@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 592 1000" role="img" aria-label="Anterior human body outline used as a reference for AO anatomic regions">
+  <g fill="#eef2f0" stroke="#b9c7c3" stroke-width="4" stroke-linejoin="round">
+    <!-- head -->
+    <ellipse cx="260" cy="60" rx="52" ry="58" />
+    <!-- neck -->
+    <rect x="234" y="108" width="52" height="34" rx="10" />
+    <!-- clavicle/shoulder line + torso -->
+    <path d="M150,175 C190,150 330,150 372,175 L392,300 C396,360 380,420 352,470 L336,560 L192,560 L176,470 C148,420 132,360 136,300 Z" />
+    <!-- left arm (viewer's left) -->
+    <path d="M150,175 C110,190 88,230 78,290 C70,340 66,400 70,460 C72,490 84,510 100,520 L128,500 C114,480 108,450 108,410 C108,350 118,290 138,240 Z" />
+    <!-- right arm -->
+    <path d="M372,175 C412,190 434,230 444,290 C452,340 456,400 452,460 C450,490 438,510 422,520 L394,500 C408,480 414,450 414,410 C414,350 404,290 384,240 Z" />
+    <!-- left hand -->
+    <ellipse cx="92" cy="540" rx="26" ry="34" />
+    <!-- right hand -->
+    <ellipse cx="430" cy="540" rx="26" ry="34" />
+    <!-- pelvis -->
+    <path d="M192,560 L336,560 L352,650 C340,690 300,712 264,712 C228,712 188,690 176,650 Z" />
+    <!-- left thigh -->
+    <path d="M192,650 C186,720 182,800 190,870 L232,872 C232,800 234,720 234,660 Z" />
+    <!-- right thigh -->
+    <path d="M336,650 C342,720 346,800 338,870 L296,872 C296,800 294,720 294,660 Z" />
+    <!-- left knee/patella hint -->
+    <circle cx="210" cy="872" r="20" fill="#e2e9e6" />
+    <circle cx="318" cy="872" r="20" fill="#e2e9e6" />
+    <!-- left leg -->
+    <path d="M196,890 C192,930 190,955 194,978 L226,978 C230,955 230,930 226,890 Z" />
+    <!-- right leg -->
+    <path d="M332,890 C336,930 338,955 334,978 L302,978 C298,955 298,930 302,890 Z" />
+    <!-- left foot -->
+    <ellipse cx="196" cy="990" rx="34" ry="14" />
+    <!-- right foot -->
+    <ellipse cx="332" cy="990" rx="34" ry="14" />
+  </g>
+</svg>

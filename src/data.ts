@@ -1,0 +1,195 @@
+export interface SegmentOption {
+  code: string;
+  label: string;
+}
+
+export interface BoneOption {
+  key: string;
+  label: string;
+  segments: SegmentOption[];
+}
+
+export interface SubtypeOption {
+  code: string;
+  label: string;
+}
+
+export interface Region {
+  key: string;
+  code: string;
+  name: string;
+  x: number;
+  y: number;
+  segments?: SegmentOption[];
+  bones?: BoneOption[];
+  subtypes?: SubtypeOption[];
+}
+
+export const REGIONS: Region[] = [
+  { key: 'cranio', code: '9', name: 'Craniomaxillofacial', x: 44, y: 6 },
+  { key: 'clavicle', code: '15', name: 'Clavicle', x: 54, y: 17 },
+  { key: 'scapula', code: '14', name: 'Scapula', x: 53, y: 22 },
+  { key: 'thorax', code: '16', name: 'Thorax', x: 45, y: 24 },
+  { key: 'spine', code: '5', name: 'Spine', x: 45, y: 32 },
+  {
+    key: 'humerus', code: '1', name: 'Humerus', x: 28, y: 26,
+    segments: [
+      { code: '11', label: 'Proximal (11)' },
+      { code: '12', label: 'Diaphyseal (12)' },
+      { code: '13', label: 'Distal (13)' },
+    ],
+  },
+  {
+    key: 'forearm', code: '2R/2U', name: 'Forearm (Radius / Ulna)', x: 24, y: 44,
+    bones: [
+      { key: 'radius', label: 'Radius', segments: [
+        { code: '2R1', label: 'Proximal (2R1)' },
+        { code: '2R2', label: 'Shaft (2R2)' },
+        { code: '2R3', label: 'Distal (2R3)' },
+      ] },
+      { key: 'ulna', label: 'Ulna', segments: [
+        { code: '2U1', label: 'Proximal (2U1)' },
+        { code: '2U2', label: 'Shaft (2U2)' },
+        { code: '2U3', label: 'Distal (2U3)' },
+      ] },
+    ],
+  },
+  {
+    key: 'hand', code: '7', name: 'Hand', x: 83, y: 50,
+    subtypes: [
+      { code: '71', label: 'Lunate' },
+      { code: '72', label: 'Scaphoid' },
+      { code: '73', label: 'Capitate' },
+      { code: '74', label: 'Hamate' },
+      { code: '75', label: 'Trapezium' },
+      { code: '76', label: 'Other carpal bones' },
+      { code: '77', label: 'Metacarpals' },
+      { code: '78', label: 'Phalanges' },
+    ],
+  },
+  { key: 'pelvicring', code: '61', name: 'Pelvic ring', x: 45, y: 42 },
+  { key: 'acetabulum', code: '62', name: 'Acetabulum', x: 53, y: 45 },
+  {
+    key: 'femur', code: '3', name: 'Femur', x: 35, y: 53,
+    segments: [
+      { code: '31', label: 'Proximal (31)' },
+      { code: '32', label: 'Diaphyseal (32)' },
+      { code: '33', label: 'Distal (33)' },
+    ],
+  },
+  { key: 'patella', code: '34', name: 'Patella', x: 45, y: 63 },
+  {
+    key: 'tibiafibula', code: '4/4F', name: 'Tibia / Fibula (Leg)', x: 47, y: 74,
+    bones: [
+      { key: 'tibia', label: 'Tibia', segments: [
+        { code: '41', label: 'Proximal (41)' },
+        { code: '42', label: 'Diaphyseal (42)' },
+        { code: '43', label: 'Distal (43)' },
+      ] },
+      { key: 'fibula', label: 'Fibula', segments: [
+        { code: '4F1', label: 'Proximal (4F1)' },
+        { code: '4F2', label: 'Diaphyseal (4F2)' },
+        { code: '4F3', label: 'Distal (4F3)' },
+      ] },
+    ],
+  },
+  { key: 'malleolus', code: '44', name: 'Malleolus (Ankle)', x: 52, y: 85 },
+  {
+    key: 'foot', code: '8', name: 'Foot', x: 35, y: 90,
+    subtypes: [
+      { code: '81', label: 'Talus' },
+      { code: '82', label: 'Calcaneus' },
+      { code: '83', label: 'Navicular' },
+      { code: '84', label: 'Cuboid' },
+      { code: '85', label: 'Cuneiforms' },
+      { code: '87', label: 'Metatarsals' },
+      { code: '88', label: 'Phalanges' },
+    ],
+  },
+];
+
+export const TIMING = [
+  { value: 'in', label: 'ในเวลาราชการ (Official hours)' },
+  { value: 'out', label: 'นอกเวลาราชการ (After hours)' },
+] as const;
+
+export const PROC_TYPE = [
+  { value: 'primary', label: 'Primary surgery' },
+  { value: 'revision', label: 'Revision surgery' },
+  { value: 'staged', label: 'Staged surgery' },
+] as const;
+
+export const ROLES = [
+  { value: 'primary_surgeon', label: 'Primary surgeon' },
+  { value: 'primary_assistant', label: 'Primary assistant' },
+  { value: 'secondary_assistant', label: 'Secondary assistant' },
+  { value: 'observer', label: 'Observer (not scrub in)' },
+  { value: 'uncertain', label: 'Uncertain' },
+] as const;
+
+export const OPTIME = [
+  { value: '<1', label: '< 1 hr' },
+  { value: '1-2', label: '1–2 hr' },
+  { value: '2-3', label: '2–3 hr' },
+  { value: '3-4', label: '3–4 hr' },
+  { value: '>4', label: '> 4 hr' },
+] as const;
+
+export const PLACE = [
+  { value: 'own', label: 'สถาบันของตนเอง (Home institution)' },
+  { value: 'outside', label: 'นอกสถาบัน (Outside institution)' },
+] as const;
+
+export const TYPE_OPTS = [
+  { code: 'A', label: 'Type A', desc: 'Simple / extra-articular' },
+  { code: 'B', label: 'Type B', desc: 'Wedge / partial articular' },
+  { code: 'C', label: 'Type C', desc: 'Complex / complete articular' },
+] as const;
+
+export const GROUP_OPTS = ['1', '2', '3'] as const;
+
+export const TIMING_MAP: Record<string, string> = {
+  in: 'ในเวลาราชการ (Official hours)',
+  out: 'นอกเวลาราชการ (After hours)',
+};
+export const PLACE_MAP: Record<string, string> = {
+  own: 'สถาบันของตนเอง (Home institution)',
+  outside: 'นอกสถาบัน (Outside institution)',
+};
+export const ROLE_MAP: Record<string, string> = {
+  primary_surgeon: 'Primary surgeon',
+  primary_assistant: 'Primary assistant',
+  secondary_assistant: 'Secondary assistant',
+  observer: 'Observer (not scrub in)',
+  uncertain: 'Uncertain',
+};
+export const OPTIME_MAP: Record<string, string> = {
+  '<1': '< 1 hr',
+  '1-2': '1–2 hr',
+  '2-3': '2–3 hr',
+  '3-4': '3–4 hr',
+  '>4': '> 4 hr',
+};
+export const PROC_MAP: Record<string, string> = {
+  primary: 'Primary surgery',
+  revision: 'Revision surgery',
+  staged: 'Staged surgery',
+};
+
+export const REQUIRED: { key: RequiredFormKey; label: string }[] = [
+  { key: 'date', label: 'Date of operation' },
+  { key: 'timing', label: 'Timing (in/out of hours)' },
+  { key: 'diagnosis', label: 'Diagnosis' },
+  { key: 'otherClassification', label: 'Other classification' },
+  { key: 'approach', label: 'Approach' },
+  { key: 'position', label: 'Position' },
+  { key: 'procedure', label: 'Procedure' },
+  { key: 'procedureType', label: 'Type of procedure' },
+  { key: 'role', label: 'Your role' },
+  { key: 'opTime', label: 'Operative time' },
+  { key: 'place', label: 'Place' },
+];
+
+export type RequiredFormKey =
+  | 'date' | 'timing' | 'diagnosis' | 'otherClassification' | 'approach'
+  | 'position' | 'procedure' | 'procedureType' | 'role' | 'opTime' | 'place';
