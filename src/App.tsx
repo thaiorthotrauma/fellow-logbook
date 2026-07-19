@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { REGIONS, REQUIRED } from './data';
-import { computeAoCode } from './logic';
+import { REQUIRED } from './data';
+import { computeAoCode, findRegion } from './logic';
+import { deleteCaseById, fetchCases, insertCase } from './lib/casesApi';
 import { emptyAo, emptyForm, type AoState, type CaseEntry, type FormState } from './types';
 import NewEntryForm from './components/NewEntryForm';
 import CaseLog from './components/CaseLog';
 
-const STORAGE_KEY = 'fellowLogbookCases_v1';
 const DESKTOP_BREAKPOINT = 1024;
 
 type Tab = 'form' | 'log';
@@ -20,14 +20,15 @@ function App() {
   const [form, setForm] = useState<FormState>(emptyForm());
   const [ao, setAo] = useState<AoState>(emptyAo());
   const [isDesktop, setIsDesktop] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setCases(JSON.parse(raw));
-    } catch {
-      /* ignore corrupt storage */
-    }
+    fetchCases()
+      .then(setCases)
+      .catch(err => {
+        console.error(err);
+        setToast('Could not load your cases. Check your connection and reload.');
+      });
 
     const checkViewport = () => setIsDesktop(window.innerWidth > DESKTOP_BREAKPOINT);
     checkViewport();
@@ -40,14 +41,6 @@ function App() {
     const timer = setTimeout(() => setToast(null), 2600);
     return () => clearTimeout(timer);
   }, [toast]);
-
-  function persist(next: CaseEntry[]) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      /* ignore quota errors */
-    }
-  }
 
   function updateForm<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm(f => ({ ...f, [key]: value }));
@@ -63,32 +56,39 @@ function App() {
     setErrors([]);
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const missing = validate();
     if (missing.length) {
       setErrors(missing);
       return;
     }
-    const region = REGIONS.find(r => r.key === ao.regionKey);
-    const entry: CaseEntry = {
-      id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
-      ...form,
-      aoCode: computeAoCode(ao),
-      aoRegionLabel: region ? region.name : '',
-    };
-    const next = [...cases, entry];
-    persist(next);
-    setCases(next);
-    setErrors([]);
-    setForm(emptyForm());
-    setAo(emptyAo());
-    setToast('Case saved to logbook');
+    setSaving(true);
+    try {
+      const region = findRegion(ao.regionKey);
+      const entry = await insertCase(form, computeAoCode(ao), region ? region.name : '');
+      setCases(prev => [...prev, entry]);
+      setErrors([]);
+      setForm(emptyForm());
+      setAo(emptyAo());
+      setToast('Case saved to logbook');
+    } catch (err) {
+      console.error(err);
+      setToast('Could not save this case. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   }
 
-  function deleteCase(id: string) {
-    const next = cases.filter(c => c.id !== id);
-    persist(next);
-    setCases(next);
+  async function deleteCase(id: string) {
+    const previous = cases;
+    setCases(cases.filter(c => c.id !== id));
+    try {
+      await deleteCaseById(id);
+    } catch (err) {
+      console.error(err);
+      setCases(previous);
+      setToast('Could not delete this case. Please try again.');
+    }
   }
 
   if (isDesktop) {
@@ -133,6 +133,7 @@ function App() {
             setAo={setAo}
             onReset={resetForm}
             onSubmit={handleSubmit}
+            saving={saving}
           />
         ) : (
           <CaseLog

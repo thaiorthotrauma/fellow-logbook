@@ -12,9 +12,10 @@ interface NewEntryFormProps {
   setAo: Dispatch<SetStateAction<AoState>>;
   onReset: () => void;
   onSubmit: () => void;
+  saving: boolean;
 }
 
-export default function NewEntryForm({ form, ao, errors, updateForm, setAo, onReset, onSubmit }: NewEntryFormProps) {
+export default function NewEntryForm({ form, ao, errors, updateForm, setAo, onReset, onSubmit, saving }: NewEntryFormProps) {
   return (
     <div>
       {errors.length > 0 && (
@@ -174,7 +175,9 @@ export default function NewEntryForm({ form, ao, errors, updateForm, setAo, onRe
 
       <div className="form-actions">
         <button type="button" className="btn-secondary" onClick={onReset}>Reset</button>
-        <button type="button" className="btn-primary" onClick={onSubmit}>Save Case</button>
+        <button type="button" className="btn-primary" onClick={onSubmit} disabled={saving}>
+          {saving ? 'Saving…' : 'Save Case'}
+        </button>
       </div>
     </div>
   );
