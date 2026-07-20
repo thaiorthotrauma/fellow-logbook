@@ -31,6 +31,11 @@ template includes `{{ .Token }}` (the 6-digit code), not just
 `{{ .ConfirmationURL }}` — we want users to type a code, not tap a link,
 since they're inside the LINE in-app browser.
 
+A branded template matching the app's look is at
+[`supabase/email-templates/otp-email.html`](./supabase/email-templates/otp-email.html)
+— paste its contents into that Magic Link template's HTML source (it already
+contains `{{ .Token }}` where the code should render).
+
 Also check **Authentication → Rate Limits**: Supabase's default built-in
 email sender allows only a handful of emails/hour. Fine for a small fellow
 roster; if you outgrow it, attach a custom SMTP provider (e.g. Resend) under
