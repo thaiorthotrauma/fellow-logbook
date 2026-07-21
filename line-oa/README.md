@@ -100,13 +100,11 @@ can be regenerated the same way.
 
 ## Cover photo
 
-[`cover-photo.png`](./cover-photo.png) — 1080×787px, ~500KB (well under
+[`cover-photo.png`](./cover-photo.png) — 1080×787px, ~430KB (well under
 LINE's 3MB limit), shown on the Official Account's profile page.
 
-Same brand language as the rich menu (teal gradient, decorative rings) plus
-a "TOTS" seal/monogram, title, and a short academic-toned subtitle. Content
-is centered with a clear margin at the bottom — LINE overlays the OA's
-circular profile photo there, so nothing essential sits in that zone.
+Background only — same brand language as the rich menu (teal gradient,
+decorative rings), no text or other components.
 
 **To upload:** LINE Developers Console → your channel → **Messaging API**
 tab → **LINE Official Account settings** (or the OA Manager at
