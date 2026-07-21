@@ -67,14 +67,15 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       });
       if (error) throw error;
 
-      if (data?.status === 'verified' && data.email && data.redeem_token) {
-        // `type: 'magiclink'` here is just the label Supabase's SDK uses for
-        // this redemption — no email is involved. This is purely how the
-        // token check-line-user generated server-side gets turned into a
-        // real, auto-refreshing session for a physician we already verified.
+      if (data?.status === 'verified' && data.redeem_token) {
+        // redeem_token is the *hashed* token from the server's generateLink
+        // call, so it must go in `token_hash` (not `token`, which is for a
+        // raw emailed code). `type: 'magiclink'` is just Supabase's label for
+        // this redemption — no email is sent. This turns the server-minted
+        // token into a real, auto-refreshing session for a fellow we already
+        // verified owns this LINE identity.
         const { error: redeemError } = await supabase.auth.verifyOtp({
-          email: data.email,
-          token: data.redeem_token,
+          token_hash: data.redeem_token,
           type: 'magiclink',
         });
         if (redeemError) throw redeemError;
