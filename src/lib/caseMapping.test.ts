@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fromRow, toRow } from './casesApi';
+import { fromRow, toRow } from './caseMapping';
 import type { CaseEntry, FormState } from '../types';
 
 const sampleForm: FormState = {
