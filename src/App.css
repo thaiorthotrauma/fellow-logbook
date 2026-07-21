@@ -13,17 +13,23 @@
 }
 
 .header {
-  background: linear-gradient(135deg, #0f7a6f 0%, #0d6e64 55%, #0a5a52 100%);
-  border-bottom: 1px solid #0a4f48;
-  padding: 18px 32px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 14px;
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  padding: 18px 32px;
+  background:
+    radial-gradient(120% 180% at 15% -20%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(135deg, #12a091 0%, #0d6e64 48%, #083d38 100%);
+  background-blend-mode: screen, normal;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 12px 28px -8px rgba(6, 38, 34, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .header-title {
@@ -32,27 +38,31 @@
   color: #ffffff;
   letter-spacing: -0.01em;
   min-height: 23px;
+  text-shadow: 0 1px 2px rgba(3, 22, 19, 0.2);
 }
 
 .header-institution {
   font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(255, 255, 255, 0.92);
   margin-top: 3px;
 }
 
 .header-subtitle {
   font-size: 12.5px;
-  color: rgba(255, 255, 255, 0.75);
+  color: rgba(255, 255, 255, 0.72);
   margin-top: 2px;
 }
 
 .tabs {
   display: flex;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   padding: 4px;
-  border-radius: 10px;
+  border-radius: 11px;
 }
 
 .tab {
@@ -65,12 +75,17 @@
   color: rgba(255, 255, 255, 0.85);
   border: none;
   font-family: inherit;
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.tab:active {
+  transform: scale(0.95);
 }
 
 .tab.active {
   background: #ffffff;
   color: #0d6e64;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 8px rgba(4, 30, 27, 0.22);
 }
 
 .content {
@@ -90,11 +105,14 @@
 }
 
 .card {
-  background: #fff;
-  border: 1px solid #e5e9e7;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 14px;
   padding: 22px 26px;
   margin-bottom: 16px;
+  box-shadow: 0 1px 2px rgba(22, 35, 31, 0.04), 0 10px 24px -12px rgba(22, 35, 31, 0.18);
 }
 
 .card-header {
@@ -176,6 +194,12 @@
   flex-wrap: wrap;
 }
 
+.pill-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
 .pill {
   padding: 8px 14px;
   border-radius: 8px;
@@ -185,14 +209,31 @@
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
   user-select: none;
+}
+
+.pill:active {
+  transform: scale(0.94);
 }
 
 .pill.selected {
   border: 1.5px solid #0d6e64;
   background: #0d6e64;
   color: #ffffff;
+  animation: pill-pop 0.24s ease;
+}
+
+@keyframes pill-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .ao-code-badge {
@@ -219,12 +260,16 @@
 }
 
 .ao-diagram-wrap {
-  position: relative;
   width: 240px;
   flex-shrink: 0;
   background: #f4f7f6;
   border: 1px solid #e7edea;
   border-radius: 14px;
+  padding: 14px 12px 30px;
+}
+
+.ao-diagram-stage {
+  position: relative;
 }
 
 .ao-diagram-img {
@@ -260,6 +305,10 @@
   z-index: 4;
 }
 
+.ao-dot:active {
+  transform: translate(-50%, -50%) scale(0.9);
+}
+
 .ao-dot:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px rgba(13, 110, 100, 0.3);
@@ -272,6 +321,19 @@
   transform: translate(-50%, -50%) scale(1.18);
   box-shadow: 0 0 0 4px rgba(13, 110, 100, 0.18);
   z-index: 3;
+  animation: dot-pop 0.26s ease;
+}
+
+@keyframes dot-pop {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  55% {
+    transform: translate(-50%, -50%) scale(1.32);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.18);
+  }
 }
 
 .ao-detail-panel {

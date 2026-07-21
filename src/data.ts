@@ -138,8 +138,8 @@ export const PROC_TYPE = [
 
 export const ROLES = [
   { value: 'primary_surgeon', label: 'Primary surgeon' },
-  { value: 'primary_assistant', label: 'Primary assistant' },
-  { value: 'secondary_assistant', label: 'Secondary assistant' },
+  { value: 'primary_assistant', label: 'Primary assist' },
+  { value: 'secondary_assistant', label: 'Secondary assist' },
   { value: 'observer', label: 'Observer (not scrub in)' },
   { value: 'uncertain', label: 'Uncertain' },
 ] as const satisfies readonly Option<string>[];

@@ -140,7 +140,7 @@ export default function NewEntryForm({ form, ao, errors, updateForm, setAo, onRe
           <span className="step-title">Your Role</span>
           <span className="required-star">*</span>
         </div>
-        <div className="pill-row">
+        <div className="pill-grid-2">
           {ROLES.map(opt => (
             <Pill key={opt.value} label={opt.label} selected={form.role === opt.value} onClick={() => updateForm('role', opt.value)} />
           ))}

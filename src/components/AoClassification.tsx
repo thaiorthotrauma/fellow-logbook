@@ -42,19 +42,21 @@ export default function AoClassification({ ao, setAo }: AoClassificationProps) {
 
       <div className="ao-layout">
         <div className="ao-diagram-wrap">
-          <img src={aoBodyDiagram} alt="AO anatomic region diagram" className="ao-diagram-img" />
-          {REGIONS.map(r => (
-            <button
-              type="button"
-              key={r.key}
-              className={`ao-dot ${ao.regionKey === r.key ? 'selected' : ''}`}
-              style={{ left: r.x + '%', top: r.y + '%' }}
-              onClick={() => selectRegion(r.key)}
-              title={r.name}
-            >
-              {r.pin ?? r.code}
-            </button>
-          ))}
+          <div className="ao-diagram-stage">
+            <img src={aoBodyDiagram} alt="AO anatomic region diagram" className="ao-diagram-img" />
+            {REGIONS.map(r => (
+              <button
+                type="button"
+                key={r.key}
+                className={`ao-dot ${ao.regionKey === r.key ? 'selected' : ''}`}
+                style={{ left: r.x + '%', top: r.y + '%' }}
+                onClick={() => selectRegion(r.key)}
+                title={r.name}
+              >
+                {r.pin ?? r.code}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="ao-detail-panel">
