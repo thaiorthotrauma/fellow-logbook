@@ -54,7 +54,7 @@ export default function NewEntryForm({ form, ao, errors, updateForm, setAo, onRe
           className="field-textarea"
           value={form.diagnosis}
           onChange={e => updateForm('diagnosis', e.target.value)}
-          placeholder="e.g. Closed fracture, right distal femur"
+          placeholder="Closed fracture right distal femur"
           rows={2}
         />
       </div>
