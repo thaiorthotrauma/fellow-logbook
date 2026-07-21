@@ -3,11 +3,11 @@
 A single full-image rich menu whose only tap area opens the app via LIFF.
 Designed to match the app's header theme: a bolder teal gradient, three
 concentric decorative rings for depth, and a logbook/checkmark icon plus
-an "Open Logbook" pill button — both enlarged, in one evenly-spread row,
+an "Open Logbook" pill button — both enlarged (button further sized up), in one evenly-spread row,
 no additional title/subtitle text.
 
 - **Image:** [`richmenu-logbook.jpg`](./richmenu-logbook.jpg) — 2500×843px
-  (LINE's "compact" size), ~90KB.
+  (LINE's "compact" size), ~94KB.
 - Since this session's network policy blocks `api.line.me` directly, the
   create/upload/set-default calls below need to be run from your machine
   (or anywhere with normal internet access) using `curl`.
