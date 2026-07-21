@@ -126,8 +126,8 @@ const labelMap = (opts: readonly Option<string>[]): Record<string, string> =>
   Object.fromEntries(opts.map(o => [o.value, o.label]));
 
 export const TIMING = [
-  { value: 'in', label: 'ในเวลาราชการ (Official hours)' },
-  { value: 'out', label: 'นอกเวลาราชการ (After hours)' },
+  { value: 'in', label: 'Official hours' },
+  { value: 'out', label: 'After hours' },
 ] as const satisfies readonly Option<string>[];
 
 export const PROC_TYPE = [
@@ -153,8 +153,8 @@ export const OPTIME = [
 ] as const satisfies readonly Option<string>[];
 
 export const PLACE = [
-  { value: 'own', label: 'สถาบันของตนเอง (Home institution)' },
-  { value: 'outside', label: 'นอกสถาบัน (Outside institution)' },
+  { value: 'own', label: 'Home institution' },
+  { value: 'outside', label: 'Outside institution' },
 ] as const satisfies readonly Option<string>[];
 
 export const TYPE_OPTS = [
