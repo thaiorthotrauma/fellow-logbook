@@ -11,18 +11,19 @@ Open your Supabase project → **SQL Editor** → New query, paste in the
 contents of [`supabase/schema.sql`](./supabase/schema.sql), and run it.
 
 This creates:
-- `public.physicians` — the whitelist (`full_name`, `email`, `line_user_id`,
-  `verified`). Seeded with the one admin row you gave me
-  (`pong.poti@gmail.com`). Add more later with:
-  ```sql
-  insert into public.physicians (full_name, email) values ('Name', 'email@example.com');
-  ```
+- `public.physicians` — the whitelist (`full_name`, `email`, `institution`,
+  `line_user_id`, `verified`). Seeded with the admin row
+  (`pong.poti@gmail.com`).
 - `public.cases` — the actual logbook entries, RLS-scoped so each physician
   only sees their own.
 - `is_email_allowed(email)` — a public RPC used to check the whitelist
   without exposing it.
 - `claim_physician_row()` — links a freshly-authenticated Supabase user to
   their whitelist row by email.
+
+Then load the fellow roster: paste in and run
+[`supabase/seed_physicians.sql`](./supabase/seed_physicians.sql). Safe to
+re-run any time the roster changes — it upserts by email.
 
 ## 2. Configure Supabase Auth email OTP
 

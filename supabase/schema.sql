@@ -6,6 +6,7 @@ create table if not exists public.physicians (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
   email text not null unique,
+  institution text,
   user_id uuid unique references auth.users (id) on delete set null,
   line_user_id text unique,
   verified boolean not null default false,
@@ -67,9 +68,10 @@ $$;
 revoke all on function public.claim_physician_row() from public;
 grant execute on function public.claim_physician_row() to authenticated;
 
--- Seed the initial whitelist. Add more physicians the same way.
-insert into public.physicians (full_name, email)
-values ('ปองสิทธิ์ โพธิคุณ', 'pong.poti@gmail.com')
+-- Seed the initial admin row. Run supabase/seed_physicians.sql afterward (or
+-- any time the roster changes) to load/update the full fellow whitelist.
+insert into public.physicians (full_name, email, institution)
+values ('ปองสิทธิ์ โพธิคุณ', 'pong.poti@gmail.com', 'สมุทรสาคร')
 on conflict (email) do nothing;
 
 -- ── Case log ────────────────────────────────────────────────────────────────
