@@ -33,12 +33,6 @@
     <path d="M118,316 L122,384" stroke-width="19"/>
   </g>
 
-  <!-- Hands & feet -->
-  <ellipse class="tissue" cx="48" cy="264" rx="11" ry="15"/>
-  <ellipse class="tissue" cx="152" cy="264" rx="11" ry="15"/>
-  <ellipse class="tissue" cx="80" cy="392" rx="17" ry="9"/>
-  <ellipse class="tissue" cx="120" cy="392" rx="17" ry="9"/>
-
   <!-- Torso (shoulders → waist), drawn over the arm tops -->
   <path class="tissue" d="M66,92 C74,80 88,76 100,76 C112,76 126,80 134,92
         L128,150 C126,175 122,194 116,208 L84,208 C78,194 74,175 72,150 Z"/>
@@ -74,4 +68,11 @@
     <circle cx="78" cy="384" r="5"/>
     <circle cx="122" cy="384" r="5"/>
   </g>
+
+  <!-- Hands & feet, drawn last so their outline always completes cleanly
+       over the wrist/ankle joints beneath them -->
+  <ellipse class="tissue" cx="48" cy="264" rx="11" ry="15"/>
+  <ellipse class="tissue" cx="152" cy="264" rx="11" ry="15"/>
+  <ellipse class="tissue" cx="80" cy="392" rx="17" ry="9"/>
+  <ellipse class="tissue" cx="120" cy="392" rx="17" ry="9"/>
 </svg>
