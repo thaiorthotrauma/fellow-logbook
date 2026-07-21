@@ -52,7 +52,7 @@ export default function AoClassification({ ao, setAo }: AoClassificationProps) {
               onClick={() => selectRegion(r.key)}
               title={r.name}
             >
-              {r.code}
+              {r.pin ?? r.code}
             </button>
           ))}
         </div>

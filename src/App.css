@@ -212,8 +212,11 @@
 
 .ao-diagram-wrap {
   position: relative;
-  width: 260px;
+  width: 240px;
   flex-shrink: 0;
+  background: #f4f7f6;
+  border: 1px solid #e7edea;
+  border-radius: 14px;
 }
 
 .ao-diagram-img {
@@ -225,30 +228,40 @@
 .ao-dot {
   position: absolute;
   transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
-  border: 2px solid #0d6e64;
+  border-radius: 999px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  background: #ffffff;
+  border: 1.5px solid #0d6e64;
   color: #0d6e64;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 700;
+  font-variant-numeric: tabular-nums;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 2px rgba(22, 35, 31, 0.16);
   z-index: 2;
-  transition: all 0.15s ease;
-  width: 24px;
-  height: 24px;
-  padding: 0;
+  transition: transform 0.12s ease, background 0.12s ease, box-shadow 0.12s ease;
+}
+
+.ao-dot:hover {
+  background: #eaf4f2;
+  z-index: 4;
+}
+
+.ao-dot:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(13, 110, 100, 0.3);
 }
 
 .ao-dot.selected {
-  width: 32px;
-  height: 32px;
   background: #0d6e64;
-  border: 2px solid #0a4f48;
+  border-color: #0a4f48;
   color: #fff;
+  transform: translate(-50%, -50%) scale(1.18);
   box-shadow: 0 0 0 4px rgba(13, 110, 100, 0.18);
   z-index: 3;
 }

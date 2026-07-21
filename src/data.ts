@@ -20,19 +20,22 @@ export interface Region {
   name: string;
   x: number;
   y: number;
+  /** Short label shown on the map marker when `code` is too long to fit
+   *  legibly in the dot (e.g. combined regions like Forearm 2R/2U). */
+  pin?: string;
   segments?: SegmentOption[];
   bones?: BoneOption[];
   subtypes?: SubtypeOption[];
 }
 
 export const REGIONS: Region[] = [
-  { key: 'cranio', code: '9', name: 'Craniomaxillofacial', x: 44, y: 6 },
-  { key: 'clavicle', code: '15', name: 'Clavicle', x: 54, y: 17 },
-  { key: 'scapula', code: '14', name: 'Scapula', x: 53, y: 22 },
-  { key: 'thorax', code: '16', name: 'Thorax', x: 45, y: 24 },
-  { key: 'spine', code: '5', name: 'Spine', x: 45, y: 32 },
+  { key: 'cranio', code: '9', name: 'Craniomaxillofacial', x: 50, y: 10 },
+  { key: 'clavicle', code: '15', name: 'Clavicle', x: 58, y: 19 },
+  { key: 'scapula', code: '14', name: 'Scapula', x: 66, y: 25 },
+  { key: 'thorax', code: '16', name: 'Thorax', x: 50, y: 27 },
+  { key: 'spine', code: '5', name: 'Spine', x: 50, y: 40 },
   {
-    key: 'humerus', code: '1', name: 'Humerus', x: 28, y: 26,
+    key: 'humerus', code: '1', name: 'Humerus', x: 31, y: 33,
     segments: [
       { code: '11', label: 'Proximal (11)' },
       { code: '12', label: 'Diaphyseal (12)' },
@@ -40,7 +43,7 @@ export const REGIONS: Region[] = [
     ],
   },
   {
-    key: 'forearm', code: '2R/2U', name: 'Forearm (Radius / Ulna)', x: 24, y: 44,
+    key: 'forearm', code: '2R/2U', pin: '2', name: 'Forearm (Radius / Ulna)', x: 26, y: 52,
     bones: [
       { key: 'radius', label: 'Radius', segments: [
         { code: '2R1', label: 'Proximal (2R1)' },
@@ -55,7 +58,7 @@ export const REGIONS: Region[] = [
     ],
   },
   {
-    key: 'hand', code: '7', name: 'Hand', x: 83, y: 50,
+    key: 'hand', code: '7', name: 'Hand', x: 23, y: 66,
     subtypes: [
       { code: '71', label: 'Lunate' },
       { code: '72', label: 'Scaphoid' },
@@ -67,19 +70,19 @@ export const REGIONS: Region[] = [
       { code: '78', label: 'Phalanges' },
     ],
   },
-  { key: 'pelvicring', code: '61', name: 'Pelvic ring', x: 45, y: 42 },
-  { key: 'acetabulum', code: '62', name: 'Acetabulum', x: 53, y: 45 },
+  { key: 'pelvicring', code: '61', name: 'Pelvic ring', x: 45, y: 55 },
+  { key: 'acetabulum', code: '62', name: 'Acetabulum', x: 57, y: 58 },
   {
-    key: 'femur', code: '3', name: 'Femur', x: 35, y: 53,
+    key: 'femur', code: '3', name: 'Femur', x: 40, y: 70,
     segments: [
       { code: '31', label: 'Proximal (31)' },
       { code: '32', label: 'Diaphyseal (32)' },
       { code: '33', label: 'Distal (33)' },
     ],
   },
-  { key: 'patella', code: '34', name: 'Patella', x: 45, y: 63 },
+  { key: 'patella', code: '34', name: 'Patella', x: 45, y: 79 },
   {
-    key: 'tibiafibula', code: '4/4F', name: 'Tibia / Fibula (Leg)', x: 47, y: 74,
+    key: 'tibiafibula', code: '4/4F', pin: '4', name: 'Tibia / Fibula (Leg)', x: 40, y: 87,
     bones: [
       { key: 'tibia', label: 'Tibia', segments: [
         { code: '41', label: 'Proximal (41)' },
@@ -93,9 +96,9 @@ export const REGIONS: Region[] = [
       ] },
     ],
   },
-  { key: 'malleolus', code: '44', name: 'Malleolus (Ankle)', x: 52, y: 85 },
+  { key: 'malleolus', code: '44', name: 'Malleolus (Ankle)', x: 60, y: 93 },
   {
-    key: 'foot', code: '8', name: 'Foot', x: 35, y: 90,
+    key: 'foot', code: '8', name: 'Foot', x: 38, y: 97,
     subtypes: [
       { code: '81', label: 'Talus' },
       { code: '82', label: 'Calcaneus' },
