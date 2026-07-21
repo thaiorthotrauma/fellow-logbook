@@ -8,12 +8,15 @@ create table if not exists public.physicians (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
   email text not null unique,
-  institution text,
   user_id uuid unique references auth.users (id) on delete set null,
   line_user_id text unique,
   verified boolean not null default false,
   created_at timestamptz not null default now()
 );
+
+-- Added after the initial table creation — explicit ALTER so re-running this
+-- script against a table created before this column existed still works.
+alter table public.physicians add column if not exists institution text;
 
 alter table public.physicians enable row level security;
 
