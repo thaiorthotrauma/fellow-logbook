@@ -1,5 +1,7 @@
 -- Fellowship Case Logbook schema
--- Run this once in the Supabase SQL editor (Project > SQL Editor > New query).
+-- Run in the Supabase SQL editor (Project > SQL Editor > New query).
+-- Safe to re-run: tables/functions/indexes are idempotent and policies are
+-- dropped and recreated on each run.
 
 -- ── Whitelist / physician identity ──────────────────────────────────────────
 create table if not exists public.physicians (
@@ -16,6 +18,7 @@ create table if not exists public.physicians (
 alter table public.physicians enable row level security;
 
 -- A physician may read only their own row, once linked (user_id = auth.uid()).
+drop policy if exists "physicians can read own row" on public.physicians;
 create policy "physicians can read own row"
   on public.physicians for select
   using (auth.uid() is not null and user_id = auth.uid());
@@ -96,6 +99,7 @@ create table if not exists public.cases (
 
 alter table public.cases enable row level security;
 
+drop policy if exists "physicians manage their own cases" on public.cases;
 create policy "physicians manage their own cases"
   on public.cases for all
   using (auth.uid() = user_id)
