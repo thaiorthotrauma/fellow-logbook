@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { getLineIdToken, initLiff, liff } from '../lib/liff';
+import { getLineIdToken, initLiff, isLikelyDesktop, liff } from '../lib/liff';
 import EmailStep from './EmailStep';
 import OtpStep from './OtpStep';
 import RejectedScreen from './RejectedScreen';
@@ -40,7 +40,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
         setStage('blocked-not-liff');
         return;
       }
-      if (liff.getOS() === 'web') {
+      if (isLikelyDesktop()) {
         setStage('blocked-desktop');
         return;
       }

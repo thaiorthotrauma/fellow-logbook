@@ -20,4 +20,16 @@ export function getLineIdToken(): string {
   return token;
 }
 
+// Since iPadOS 13, Safari (and any embedded WebView that doesn't override its
+// user agent, which includes LINE's in-app browser) reports itself as a Mac
+// by default — the string "iPad" no longer appears. liff.getOS() detects OS
+// purely from that user agent, so it misreads a real iPad as desktop "web".
+// A genuine Mac has no touchscreen; an iPad (even while UA-lying as one)
+// reports multiple touch points. This distinguishes the two so a real iPad
+// isn't wrongly treated as a desktop.
+export function isLikelyDesktop(): boolean {
+  if (liff.getOS() !== 'web') return false;
+  return navigator.maxTouchPoints <= 1;
+}
+
 export { liff };
