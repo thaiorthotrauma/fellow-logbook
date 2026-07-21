@@ -75,3 +75,44 @@
     transform: rotate(360deg);
   }
 }
+
+.otp-boxes {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.otp-box {
+  width: 44px;
+  height: 52px;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  font-family: ui-monospace, Menlo, monospace;
+  color: #16231f;
+  border: 1.5px solid #d7ddda;
+  border-radius: 10px;
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.otp-box:focus {
+  outline: none;
+  border-color: #0d6e64;
+  box-shadow: 0 0 0 3px rgba(13, 110, 100, 0.15);
+}
+
+.otp-box:disabled {
+  opacity: 0.6;
+}
+
+@media (max-width: 360px) {
+  .otp-box {
+    width: 38px;
+    height: 46px;
+    font-size: 18px;
+  }
+  .otp-boxes {
+    gap: 6px;
+  }
+}

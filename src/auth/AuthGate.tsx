@@ -12,8 +12,7 @@ type Stage = 'loading' | 'email' | 'otp' | 'rejected' | 'error' | 'authenticated
 
 interface CheckLineUserResponse {
   status: 'verified' | 'unlinked';
-  email?: string;
-  token_hash?: string;
+  session?: { access_token: string; refresh_token: string; expires_in: number };
 }
 
 export default function AuthGate({ children }: { children: ReactNode }) {
@@ -52,13 +51,12 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       });
       if (error) throw error;
 
-      if (data?.status === 'verified' && data.email && data.token_hash) {
-        const { error: verifyError } = await supabase.auth.verifyOtp({
-          email: data.email,
-          token: data.token_hash,
-          type: 'magiclink',
+      if (data?.status === 'verified' && data.session) {
+        const { error: setSessionError } = await supabase.auth.setSession({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
         });
-        if (verifyError) throw verifyError;
+        if (setSessionError) throw setSessionError;
         setStage('authenticated');
         return;
       }
