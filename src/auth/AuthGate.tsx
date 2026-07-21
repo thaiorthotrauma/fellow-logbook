@@ -6,9 +6,10 @@ import OtpStep from './OtpStep';
 import RejectedScreen from './RejectedScreen';
 import LoadingScreen from './LoadingScreen';
 import ErrorScreen from './ErrorScreen';
+import DeviceGateScreen from './DeviceGateScreen';
 import './auth.css';
 
-type Stage = 'loading' | 'email' | 'otp' | 'rejected' | 'error' | 'authenticated';
+type Stage = 'loading' | 'blocked-not-liff' | 'blocked-desktop' | 'email' | 'otp' | 'rejected' | 'error' | 'authenticated';
 
 interface CheckLineUserResponse {
   status: 'verified' | 'unlinked';
@@ -29,9 +30,23 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     try {
       setStage('loading');
 
+      await initLiff();
+
+      // Hard gate, checked before any LINE login attempt: this app is only
+      // ever allowed to run inside LINE's own in-app browser, on a phone or
+      // tablet. Anything else — an external browser, a desktop LINE client,
+      // a plain link opened in Safari/Chrome — is refused outright.
+      if (!liff.isInClient()) {
+        setStage('blocked-not-liff');
+        return;
+      }
+      if (liff.getOS() === 'web') {
+        setStage('blocked-desktop');
+        return;
+      }
+
       const { data: existingSession } = await supabase.auth.getSession();
 
-      await initLiff();
       if (!liff.isLoggedIn()) {
         liff.login();
         return; // page will redirect through LINE login and reload
@@ -112,6 +127,8 @@ export default function AuthGate({ children }: { children: ReactNode }) {
 
   if (stage === 'loading') return <LoadingScreen />;
   if (stage === 'error') return <ErrorScreen message={errorMessage} onRetry={bootstrap} />;
+  if (stage === 'blocked-not-liff') return <DeviceGateScreen reason="not-liff" />;
+  if (stage === 'blocked-desktop') return <DeviceGateScreen reason="desktop" />;
   if (stage === 'rejected') return <RejectedScreen />;
   if (stage === 'email') return <EmailStep onSubmit={handleEmailSubmit} />;
   if (stage === 'otp') return <OtpStep email={email} onSubmit={handleOtpSubmit} />;
