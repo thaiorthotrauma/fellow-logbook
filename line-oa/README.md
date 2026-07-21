@@ -1,12 +1,13 @@
 # LINE Rich Menu — Fellow Logbook
 
 A single full-image rich menu whose only tap area opens the app via LIFF.
-Designed to match the app's header theme (teal gradient, a logbook/checkmark
-icon, an "Open Logbook" pill button, both in one evenly-spread row — no
-additional title/subtitle text).
+Designed to match the app's header theme: a bolder teal gradient, three
+concentric decorative rings for depth, and a logbook/checkmark icon plus
+an "Open Logbook" pill button — both enlarged, in one evenly-spread row,
+no additional title/subtitle text.
 
 - **Image:** [`richmenu-logbook.jpg`](./richmenu-logbook.jpg) — 2500×843px
-  (LINE's "compact" size), ~65KB.
+  (LINE's "compact" size), ~90KB.
 - Since this session's network policy blocks `api.line.me` directly, the
   create/upload/set-default calls below need to be run from your machine
   (or anywhere with normal internet access) using `curl`.
