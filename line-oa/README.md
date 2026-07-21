@@ -7,7 +7,7 @@ an "Open Logbook" pill button — both enlarged (button further sized up), in on
 no additional title/subtitle text.
 
 - **Image:** [`richmenu-logbook.jpg`](./richmenu-logbook.jpg) — 2500×843px
-  (LINE's "compact" size), ~94KB.
+  (LINE's "compact" size), ~98KB.
 - Since this session's network policy blocks `api.line.me` directly, the
   create/upload/set-default calls below need to be run from your machine
   (or anywhere with normal internet access) using `curl`.
