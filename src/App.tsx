@@ -7,8 +7,6 @@ import { emptyAo, emptyForm, type AoState, type CaseEntry, type FormState } from
 import NewEntryForm from './components/NewEntryForm';
 import CaseLog from './components/CaseLog';
 
-const DESKTOP_BREAKPOINT = 1024;
-
 type Tab = 'form' | 'log';
 
 function App() {
@@ -19,7 +17,6 @@ function App() {
   const [errors, setErrors] = useState<string[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [ao, setAo] = useState<AoState>(emptyAo());
-  const [isDesktop, setIsDesktop] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -29,11 +26,6 @@ function App() {
         console.error(err);
         setToast('Could not load your cases. Check your connection and reload.');
       });
-
-    const checkViewport = () => setIsDesktop(window.innerWidth > DESKTOP_BREAKPOINT);
-    checkViewport();
-    window.addEventListener('resize', checkViewport);
-    return () => window.removeEventListener('resize', checkViewport);
   }, []);
 
   useEffect(() => {
@@ -89,21 +81,6 @@ function App() {
       setCases(previous);
       setToast('Could not delete this case. Please try again.');
     }
-  }
-
-  if (isDesktop) {
-    return (
-      <div className="desktop-gate">
-        <div className="desktop-gate-inner">
-          <div className="desktop-gate-badge">!</div>
-          <div className="desktop-gate-title">Mobile &amp; Tablet Only</div>
-          <div className="desktop-gate-body">
-            This logbook is designed for use on mobile phones and tablets in the operating room and ward.
-            Please open it on a smaller screen, or narrow this browser window, to continue.
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (

@@ -108,16 +108,30 @@ export const REGIONS: Region[] = [
   },
 ];
 
+// Each option list is the single source of truth for both its values (used as
+// the literal-union type below, the DB CHECK constraints, and the stored
+// column value) and its human labels. The `*_MAP` lookups are derived from the
+// arrays so a label can never drift from its option.
+interface Option<V extends string> {
+  value: V;
+  label: string;
+}
+
+// Returns a plain string-keyed lookup so display sites can index it with a
+// possibly-legacy value and fall back to '—' rather than tripping the compiler.
+const labelMap = (opts: readonly Option<string>[]): Record<string, string> =>
+  Object.fromEntries(opts.map(o => [o.value, o.label]));
+
 export const TIMING = [
   { value: 'in', label: 'ในเวลาราชการ (Official hours)' },
   { value: 'out', label: 'นอกเวลาราชการ (After hours)' },
-] as const;
+] as const satisfies readonly Option<string>[];
 
 export const PROC_TYPE = [
   { value: 'primary', label: 'Primary surgery' },
   { value: 'revision', label: 'Revision surgery' },
   { value: 'staged', label: 'Staged surgery' },
-] as const;
+] as const satisfies readonly Option<string>[];
 
 export const ROLES = [
   { value: 'primary_surgeon', label: 'Primary surgeon' },
@@ -125,7 +139,7 @@ export const ROLES = [
   { value: 'secondary_assistant', label: 'Secondary assistant' },
   { value: 'observer', label: 'Observer (not scrub in)' },
   { value: 'uncertain', label: 'Uncertain' },
-] as const;
+] as const satisfies readonly Option<string>[];
 
 export const OPTIME = [
   { value: '<1', label: '< 1 hr' },
@@ -133,12 +147,12 @@ export const OPTIME = [
   { value: '2-3', label: '2–3 hr' },
   { value: '3-4', label: '3–4 hr' },
   { value: '>4', label: '> 4 hr' },
-] as const;
+] as const satisfies readonly Option<string>[];
 
 export const PLACE = [
   { value: 'own', label: 'สถาบันของตนเอง (Home institution)' },
   { value: 'outside', label: 'นอกสถาบัน (Outside institution)' },
-] as const;
+] as const satisfies readonly Option<string>[];
 
 export const TYPE_OPTS = [
   { code: 'A', label: 'Type A', desc: 'Simple / extra-articular' },
@@ -148,33 +162,19 @@ export const TYPE_OPTS = [
 
 export const GROUP_OPTS = ['1', '2', '3'] as const;
 
-export const TIMING_MAP: Record<string, string> = {
-  in: 'ในเวลาราชการ (Official hours)',
-  out: 'นอกเวลาราชการ (After hours)',
-};
-export const PLACE_MAP: Record<string, string> = {
-  own: 'สถาบันของตนเอง (Home institution)',
-  outside: 'นอกสถาบัน (Outside institution)',
-};
-export const ROLE_MAP: Record<string, string> = {
-  primary_surgeon: 'Primary surgeon',
-  primary_assistant: 'Primary assistant',
-  secondary_assistant: 'Secondary assistant',
-  observer: 'Observer (not scrub in)',
-  uncertain: 'Uncertain',
-};
-export const OPTIME_MAP: Record<string, string> = {
-  '<1': '< 1 hr',
-  '1-2': '1–2 hr',
-  '2-3': '2–3 hr',
-  '3-4': '3–4 hr',
-  '>4': '> 4 hr',
-};
-export const PROC_MAP: Record<string, string> = {
-  primary: 'Primary surgery',
-  revision: 'Revision surgery',
-  staged: 'Staged surgery',
-};
+// Literal-union types for the constrained fields — kept in lockstep with the
+// option arrays above and the CHECK constraints in schema.sql.
+export type Timing = (typeof TIMING)[number]['value'];
+export type ProcedureType = (typeof PROC_TYPE)[number]['value'];
+export type Role = (typeof ROLES)[number]['value'];
+export type OpTime = (typeof OPTIME)[number]['value'];
+export type Place = (typeof PLACE)[number]['value'];
+
+export const TIMING_MAP = labelMap(TIMING);
+export const PLACE_MAP = labelMap(PLACE);
+export const ROLE_MAP = labelMap(ROLES);
+export const OPTIME_MAP = labelMap(OPTIME);
+export const PROC_MAP = labelMap(PROC_TYPE);
 
 export const REQUIRED: { key: RequiredFormKey; label: string }[] = [
   { key: 'date', label: 'Date of operation' },

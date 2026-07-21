@@ -12,46 +12,6 @@
   padding-bottom: 60px;
 }
 
-.desktop-gate {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 40px;
-  text-align: center;
-}
-
-.desktop-gate-inner {
-  max-width: 420px;
-}
-
-.desktop-gate-badge {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #eaf4f2;
-  color: #0d6e64;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  font-weight: 700;
-  margin: 0 auto 20px;
-}
-
-.desktop-gate-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #16231f;
-  margin-bottom: 10px;
-}
-
-.desktop-gate-body {
-  font-size: 14px;
-  color: #6b7674;
-  line-height: 1.6;
-}
-
 .header {
   background: #ffffff;
   border-bottom: 1px solid #e5e9e7;

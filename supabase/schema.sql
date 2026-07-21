@@ -18,6 +18,12 @@ create table if not exists public.physicians (
 -- script against a table created before this column existed still works.
 alter table public.physicians add column if not exists institution text;
 
+-- Case-insensitive uniqueness on email: all lookups compare with lower(), and
+-- the roster has mixed-case addresses, so guard against two rows that differ
+-- only by case.
+create unique index if not exists physicians_email_lower_idx
+  on public.physicians (lower(email));
+
 alter table public.physicians enable row level security;
 
 -- A physician may read only their own row, once linked (user_id = auth.uid()).
@@ -99,6 +105,30 @@ create table if not exists public.cases (
   place text not null,
   created_at timestamptz not null default now()
 );
+
+-- Constrain the enumerated columns to the exact value sets the app uses (these
+-- mirror the option arrays in src/data.ts). Dropped-then-added so the script
+-- stays re-runnable. A bad or renamed value is rejected at write time rather
+-- than silently stored and surfacing later as a broken report.
+alter table public.cases drop constraint if exists cases_timing_check;
+alter table public.cases add constraint cases_timing_check
+  check (timing in ('in', 'out'));
+
+alter table public.cases drop constraint if exists cases_procedure_type_check;
+alter table public.cases add constraint cases_procedure_type_check
+  check (procedure_type in ('primary', 'revision', 'staged'));
+
+alter table public.cases drop constraint if exists cases_role_check;
+alter table public.cases add constraint cases_role_check
+  check (role in ('primary_surgeon', 'primary_assistant', 'secondary_assistant', 'observer', 'uncertain'));
+
+alter table public.cases drop constraint if exists cases_op_time_check;
+alter table public.cases add constraint cases_op_time_check
+  check (op_time in ('<1', '1-2', '2-3', '3-4', '>4'));
+
+alter table public.cases drop constraint if exists cases_place_check;
+alter table public.cases add constraint cases_place_check
+  check (place in ('own', 'outside'));
 
 alter table public.cases enable row level security;
 

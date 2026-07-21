@@ -1,58 +1,47 @@
 import { supabase } from './supabaseClient';
 import type { CaseEntry, FormState } from '../types';
 
-interface CaseRow {
-  id: string;
-  date: string;
-  timing: string;
-  diagnosis: string;
-  ao_code: string;
-  ao_region_label: string;
-  other_classification: string;
-  approach: string;
-  position: string;
-  procedure: string;
-  procedure_type: string;
-  role: string;
-  op_time: string;
-  place: string;
+// Single source of truth for the case field mapping: [camelCase app key,
+// snake_case DB column]. Both row mappers below are generated from this list,
+// so adding a field means editing exactly one line here (plus the TS type and
+// the SQL column — the two places that are genuinely different languages).
+const FIELD_MAP: readonly (readonly [keyof CaseEntry, string])[] = [
+  ['id', 'id'],
+  ['date', 'date'],
+  ['timing', 'timing'],
+  ['diagnosis', 'diagnosis'],
+  ['aoCode', 'ao_code'],
+  ['aoRegionLabel', 'ao_region_label'],
+  ['otherClassification', 'other_classification'],
+  ['approach', 'approach'],
+  ['position', 'position'],
+  ['procedure', 'procedure'],
+  ['procedureType', 'procedure_type'],
+  ['role', 'role'],
+  ['opTime', 'op_time'],
+  ['place', 'place'],
+];
+
+export type CaseRow = Record<string, unknown>;
+
+/** DB row (snake_case) → app entry (camelCase). Constrained columns are
+ *  trusted to hold valid values because of the CHECK constraints in the DB. */
+export function fromRow(row: CaseRow): CaseEntry {
+  const entry: Record<string, unknown> = {};
+  for (const [key, col] of FIELD_MAP) entry[key] = row[col];
+  return entry as unknown as CaseEntry;
 }
 
-function fromRow(row: CaseRow): CaseEntry {
-  return {
-    id: row.id,
-    date: row.date,
-    timing: row.timing,
-    diagnosis: row.diagnosis,
-    aoCode: row.ao_code,
-    aoRegionLabel: row.ao_region_label,
-    otherClassification: row.other_classification,
-    approach: row.approach,
-    position: row.position,
-    procedure: row.procedure,
-    procedureType: row.procedure_type,
-    role: row.role,
-    opTime: row.op_time,
-    place: row.place,
-  };
-}
-
-function toRow(form: FormState, aoCode: string, aoRegionLabel: string) {
-  return {
-    date: form.date,
-    timing: form.timing,
-    diagnosis: form.diagnosis,
-    ao_code: aoCode,
-    ao_region_label: aoRegionLabel,
-    other_classification: form.otherClassification,
-    approach: form.approach,
-    position: form.position,
-    procedure: form.procedure,
-    procedure_type: form.procedureType,
-    role: form.role,
-    op_time: form.opTime,
-    place: form.place,
-  };
+/** Form values + computed AO fields → DB row (snake_case). `id` is omitted so
+ *  the DB assigns it; `user_id` defaults to auth.uid() server-side. */
+export function toRow(form: FormState, aoCode: string, aoRegionLabel: string): CaseRow {
+  const source: Record<string, unknown> = { ...form, aoCode, aoRegionLabel };
+  const row: CaseRow = {};
+  for (const [key, col] of FIELD_MAP) {
+    if (key === 'id') continue;
+    row[col] = source[key];
+  }
+  return row;
 }
 
 export async function fetchCases(): Promise<CaseEntry[]> {

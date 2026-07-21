@@ -61,11 +61,21 @@ Deno.serve(async req => {
       return json({ error: 'this LINE account is already linked to a different physician' }, 409);
     }
 
-    const { error: updateError } = await admin
+    // Match on user_id, not email. claim_physician_row() runs immediately
+    // before this (case-insensitively linking user_id to the whitelist row),
+    // so user_id is the reliable key here. Matching on email would need to be
+    // case-insensitive — the roster has mixed-case addresses while Supabase
+    // lowercases auth emails — and doing that with ilike risks treating `%`
+    // or `_` in an address as wildcards.
+    const { data: updated, error: updateError } = await admin
       .from('physicians')
-      .update({ user_id: user.id, line_user_id: lineUserId, verified: true })
-      .ilike('email', user.email);
+      .update({ line_user_id: lineUserId, verified: true })
+      .eq('user_id', user.id)
+      .select('id');
     if (updateError) throw updateError;
+    if (!updated || updated.length === 0) {
+      return json({ error: 'no physician row linked to this account' }, 409);
+    }
 
     return json({ status: 'ok' });
   } catch (err) {

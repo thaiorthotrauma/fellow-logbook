@@ -1,15 +1,17 @@
+import type { OpTime, Place, ProcedureType, Role, Timing } from './data';
+
 export interface FormState {
   date: string;
-  timing: string | null;
+  timing: Timing | null;
   diagnosis: string;
   otherClassification: string;
   approach: string;
   position: string;
   procedure: string;
-  procedureType: string | null;
-  role: string | null;
-  opTime: string | null;
-  place: string | null;
+  procedureType: ProcedureType | null;
+  role: Role | null;
+  opTime: OpTime | null;
+  place: Place | null;
 }
 
 export interface AoState {
