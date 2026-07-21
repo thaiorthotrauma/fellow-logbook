@@ -3,6 +3,7 @@ import './App.css';
 import { REQUIRED } from './data';
 import { computeAoCode, findRegion } from './logic';
 import { deleteCaseById, fetchCases, insertCase } from './lib/casesApi';
+import { fetchCurrentPhysician, type Physician } from './lib/physicianApi';
 import { emptyAo, emptyForm, type AoState, type CaseEntry, type FormState } from './types';
 import NewEntryForm from './components/NewEntryForm';
 import CaseLog from './components/CaseLog';
@@ -12,6 +13,7 @@ type Tab = 'form' | 'log';
 function App() {
   const [tab, setTab] = useState<Tab>('form');
   const [cases, setCases] = useState<CaseEntry[]>([]);
+  const [physician, setPhysician] = useState<Physician | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -26,6 +28,10 @@ function App() {
         console.error(err);
         setToast('Could not load your cases. Check your connection and reload.');
       });
+
+    fetchCurrentPhysician()
+      .then(setPhysician)
+      .catch(err => console.error(err));
   }, []);
 
   useEffect(() => {
@@ -87,8 +93,11 @@ function App() {
     <div className="app">
       <div className="header">
         <div>
-          <div className="header-title">Fellowship Case Logbook</div>
-          <div className="header-subtitle">Orthopedic Traumatology Fellowship — Operative Case Record</div>
+          <div className="header-title">{physician?.fullName ?? ' '}</div>
+          {physician?.institution && (
+            <div className="header-institution">Institution : {physician.institution}</div>
+          )}
+          <div className="header-subtitle">Operative case record : year 2026 - 2027</div>
         </div>
         <div className="tabs">
           <button type="button" className={`tab ${tab === 'form' ? 'active' : ''}`} onClick={() => setTab('form')}>
