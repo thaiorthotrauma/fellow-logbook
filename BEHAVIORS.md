@@ -1,0 +1,140 @@
+# App Behaviors
+
+A reference for how the Fellowship Case Logbook (TOTS Fellow Logbook) behaves at
+runtime — access control, login, responsive display, and data handling. See
+[SETUP.md](./SETUP.md) for backend configuration and [README.md](./README.md)
+for an overview.
+
+## 1. Access & device gate
+
+The app is intended to run **only inside the LINE in-app browser, on a phone or
+tablet**. Before any UI renders, `AuthGate` runs a hard gate:
+
+| Where it's opened | Result |
+| --- | --- |
+| iPhone via LINE app | ✅ App loads |
+| Android phone via LINE app | ✅ App loads |
+| iPad via LINE app | ✅ App loads (see iPad note below) |
+| Android tablet via LINE app | ✅ App loads |
+| Desktop LINE client (Windows/Mac) | ⛔ "Mobile & Tablet Only" screen |
+| Any external browser (Safari/Chrome, mobile or desktop) | ⛔ "Open This in the LINE App" screen |
+
+- **Gate logic:** `liff.isInClient()` must be true (rejects external browsers),
+  then `isLikelyDesktop()` must be false (rejects desktop LINE clients).
+- **iPad note:** since iPadOS 13, Safari and embedded WebViews report a *Mac*
+  user agent, so LIFF's `getOS()` returns `"web"` for a real iPad. The gate
+  compensates by only treating `"web"` as desktop when the device has **no
+  touchscreen** (`navigator.maxTouchPoints <= 1`). A real Mac has none; an iPad
+  reports several, so it is correctly allowed through.
+- The gate is **UX enforcement, not a security control** — the security
+  boundary is the LINE-token verification + whitelist + OTP below.
+
+## 2. Login flow
+
+Authentication combines LINE identity (via LIFF) with an email whitelist. Full
+walkthrough is in [SETUP.md](./SETUP.md#how-the-login-flow-works).
+
+- **Returning, already-verified fellow:** recognized automatically from their
+  LINE identity and dropped straight into the app — no email or code needed.
+  - A cached browser session is used if present (fast path).
+  - If the session was cleared (e.g. LINE cache wipe), the `check-line-user`
+    Edge Function re-establishes one from the LINE identity — still no email.
+- **First-time fellow:**
+  1. Enters their email.
+  2. Email is checked against the whitelist. **Not on the list → hard "Email
+     Not Found" stop** (no code is sent).
+  3. On the list → a 6-digit code is emailed.
+  4. Code entered in a 6-box input (auto-advance, paste-to-fill, auto-submits on
+     the 6th digit).
+  5. On success, their LINE identity is permanently linked to their physician
+     record; future opens use the returning-user path above.
+- **Failure states:** a generic error screen with a **Try again** button
+  re-runs the whole bootstrap.
+
+## 3. Header
+
+Once authenticated, the sticky header shows, pulled live from the fellow's own
+whitelist row (readable only by them via row-level security):
+
+- **Title** — the fellow's full name (Thai).
+- **Institution** — `Institution : {name}`.
+- **Subtitle** — `Operative case record : year 2026 - 2027` (fixed label).
+- **Tabs** — New Entry / Case Log (with a live count).
+
+Before the profile finishes loading the title area is briefly blank rather than
+showing a placeholder name.
+
+## 4. New Entry form
+
+Ten sections, all required unless noted:
+
+1. **Date of Operation** + timing (Official hours / After hours).
+2. **Diagnosis** (free text).
+3. **AO classification** (optional to submit unless configured otherwise) — pick
+   a region on the body map or via dropdown, then narrow by bone / segment /
+   subtype / fracture type / group. A live AO/OTA code is computed and shown.
+4. **Other classification** (free text).
+5. **Approach & Position** (two fields).
+6. **Procedure** (free text).
+7. **Type of Procedure** (Primary / Revision / Staged).
+8. **Your Role** (Primary surgeon / Primary assist / Secondary assist / Observer
+   / Uncertain) — shown in a 2-column grid.
+9. **Operative Time** (skin to skin, ranges).
+10. **Place** (Home / Outside institution).
+
+- **Validation:** on Save, missing required fields surface in a banner listing
+  each one; nothing is saved until all are filled.
+- **Save:** inserts the case (scoped to the fellow via RLS), shows a
+  "Case saved to logbook" toast, resets the form, and increments the tab count.
+  The Save button shows a saving state and is disabled during the request.
+- **Reset:** clears the form and AO selection.
+
+## 5. Case Log
+
+- Lists the fellow's own saved cases, newest first, with a count.
+- Each card shows date, timing, AO code, diagnosis, role · op-time · place.
+- **Tap a card** to expand full details (other classification, approach,
+  position, procedure type, procedure). On phones < 380px the detail grid
+  collapses to a single column.
+- **Delete** removes a case optimistically; if the server rejects it, the case
+  reappears and a toast reports the failure.
+- Empty state: a prompt to add the first case.
+
+## 6. Data & persistence
+
+- All cases live in Supabase (Postgres); **each fellow sees only their own** via
+  row-level security.
+- Enumerated fields (timing, role, procedure type, op time, place) are
+  constrained both in TypeScript and by database CHECK constraints — invalid
+  values are rejected at write time.
+- Cases load once on entry; there is no live cross-device refresh (a personal
+  logbook, so this is by design).
+- A failed initial load shows a toast asking the user to check their connection
+  and reload.
+
+## 7. Display & rendering
+
+- **Responsive:** a single content column capped at 960px and centered. On
+  phones it fills the width; on tablets it centers with neutral side margins.
+  Two-column field groups collapse to one column on narrow screens. Verified at
+  real iPhone, iPad portrait, and iPad landscape sizes.
+- **Fonts:** self-hosted (no external CDN). Latin uses IBM Plex Sans; Thai
+  (name / institution) uses IBM Plex Sans Thai, so both scripts share the same
+  type family. Falls back to the system sans-serif if the fonts fail to load.
+- **Glass styling:** header and cards use `backdrop-filter` blur where
+  supported; on engines without it they degrade to a flat translucent panel.
+- **Micro-interactions:** option pills, AO map markers, and tabs scale/pop on
+  press and selection (respecting the browser's reduced-motion where the engine
+  applies it).
+- **Mobile viewport:** full-height screens use `100dvh` so they center correctly
+  under mobile browser toolbars; the save toast clears the iPhone home indicator
+  via `safe-area-inset`.
+- **Native controls:** the date picker and region dropdown render in each
+  platform's native style (iOS wheel, Android dialog, etc.).
+
+## 8. Known edge cases
+
+- A **touchscreen Windows laptop running the desktop LINE client** would pass
+  the gate (touch + in-client). Rare; low impact.
+- If `fonts` fail to load on a restricted network, text still renders in the
+  system font — layout is unaffected.
