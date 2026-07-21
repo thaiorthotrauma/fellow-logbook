@@ -1,4 +1,4 @@
-# LINE Rich Menu — Fellow Logbook
+# LINE Official Account Assets — Fellow Logbook
 
 A single full-image rich menu whose only tap area opens the app via LIFF.
 Designed to match the app's header theme: a bolder teal gradient, three
@@ -88,10 +88,28 @@ show **already expanded** at the bottom, tapping anywhere opens the logbook.
 `"selected": true` in step 1 is what makes it appear expanded by default
 rather than collapsed/minimized.
 
-## Regenerating the image
+## Regenerating the rich menu image
 
 The image was rendered from a small HTML/CSS mockup (teal gradient +
 inline SVG book/check icon + self-hosted IBM Plex Sans, matching the app's
 own header) via a headless browser screenshot, then exported as JPEG to
 stay under LINE's 1MB limit. If you want to tweak the design, ask and it
 can be regenerated the same way.
+
+---
+
+## Cover photo
+
+[`cover-photo.png`](./cover-photo.png) — 1080×787px, ~500KB (well under
+LINE's 3MB limit), shown on the Official Account's profile page.
+
+Same brand language as the rich menu (teal gradient, decorative rings) plus
+a "TOTS" seal/monogram, title, and a short academic-toned subtitle. Content
+is centered with a clear margin at the bottom — LINE overlays the OA's
+circular profile photo there, so nothing essential sits in that zone.
+
+**To upload:** LINE Developers Console → your channel → **Messaging API**
+tab → **LINE Official Account settings** (or the OA Manager at
+[manager.line.biz](https://manager.line.biz)) → **Home** → edit cover photo
+→ upload `cover-photo.png` directly. This one has no API endpoint — it's
+set through the console/OA Manager UI, not `curl`.
