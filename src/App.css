@@ -57,6 +57,58 @@
   margin-top: 4px;
 }
 
+/* Shimmer placeholders shown in the header while the fellow's profile
+   (name / institution) is still loading. Bar sizes mirror the real text so
+   the header doesn't jump when the content arrives. */
+.header-skeleton {
+  padding: 2px 0;
+}
+
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.12) 25%,
+    rgba(255, 255, 255, 0.28) 37%,
+    rgba(255, 255, 255, 0.12) 63%
+  );
+  background-size: 400% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 190px;
+  margin-bottom: 8px;
+}
+
+.skeleton-inst {
+  height: 12px;
+  width: 150px;
+  margin-bottom: 8px;
+}
+
+.skeleton-sub {
+  height: 10px;
+  width: 210px;
+  max-width: 62vw;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: 0 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
 .tabs {
   display: flex;
   gap: 4px;

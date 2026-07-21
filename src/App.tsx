@@ -14,6 +14,7 @@ function App() {
   const [tab, setTab] = useState<Tab>('form');
   const [cases, setCases] = useState<CaseEntry[]>([]);
   const [physician, setPhysician] = useState<Physician | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -31,7 +32,8 @@ function App() {
 
     fetchCurrentPhysician()
       .then(setPhysician)
-      .catch(err => console.error(err));
+      .catch(err => console.error(err))
+      .finally(() => setProfileLoading(false));
   }, []);
 
   useEffect(() => {
@@ -93,11 +95,21 @@ function App() {
     <div className="app">
       <div className="header">
         <div>
-          <div className="header-title">{physician?.fullName ?? ' '}</div>
-          {physician?.institution && (
-            <div className="header-institution">Institution : {physician.institution}</div>
+          {profileLoading ? (
+            <div className="header-skeleton" aria-hidden="true">
+              <div className="skeleton skeleton-title" />
+              <div className="skeleton skeleton-inst" />
+              <div className="skeleton skeleton-sub" />
+            </div>
+          ) : (
+            <>
+              <div className="header-title">{physician?.fullName ?? ' '}</div>
+              {physician?.institution && (
+                <div className="header-institution">Institution : {physician.institution}</div>
+              )}
+              <div className="header-subtitle">Operative case record : year 2026 - 2027</div>
+            </>
           )}
-          <div className="header-subtitle">Operative case record : year 2026 - 2027</div>
         </div>
         <div className="tabs">
           <button type="button" className={`tab ${tab === 'form' ? 'active' : ''}`} onClick={() => setTab('form')}>

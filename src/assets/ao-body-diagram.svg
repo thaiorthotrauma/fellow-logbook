@@ -73,6 +73,6 @@
        over the wrist/ankle joints beneath them -->
   <ellipse class="tissue" cx="48" cy="264" rx="11" ry="15"/>
   <ellipse class="tissue" cx="152" cy="264" rx="11" ry="15"/>
-  <ellipse class="tissue" cx="80" cy="392" rx="17" ry="9"/>
-  <ellipse class="tissue" cx="120" cy="392" rx="17" ry="9"/>
+  <ellipse class="tissue" cx="80" cy="388" rx="17" ry="9"/>
+  <ellipse class="tissue" cx="120" cy="388" rx="17" ry="9"/>
 </svg>
