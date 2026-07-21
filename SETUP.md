@@ -59,27 +59,13 @@ supabase link --project-ref dqfujzwniwtnzdtpbgrc
 # Confirm this is your LINE Login *channel* ID (see caveat below).
 supabase secrets set LINE_CHANNEL_ID=2010758904
 
-# JWT secret used to sign a session for returning users (see below).
-supabase secrets set SUPABASE_JWT_SECRET=<your project's JWT secret>
-
 supabase functions deploy check-line-user
 supabase functions deploy link-line-user
 ```
 
 `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by
-Supabase — you don't need to set those.
-
-**Where to find the JWT secret:** Project Settings → API → JWT Keys. Look
-for a **Legacy JWT Secret** (sometimes needs "Reveal") — that's a shared
-HS256 secret `check-line-user` uses to hand-sign a valid session for a
-returning, already-verified fellow, so they skip straight back into the app
-without a fresh email/OTP round trip. No Supabase "magic link" mechanism is
-used anywhere in this app. If your project only shows the newer asymmetric
-JWT Signing Keys with no legacy secret option, tell me — the function needs
-adjusting for that case.
-
-Treat this secret like a master password for your project's auth — set it
-only via `supabase secrets set`, never commit it or paste it in chat.
+Supabase — you don't need to set those, and there's no other secret to
+manage for this step.
 
 ## 4. LINE Developers console
 
@@ -114,9 +100,11 @@ VITE_LIFF_ID=<confirm/replace with the full LIFF ID>
    in (fast path for returning users on the same device).
 3. Otherwise, calls the `check-line-user` Edge Function with the ID token.
    It verifies the token with LINE, looks up `physicians` by
-   `line_user_id`; if that LINE identity is already verified, it hand-signs
-   a fresh session token for the client (`supabase.auth.setSession`) — no
-   email, no re-verification, no Supabase "magic link" involved.
+   `line_user_id`; if that LINE identity is already verified, it generates a
+   redeemable token server-side (via Supabase's admin API — internally
+   labeled `type: 'magiclink'`, but no email is sent) and the client
+   redeems it into a real session with `supabase.auth.verifyOtp`. No
+   re-verification needed.
 4. If unlinked, shows the **email entry screen**. The email is checked
    against the whitelist (`is_email_allowed`); no match → hard rejection
    screen ("Email Not Found"). Match → Supabase sends a 6-digit email OTP

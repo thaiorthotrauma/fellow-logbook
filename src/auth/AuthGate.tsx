@@ -12,7 +12,8 @@ type Stage = 'loading' | 'email' | 'otp' | 'rejected' | 'error' | 'authenticated
 
 interface CheckLineUserResponse {
   status: 'verified' | 'unlinked';
-  session?: { access_token: string; refresh_token: string; expires_in: number };
+  email?: string;
+  redeem_token?: string;
 }
 
 export default function AuthGate({ children }: { children: ReactNode }) {
@@ -51,12 +52,17 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       });
       if (error) throw error;
 
-      if (data?.status === 'verified' && data.session) {
-        const { error: setSessionError } = await supabase.auth.setSession({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
+      if (data?.status === 'verified' && data.email && data.redeem_token) {
+        // `type: 'magiclink'` here is just the label Supabase's SDK uses for
+        // this redemption — no email is involved. This is purely how the
+        // token check-line-user generated server-side gets turned into a
+        // real, auto-refreshing session for a physician we already verified.
+        const { error: redeemError } = await supabase.auth.verifyOtp({
+          email: data.email,
+          token: data.redeem_token,
+          type: 'magiclink',
         });
-        if (setSessionError) throw setSessionError;
+        if (redeemError) throw redeemError;
         setStage('authenticated');
         return;
       }
