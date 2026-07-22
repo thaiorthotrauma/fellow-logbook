@@ -83,31 +83,16 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
       <div className="card">
         <div className="card-header">
           <span className="step-badge">5</span>
-          <span className="step-title">Approach &amp; Position</span>
+          <span className="step-title">Approach</span>
           <span className="required-star">*</span>
         </div>
-        <div className="two-col">
-          <div>
-            <div className="field-label">Approach</div>
-            <input
-              type="text"
-              className="field-input"
-              value={form.approach}
-              onChange={e => updateForm('approach', e.target.value)}
-              placeholder="e.g. Anterolateral"
-            />
-          </div>
-          <div>
-            <div className="field-label">Position</div>
-            <input
-              type="text"
-              className="field-input"
-              value={form.position}
-              onChange={e => updateForm('position', e.target.value)}
-              placeholder="e.g. Supine / lateral decubitus"
-            />
-          </div>
-        </div>
+        <input
+          type="text"
+          className="field-input"
+          value={form.approach}
+          onChange={e => updateForm('approach', e.target.value)}
+          placeholder="e.g. Anterolateral"
+        />
       </div>
 
       <div className="card">

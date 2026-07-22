@@ -48,7 +48,7 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                   <div className="case-card-expanded">
                     <div><span className="k">Other classification: </span>{c.otherClassification || '—'}</div>
                     <div><span className="k">Approach: </span>{c.approach || '—'}</div>
-                    <div><span className="k">Position: </span>{c.position || '—'}</div>
+                    {c.position && <div><span className="k">Position: </span>{c.position}</div>}
                     <div><span className="k">Type of procedure: </span>{PROC_MAP[c.procedureType ?? ''] ?? '—'}</div>
                     <div className="full"><span className="k">Procedure: </span>{c.procedure || '—'}</div>
                     {c.imagePaths.length > 0 && <CaseImages paths={c.imagePaths} />}

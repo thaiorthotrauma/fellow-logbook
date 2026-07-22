@@ -185,7 +185,6 @@ export const REQUIRED: { key: RequiredFormKey; label: string }[] = [
   { key: 'diagnosis', label: 'Diagnosis' },
   { key: 'otherClassification', label: 'Other classification' },
   { key: 'approach', label: 'Approach' },
-  { key: 'position', label: 'Position' },
   { key: 'procedure', label: 'Procedure' },
   { key: 'procedureType', label: 'Type of procedure' },
   { key: 'role', label: 'Your role' },
@@ -195,4 +194,4 @@ export const REQUIRED: { key: RequiredFormKey; label: string }[] = [
 
 export type RequiredFormKey =
   | 'date' | 'timing' | 'diagnosis' | 'otherClassification' | 'approach'
-  | 'position' | 'procedure' | 'procedureType' | 'role' | 'opTime' | 'place';
+  | 'procedure' | 'procedureType' | 'role' | 'opTime' | 'place';
