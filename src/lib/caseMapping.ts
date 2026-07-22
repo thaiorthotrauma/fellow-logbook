@@ -23,6 +23,7 @@ const FIELD_MAP: readonly (readonly [keyof CaseEntry, string])[] = [
   ['role', 'role'],
   ['opTime', 'op_time'],
   ['place', 'place'],
+  ['imagePaths', 'image_paths'],
 ];
 
 export type CaseRow = Record<string, unknown>;
@@ -35,10 +36,16 @@ export function fromRow(row: CaseRow): CaseEntry {
   return entry as unknown as CaseEntry;
 }
 
-/** Form values + computed AO fields → DB row (snake_case). `id` is omitted so
- *  the DB assigns it; `user_id` defaults to auth.uid() server-side. */
-export function toRow(form: FormState, aoCode: string, aoRegionLabel: string): CaseRow {
-  const source: Record<string, unknown> = { ...form, aoCode, aoRegionLabel };
+/** Form values + computed AO fields + uploaded image paths → DB row
+ *  (snake_case). `id` is omitted so the caller supplies it (needed because the
+ *  images are uploaded under {uid}/{caseId}/ before the row is inserted). */
+export function toRow(
+  form: FormState,
+  aoCode: string,
+  aoRegionLabel: string,
+  imagePaths: string[],
+): CaseRow {
+  const source: Record<string, unknown> = { ...form, aoCode, aoRegionLabel, imagePaths };
   const row: CaseRow = {};
   for (const [key, col] of FIELD_MAP) {
     if (key === 'id') continue;

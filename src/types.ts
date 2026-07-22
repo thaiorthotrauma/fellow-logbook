@@ -28,6 +28,8 @@ export interface CaseEntry extends FormState {
   id: string;
   aoCode: string;
   aoRegionLabel: string;
+  /** Storage object paths ({uid}/{caseId}/{uuid}.ext) for this case's images. */
+  imagePaths: string[];
 }
 
 export const emptyForm = (): FormState => ({

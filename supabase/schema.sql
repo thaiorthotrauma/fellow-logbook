@@ -103,8 +103,13 @@ create table if not exists public.cases (
   role text not null,
   op_time text not null,
   place text not null,
+  image_paths text[] not null default '{}',
   created_at timestamptz not null default now()
 );
+
+-- Added after the initial table creation — explicit ALTER so re-running this
+-- script against a table created before this column existed still works.
+alter table public.cases add column if not exists image_paths text[] not null default '{}';
 
 -- Constrain the enumerated columns to the exact value sets the app uses (these
 -- mirror the option arrays in src/data.ts). Dropped-then-added so the script

@@ -66,7 +66,7 @@ showing a placeholder name.
 
 ## 4. New Entry form
 
-Ten sections, all required unless noted:
+Eleven sections, all required unless noted:
 
 1. **Date of Operation** + timing (Official hours / After hours).
 2. **Diagnosis** (free text).
@@ -81,13 +81,22 @@ Ten sections, all required unless noted:
    / Uncertain) — shown in a 2-column grid.
 9. **Operative Time** (skin to skin, ranges).
 10. **Place** (Home / Outside institution).
+11. **Images** *(optional)* — pre/post-op films, intra-op findings. Multiple
+    JPG / PNG / HEIC files, **10 MB total** cap. JPG/PNG show a thumbnail;
+    HEIC (which browsers can't preview inline) shows a name+size chip. Each
+    file is removable; a running total is shown and turns red over 10 MB.
 
 - **Validation:** on Save, missing required fields surface in a banner listing
-  each one; nothing is saved until all are filled.
-- **Save:** inserts the case (scoped to the fellow via RLS), shows a
-  "Case saved to logbook" toast, resets the form, and increments the tab count.
-  The Save button shows a saving state and is disabled during the request.
-- **Reset:** clears the form and AO selection.
+  each one; nothing is saved until all are filled. If the image total exceeds
+  10 MB, save is blocked with a toast.
+- **Save:** a case id is generated client-side, any images upload to the private
+  `case-images` Storage bucket under `{user_id}/{case_id}/…` first, then the
+  case row (with the image paths) is inserted (scoped to the fellow via RLS). If
+  an image upload fails the case is not created, so there are no image-less
+  orphans. Shows a "Case saved to logbook" toast, resets the form, increments
+  the tab count. The Save button shows a saving state and is disabled during the
+  request.
+- **Reset:** clears the form, AO selection, and selected images.
 
 ## 5. Case Log
 
@@ -96,8 +105,11 @@ Ten sections, all required unless noted:
 - **Tap a card** to expand full details (other classification, approach,
   position, procedure type, procedure). On phones < 380px the detail grid
   collapses to a single column.
+- If the case has images, the expanded view loads them via short-lived signed
+  URLs (the bucket is private) and shows tappable thumbnails that open full size.
 - **Delete** removes a case optimistically; if the server rejects it, the case
-  reappears and a toast reports the failure.
+  reappears and a toast reports the failure. On success, the case's images are
+  also removed from Storage (best-effort).
 - Empty state: a prompt to add the first case.
 
 ## 6. Data & persistence
@@ -109,6 +121,9 @@ Ten sections, all required unless noted:
   values are rejected at write time.
 - Cases load once on entry; there is no live cross-device refresh (a personal
   logbook, so this is by design).
+- Case images live in a **private** Supabase Storage bucket (`case-images`),
+  pathed `{user_id}/{case_id}/…`; storage RLS scopes read/write/delete to each
+  fellow's own folder. They're only ever served through short-lived signed URLs.
 - A failed initial load shows a toast asking the user to check their connection
   and reload.
 

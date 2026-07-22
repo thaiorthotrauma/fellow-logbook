@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import { REQUIRED } from './data';
 import { computeAoCode, findRegion } from './logic';
-import { deleteCaseById, fetchCases, insertCase } from './lib/casesApi';
+import {
+  deleteCaseById,
+  fetchCases,
+  insertCase,
+  uploadCaseImages,
+  MAX_IMAGES_TOTAL_BYTES,
+} from './lib/casesApi';
 import { fetchCurrentPhysician, type Physician } from './lib/physicianApi';
 import { emptyAo, emptyForm, type AoState, type CaseEntry, type FormState } from './types';
 import NewEntryForm from './components/NewEntryForm';
@@ -20,6 +26,7 @@ function App() {
   const [errors, setErrors] = useState<string[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [ao, setAo] = useState<AoState>(emptyAo());
+  const [images, setImages] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -53,6 +60,7 @@ function App() {
   function resetForm() {
     setForm(emptyForm());
     setAo(emptyAo());
+    setImages([]);
     setErrors([]);
   }
 
@@ -62,14 +70,25 @@ function App() {
       setErrors(missing);
       return;
     }
+    const totalImageBytes = images.reduce((sum, f) => sum + f.size, 0);
+    if (totalImageBytes > MAX_IMAGES_TOTAL_BYTES) {
+      setToast('Total image size exceeds 10 MB. Remove some images to save.');
+      return;
+    }
     setSaving(true);
     try {
+      // Generate the id up front so images upload under {uid}/{caseId}/ before
+      // the row exists. If any upload fails we abort before inserting, so we
+      // never create a case that's missing its images.
+      const caseId = crypto.randomUUID();
+      const imagePaths = await uploadCaseImages(caseId, images);
       const region = findRegion(ao.regionKey);
-      const entry = await insertCase(form, computeAoCode(ao), region ? region.name : '');
+      const entry = await insertCase(caseId, form, computeAoCode(ao), region ? region.name : '', imagePaths);
       setCases(prev => [...prev, entry]);
       setErrors([]);
       setForm(emptyForm());
       setAo(emptyAo());
+      setImages([]);
       setToast('Case saved to logbook');
     } catch (err) {
       console.error(err);
@@ -80,10 +99,11 @@ function App() {
   }
 
   async function deleteCase(id: string) {
+    const target = cases.find(c => c.id === id);
     const previous = cases;
     setCases(cases.filter(c => c.id !== id));
     try {
-      await deleteCaseById(id);
+      await deleteCaseById(id, target?.imagePaths ?? []);
     } catch (err) {
       console.error(err);
       setCases(previous);
@@ -127,8 +147,11 @@ function App() {
             form={form}
             ao={ao}
             errors={errors}
+            images={images}
             updateForm={updateForm}
             setAo={setAo}
+            onAddImages={files => setImages(prev => [...prev, ...files])}
+            onRemoveImage={index => setImages(prev => prev.filter((_, i) => i !== index))}
             onReset={resetForm}
             onSubmit={handleSubmit}
             saving={saving}

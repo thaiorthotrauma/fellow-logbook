@@ -25,6 +25,12 @@ Then load the fellow roster: paste in and run
 [`supabase/seed_physicians.sql`](./supabase/seed_physicians.sql). Safe to
 re-run any time the roster changes — it upserts by email.
 
+Finally, set up image storage: paste in and run
+[`supabase/storage.sql`](./supabase/storage.sql). It creates the private
+`case-images` bucket (JPG/PNG/HEIC, 10 MB/file) and RLS policies so each
+fellow can only touch images under their own `{user_id}/` folder. Required
+for the New Entry "Images" field (Question 11) to work. Safe to re-run.
+
 ## 2. Configure Supabase Auth email OTP
 
 Every fellow's *first* login creates their Supabase Auth account on the spot

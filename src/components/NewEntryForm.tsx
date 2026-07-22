@@ -2,20 +2,24 @@ import type { Dispatch, SetStateAction } from 'react';
 import { OPTIME, PLACE, PROC_TYPE, ROLES, TIMING } from '../data';
 import type { AoState, FormState } from '../types';
 import AoClassification from './AoClassification';
+import ImageUpload from './ImageUpload';
 import Pill from './Pill';
 
 interface NewEntryFormProps {
   form: FormState;
   ao: AoState;
   errors: string[];
+  images: File[];
   updateForm: <K extends keyof FormState>(key: K, value: FormState[K]) => void;
   setAo: Dispatch<SetStateAction<AoState>>;
+  onAddImages: (files: File[]) => void;
+  onRemoveImage: (index: number) => void;
   onReset: () => void;
   onSubmit: () => void;
   saving: boolean;
 }
 
-export default function NewEntryForm({ form, ao, errors, updateForm, setAo, onReset, onSubmit, saving }: NewEntryFormProps) {
+export default function NewEntryForm({ form, ao, errors, images, updateForm, setAo, onAddImages, onRemoveImage, onReset, onSubmit, saving }: NewEntryFormProps) {
   return (
     <div>
       {errors.length > 0 && (
@@ -171,6 +175,18 @@ export default function NewEntryForm({ form, ao, errors, updateForm, setAo, onRe
             <Pill key={opt.value} label={opt.label} selected={form.place === opt.value} onClick={() => updateForm('place', opt.value)} />
           ))}
         </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header">
+          <span className="step-badge">11</span>
+          <span className="step-title">Images</span>
+          <span className="optional-tag">Optional</span>
+        </div>
+        <div className="field-label" style={{ marginBottom: 12 }}>
+          i.e. pre &amp; post-op films, intra-op findings
+        </div>
+        <ImageUpload images={images} onAdd={onAddImages} onRemove={onRemoveImage} />
       </div>
 
       <div className="form-actions">

@@ -18,7 +18,7 @@ const sampleForm: FormState = {
 
 describe('toRow', () => {
   it('maps camelCase form fields to snake_case columns', () => {
-    const row = toRow(sampleForm, '33-A2', 'Femur');
+    const row = toRow(sampleForm, '33-A2', 'Femur', ['u/c/a.jpg', 'u/c/b.png']);
     expect(row).toMatchObject({
       date: '2026-07-21',
       timing: 'in',
@@ -28,11 +28,12 @@ describe('toRow', () => {
       procedure_type: 'primary',
       op_time: '1-2',
       place: 'own',
+      image_paths: ['u/c/a.jpg', 'u/c/b.png'],
     });
   });
 
-  it('never includes id (the DB assigns it)', () => {
-    expect(toRow(sampleForm, '', '')).not.toHaveProperty('id');
+  it('never includes id (the caller supplies it)', () => {
+    expect(toRow(sampleForm, '', '', [])).not.toHaveProperty('id');
   });
 });
 
@@ -53,6 +54,7 @@ describe('fromRow', () => {
       role: 'observer',
       op_time: '>4',
       place: 'outside',
+      image_paths: ['u/c/x.jpg'],
     });
     expect(entry.id).toBe('abc-123');
     expect(entry.aoCode).toBe('33-A2');
@@ -60,18 +62,20 @@ describe('fromRow', () => {
     expect(entry.otherClassification).toBe('y');
     expect(entry.procedureType).toBe('revision');
     expect(entry.opTime).toBe('>4');
+    expect(entry.imagePaths).toEqual(['u/c/x.jpg']);
   });
 });
 
 describe('round trip', () => {
   it('toRow → fromRow reproduces the original values (plus id)', () => {
-    const row = { id: 'id-1', ...toRow(sampleForm, '33-A2', 'Femur') };
+    const row = { id: 'id-1', ...toRow(sampleForm, '33-A2', 'Femur', ['u/c/a.jpg']) };
     const entry = fromRow(row);
     const expected: CaseEntry = {
       id: 'id-1',
       ...sampleForm,
       aoCode: '33-A2',
       aoRegionLabel: 'Femur',
+      imagePaths: ['u/c/a.jpg'],
     };
     expect(entry).toEqual(expected);
   });

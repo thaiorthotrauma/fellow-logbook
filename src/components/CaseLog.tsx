@@ -1,5 +1,6 @@
 import { OPTIME_MAP, PLACE_MAP, PROC_MAP, ROLE_MAP, TIMING_MAP } from '../data';
 import type { CaseEntry } from '../types';
+import CaseImages from './CaseImages';
 
 interface CaseLogProps {
   cases: CaseEntry[];
@@ -50,6 +51,7 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                     <div><span className="k">Position: </span>{c.position || '—'}</div>
                     <div><span className="k">Type of procedure: </span>{PROC_MAP[c.procedureType ?? ''] ?? '—'}</div>
                     <div className="full"><span className="k">Procedure: </span>{c.procedure || '—'}</div>
+                    {c.imagePaths.length > 0 && <CaseImages paths={c.imagePaths} />}
                   </div>
                 )}
               </div>
