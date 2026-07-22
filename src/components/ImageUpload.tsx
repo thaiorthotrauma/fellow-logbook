@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { isAllowedImage, MAX_IMAGES_TOTAL_BYTES } from '../lib/casesApi';
+import { convertHeicFiles } from '../lib/heic';
 
 interface ImageUploadProps {
   images: File[];
@@ -19,6 +20,7 @@ function isThumbnailable(file: File): boolean {
 export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [rejected, setRejected] = useState(false);
+  const [converting, setConverting] = useState(false);
 
   const totalBytes = useMemo(() => images.reduce((sum, f) => sum + f.size, 0), [images]);
   const overLimit = totalBytes > MAX_IMAGES_TOTAL_BYTES;
@@ -32,13 +34,22 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
     return () => previews.forEach(url => url && URL.revokeObjectURL(url));
   }, [previews]);
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = Array.from(e.target.files ?? []);
     const allowed = picked.filter(isAllowedImage);
     setRejected(allowed.length < picked.length);
-    if (allowed.length) onAdd(allowed);
-    // Reset so picking the same file again re-fires change.
+    // Reset now so picking the same file again re-fires change.
     if (inputRef.current) inputRef.current.value = '';
+    if (!allowed.length) return;
+    // Convert any HEIC to JPEG in-browser before handing files up, so previews
+    // work and JPEG is what gets stored. Nothing leaves the device.
+    setConverting(true);
+    try {
+      const converted = await convertHeicFiles(allowed);
+      onAdd(converted);
+    } finally {
+      setConverting(false);
+    }
   }
 
   return (
@@ -52,14 +63,21 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
         style={{ display: 'none' }}
       />
 
-      <button type="button" className="upload-btn" onClick={() => inputRef.current?.click()}>
+      <button
+        type="button"
+        className="upload-btn"
+        onClick={() => inputRef.current?.click()}
+        disabled={converting}
+      >
         + Add images
       </button>
 
       <div className={`upload-meta ${overLimit ? 'over' : ''}`}>
-        {images.length > 0
-          ? `${images.length} file${images.length === 1 ? '' : 's'} · ${formatMB(totalBytes)} / 10 MB`
-          : 'JPG, PNG, or HEIC · up to 10 MB total'}
+        {converting
+          ? 'Converting images…'
+          : images.length > 0
+            ? `${images.length} file${images.length === 1 ? '' : 's'} · ${formatMB(totalBytes)} / 10 MB`
+            : 'JPG, PNG, or HEIC · up to 10 MB total'}
       </div>
 
       {overLimit && (
