@@ -82,12 +82,14 @@ Eleven sections, all required unless noted:
 9. **Operative Time** (skin to skin, ranges).
 10. **Place** (Home / Outside institution).
 11. **Images** *(optional)* — pre/post-op films, intra-op findings. Multiple
-    JPG / PNG / HEIC files, **10 MB total** cap. HEIC files are converted to
-    JPEG **in the browser** on selection (nothing leaves the device; the
-    converter library lazy-loads only when a HEIC is picked), so every image
-    gets a real thumbnail and JPEG is what's stored. Each file is removable; a
-    running total is shown and turns red over 10 MB. (If a HEIC conversion ever
-    fails, the original uploads as-is and shows a name+size chip instead.)
+    JPG / PNG / HEIC files, **10 MB total** cap. On selection, entirely
+    **in the browser** (nothing leaves the device): HEIC is converted to JPEG
+    (converter lazy-loads only when a HEIC is picked), then every image is
+    **downscaled to a 2048px long edge and re-encoded to JPEG (q0.92)** to save
+    storage — which also strips EXIF metadata (camera GPS/timestamp) and fixes
+    orientation. Each file gets a real thumbnail and is removable; a running
+    total is shown and turns red over 10 MB. (If a HEIC conversion or resize
+    ever fails, the original uploads as-is.)
 
 - **Validation:** on Save, missing required fields surface in a banner listing
   each one; nothing is saved until all are filled. If the image total exceeds

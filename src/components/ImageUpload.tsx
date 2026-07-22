@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { isAllowedImage, MAX_IMAGES_TOTAL_BYTES } from '../lib/casesApi';
 import { convertHeicFiles } from '../lib/heic';
+import { resizeImages } from '../lib/imageResize';
 
 interface ImageUploadProps {
   images: File[];
@@ -41,12 +42,14 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
     // Reset now so picking the same file again re-fires change.
     if (inputRef.current) inputRef.current.value = '';
     if (!allowed.length) return;
-    // Convert any HEIC to JPEG in-browser before handing files up, so previews
-    // work and JPEG is what gets stored. Nothing leaves the device.
+    // All on-device, before handing files up: convert HEIC → JPEG (so previews
+    // work and JPEG is stored), then downscale/re-encode to shrink storage.
+    // Nothing leaves the browser.
     setConverting(true);
     try {
       const converted = await convertHeicFiles(allowed);
-      onAdd(converted);
+      const resized = await resizeImages(converted);
+      onAdd(resized);
     } finally {
       setConverting(false);
     }
@@ -74,7 +77,7 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
 
       <div className={`upload-meta ${overLimit ? 'over' : ''}`}>
         {converting
-          ? 'Converting images…'
+          ? 'Processing images…'
           : images.length > 0
             ? `${images.length} file${images.length === 1 ? '' : 's'} · ${formatMB(totalBytes)} / 10 MB`
             : 'JPG, PNG, or HEIC · up to 10 MB total'}
