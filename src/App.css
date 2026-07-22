@@ -749,3 +749,151 @@
   border-radius: 8px;
   border: 1px solid #e5e9e7;
 }
+
+/* ── Redaction editor (PHI review before upload) ─────────────────────────── */
+.redact-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #0c1512;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+}
+
+.redact-header {
+  padding: calc(16px + env(safe-area-inset-top, 0px)) 20px 12px;
+  background: #0d6e64;
+}
+
+.redact-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.redact-sub {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+  margin-top: 4px;
+}
+
+.redact-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  gap: 10px;
+  overflow: auto;
+}
+
+.redact-canvas {
+  position: relative;
+  max-width: 100%;
+  max-height: 100%;
+  line-height: 0;
+  touch-action: none;
+  user-select: none;
+}
+
+.redact-canvas.add-mode {
+  cursor: crosshair;
+}
+
+.redact-image {
+  display: block;
+  max-width: 100%;
+  max-height: 68vh;
+  width: auto;
+  height: auto;
+  border-radius: 6px;
+}
+
+.redact-box {
+  position: absolute;
+  background: rgba(220, 38, 38, 0.32);
+  border: 2px solid #ef4444;
+  box-sizing: border-box;
+  cursor: move;
+  touch-action: none;
+}
+
+.redact-box-remove {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background: #16231f;
+  color: #fff;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.redact-box-handle {
+  position: absolute;
+  right: -11px;
+  bottom: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ef4444;
+  border: 2px solid #fff;
+  cursor: nwse-resize;
+  touch-action: none;
+}
+
+.redact-status {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: center;
+}
+
+.redact-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.redact-tool {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.redact-tool.active {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+.redact-count {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  font-variant-numeric: tabular-nums;
+}
+
+.redact-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+  background: #0c1512;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}

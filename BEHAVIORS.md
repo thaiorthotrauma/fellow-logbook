@@ -87,9 +87,27 @@ Eleven sections, all required unless noted:
     (converter lazy-loads only when a HEIC is picked), then every image is
     **downscaled to a 2048px long edge and re-encoded to JPEG (q0.92)** to save
     storage — which also strips EXIF metadata (camera GPS/timestamp) and fixes
-    orientation. Each file gets a real thumbnail and is removable; a running
-    total is shown and turns red over 10 MB. (If a HEIC conversion or resize
-    ever fails, the original uploads as-is.)
+    orientation. Each processed image then goes through the **redaction review**
+    (below) before being accepted. Files show thumbnails, are removable, and a
+    running total is shown that turns red over 10 MB.
+
+### Redaction review (removing burned-in patient info)
+
+Before any image is accepted for upload, a full-screen review step opens — all
+on-device, so the **un-redacted image never leaves the phone**:
+
+- On-device OCR (Tesseract.js, WASM, lazy-loaded) scans the image for text and
+  pre-marks detected regions as red boxes. Only the boxes are used, not the
+  transcribed text.
+- The fellow **must review each image**: drag/resize the auto-boxes, add boxes
+  over anything missed (name, HN/ID, date), or clear them. Detection is
+  best-effort assistance — the human review is the guarantee.
+- On "Apply & add", each confirmed box is burned in as **solid black** (a
+  guaranteed removal that can't leave a ghost, unlike inpainting) and the
+  flattened JPEG is what gets stored. The original is discarded.
+- If the OCR model can't load (e.g. blocked network), the editor still opens
+  with manual-only boxing — the review step never depends on the network.
+- "Cancel" discards the whole batch (nothing is added or uploaded).
 
 - **Validation:** on Save, missing required fields surface in a banner listing
   each one; nothing is saved until all are filled. If the image total exceeds

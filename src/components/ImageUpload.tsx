@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { isAllowedImage, MAX_IMAGES_TOTAL_BYTES } from '../lib/casesApi';
 import { convertHeicFiles } from '../lib/heic';
 import { resizeImages } from '../lib/imageResize';
+import RedactionEditor from './RedactionEditor';
 
 interface ImageUploadProps {
   images: File[];
@@ -22,6 +23,7 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
   const inputRef = useRef<HTMLInputElement>(null);
   const [rejected, setRejected] = useState(false);
   const [converting, setConverting] = useState(false);
+  const [pendingReview, setPendingReview] = useState<File[] | null>(null);
 
   const totalBytes = useMemo(() => images.reduce((sum, f) => sum + f.size, 0), [images]);
   const overLimit = totalBytes > MAX_IMAGES_TOTAL_BYTES;
@@ -49,7 +51,9 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
     try {
       const converted = await convertHeicFiles(allowed);
       const resized = await resizeImages(converted);
-      onAdd(resized);
+      // Hand off to the redaction review step before accepting the files.
+      // Only the reviewed/flattened images (from onComplete) ever enter state.
+      setPendingReview(resized);
     } finally {
       setConverting(false);
     }
@@ -113,6 +117,17 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
             </div>
           ))}
         </div>
+      )}
+
+      {pendingReview && (
+        <RedactionEditor
+          files={pendingReview}
+          onComplete={redacted => {
+            onAdd(redacted);
+            setPendingReview(null);
+          }}
+          onCancel={() => setPendingReview(null)}
+        />
       )}
     </div>
   );
