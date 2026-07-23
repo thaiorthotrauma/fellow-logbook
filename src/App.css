@@ -1041,7 +1041,7 @@
   user-select: none;
 }
 
-.redact-canvas.add-mode {
+.redact-canvas.box-mode {
   cursor: crosshair;
 }
 
@@ -1054,13 +1054,74 @@
   border-radius: 6px;
 }
 
+/* Dark bands over the area that will be blacked out (outside the keep-frame). */
+.redact-mask {
+  position: absolute;
+  background: rgba(6, 12, 10, 0.86);
+  pointer-events: none;
+}
+
+.redact-mask.top,
+.redact-mask.bottom {
+  left: 0;
+  right: 0;
+}
+
+.redact-mask.bottom {
+  bottom: 0;
+}
+
+.redact-mask.left {
+  left: 0;
+}
+
+.redact-mask.right {
+  right: 0;
+}
+
+/* The keep-frame: what stays after redaction. */
+.redact-keep {
+  position: absolute;
+  box-sizing: border-box;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.redact-keep.active {
+  border-color: #34d399;
+  cursor: move;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.redact-keep-handle {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #34d399;
+  border: 2px solid #06110d;
+  touch-action: none;
+}
+
+.redact-keep-handle.nw { top: -13px; left: -13px; cursor: nwse-resize; }
+.redact-keep-handle.ne { top: -13px; right: -13px; cursor: nesw-resize; }
+.redact-keep-handle.sw { bottom: -13px; left: -13px; cursor: nesw-resize; }
+.redact-keep-handle.se { bottom: -13px; right: -13px; cursor: nwse-resize; }
+
 .redact-box {
   position: absolute;
   background: rgba(220, 38, 38, 0.32);
   border: 2px solid #ef4444;
   box-sizing: border-box;
-  cursor: move;
   touch-action: none;
+  pointer-events: none;
+}
+
+.redact-box.active {
+  cursor: move;
+  pointer-events: auto;
 }
 
 .redact-box-remove {
@@ -1104,6 +1165,31 @@
   gap: 10px;
   padding: 10px 20px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.redact-modes {
+  display: inline-flex;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.redact-mode {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 6px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.redact-mode.active {
+  background: #0d6e64;
+  color: #fff;
 }
 
 .redact-tool {

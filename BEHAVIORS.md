@@ -96,17 +96,23 @@ Eleven sections, all required unless noted:
 Before any image is accepted for upload, a full-screen review step opens — all
 on-device, so the **un-redacted image never leaves the phone**:
 
-- On-device OCR (Tesseract.js, WASM, lazy-loaded) scans the image for text and
-  pre-marks detected regions as red boxes. Only the boxes are used, not the
-  transcribed text.
-- The fellow **must review each image**: drag/resize the auto-boxes, add boxes
-  over anything missed (name, HN/ID, date), or clear them. Detection is
-  best-effort assistance — the human review is the guarantee.
-- On "Apply & add", each confirmed box is burned in as **solid black** (a
-  guaranteed removal that can't leave a ghost, unlike inpainting) and the
-  flattened JPEG is what gets stored. The original is discarded.
-- If the OCR model can't load (e.g. blocked network), the editor still opens
-  with manual-only boxing — the review step never depends on the network.
+The editor is **deterministic** — what you see masked is exactly what gets
+burned in. There is no OCR/auto-detection: on X-rays it both missed real text
+and threw false boxes over anatomy, and PHI removal needs a guarantee, not a
+guess. Two tools:
+
+- **Crop margins** (default): a "keep" frame with draggable corners. Burned-in
+  identifiers (patient name, HN/ID, dates, hospital & system text) sit in the
+  black borders around the anatomy, so the fellow fits the frame to the image
+  and **everything outside it is blacked out** — all four margins in one
+  gesture. A live dark mask previews exactly what will be removed. "Whole image"
+  resets the frame for pictures with no margins.
+- **Cover text**: drag across anything left inside the frame to add a solid
+  black box (move/resize/remove supported) — for the rare label over anatomy.
+- On "Apply & add", the outside-frame region and every box are burned in as
+  **solid black** (a guaranteed removal that can't leave a ghost, unlike
+  inpainting) and the flattened JPEG is what gets stored. The original is
+  discarded. Runs fully on-device with no network dependency.
 - "Cancel" discards the whole batch (nothing is added or uploaded).
 
 - **Validation:** on Save, missing required fields surface in a banner listing

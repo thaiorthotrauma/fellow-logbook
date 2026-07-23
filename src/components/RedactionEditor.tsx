@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { detectTextBoxes, type RedactionBox } from '../lib/redaction/ocr';
 import { applyRedaction } from '../lib/redaction/applyRedaction';
+import { FULL_FRAME, type RedactionBox } from '../lib/redaction/types';
 import RedactionCanvas from './RedactionCanvas';
 
 interface RedactionEditorProps {
@@ -9,45 +9,40 @@ interface RedactionEditorProps {
   onCancel: () => void;
 }
 
-/** Full-screen review step: for each image, auto-detected text boxes are shown
- *  (best-effort) and the fellow covers any patient name / ID / date before the
- *  flattened image is accepted for upload. Runs entirely on-device. */
+type Mode = 'crop' | 'box';
+
+// The keep-frame starts slightly inset so the removable margins are visible
+// immediately (the dark bands signal "this gets blacked out"); the fellow
+// drags it to hug the actual image.
+const DEFAULT_KEEP: RedactionBox = { x: 0.07, y: 0.05, w: 0.86, h: 0.9 };
+
+/** Full-screen review step run entirely on-device (the un-redacted image never
+ *  leaves the phone). The fellow fits a "keep" frame to the X-ray so the black
+ *  margins — where burned-in name / ID / dates / hospital text live — are
+ *  blacked out, then covers anything left inside with manual boxes. Everything
+ *  is deterministic: what you see masked is exactly what gets burned in. */
 export default function RedactionEditor({ files, onComplete, onCancel }: RedactionEditorProps) {
   const [index, setIndex] = useState(0);
   const [boxesByFile, setBoxesByFile] = useState<Record<number, RedactionBox[]>>({});
-  const [detectedFor, setDetectedFor] = useState<Record<number, boolean>>({});
-  const [detecting, setDetecting] = useState(false);
+  const [keepByFile, setKeepByFile] = useState<Record<number, RedactionBox>>({});
+  const [mode, setMode] = useState<Mode>('crop');
   const [finishing, setFinishing] = useState(false);
-  const [addMode, setAddMode] = useState(false);
 
   const urls = useMemo(() => files.map(f => URL.createObjectURL(f)), [files]);
   useEffect(() => () => urls.forEach(URL.revokeObjectURL), [urls]);
 
-  // Auto-detect text on the current image the first time it's shown.
-  useEffect(() => {
-    if (detectedFor[index]) return;
-    let cancelled = false;
-    setDetecting(true);
-    detectTextBoxes(files[index])
-      .then(boxes => {
-        if (cancelled) return;
-        setBoxesByFile(prev => ({ ...prev, [index]: boxes }));
-        setDetectedFor(prev => ({ ...prev, [index]: true }));
-      })
-      .finally(() => !cancelled && setDetecting(false));
-    return () => {
-      cancelled = true;
-    };
-  }, [index, files, detectedFor]);
-
   const boxes = boxesByFile[index] ?? [];
+  const keep = keepByFile[index] ?? DEFAULT_KEEP;
   const setBoxes = (next: RedactionBox[]) => setBoxesByFile(prev => ({ ...prev, [index]: next }));
+  const setKeep = (next: RedactionBox) => setKeepByFile(prev => ({ ...prev, [index]: next }));
   const isLast = index === files.length - 1;
 
   async function finish() {
     setFinishing(true);
     try {
-      const redacted = await Promise.all(files.map((f, i) => applyRedaction(f, boxesByFile[i] ?? [])));
+      const redacted = await Promise.all(
+        files.map((f, i) => applyRedaction(f, boxesByFile[i] ?? [], keepByFile[i] ?? DEFAULT_KEEP)),
+      );
       onComplete(redacted);
     } finally {
       setFinishing(false);
@@ -55,12 +50,12 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
   }
 
   return (
-    <div className="redact-overlay" role="dialog" aria-modal="true" aria-label="Redact patient information">
+    <div className="redact-overlay" role="dialog" aria-modal="true" aria-label="Hide patient information">
       <div className="redact-header">
-        <div className="redact-title">Cover patient information</div>
+        <div className="redact-title">Hide patient information</div>
         <div className="redact-sub">
-          Black out any name, ID/HN, or date burned into the image. Review carefully — this can't be undone
-          after upload.
+          Fit the frame to the X-ray so the margins (name, ID/HN, dates, hospital text) are removed, then cover
+          anything left. This can't be undone after upload.
         </div>
       </div>
 
@@ -68,28 +63,36 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
         <RedactionCanvas
           imageUrl={urls[index]}
           boxes={boxes}
-          onChange={setBoxes}
-          addMode={addMode}
-          onAddModeEnd={() => setAddMode(false)}
+          onBoxes={setBoxes}
+          keep={keep}
+          onKeep={setKeep}
+          mode={mode}
+          onDrawEnd={() => { /* stay in box mode so several boxes can be drawn */ }}
         />
         <div className="redact-status">
-          {detecting
-            ? 'Scanning for text…'
+          {mode === 'crop'
+            ? 'Drag the frame or its corners — everything outside it is blacked out.'
             : boxes.length > 0
-              ? `${boxes.length} area${boxes.length === 1 ? '' : 's'} marked`
-              : 'No text detected — add boxes over anything sensitive.'}
+              ? `Drag across any remaining text to cover it. ${boxes.length} area${boxes.length === 1 ? '' : 's'} marked.`
+              : 'Drag across any remaining text to cover it.'}
         </div>
       </div>
 
       <div className="redact-toolbar">
-        <button
-          type="button"
-          className={`redact-tool ${addMode ? 'active' : ''}`}
-          onClick={() => setAddMode(v => !v)}
-        >
-          {addMode ? 'Draw a box…' : '+ Add box'}
-        </button>
-        {boxes.length > 0 && (
+        <div className="redact-modes">
+          <button type="button" className={`redact-mode ${mode === 'crop' ? 'active' : ''}`} onClick={() => setMode('crop')}>
+            Crop margins
+          </button>
+          <button type="button" className={`redact-mode ${mode === 'box' ? 'active' : ''}`} onClick={() => setMode('box')}>
+            Cover text
+          </button>
+        </div>
+        {mode === 'crop' && (
+          <button type="button" className="redact-tool" onClick={() => setKeep(FULL_FRAME)}>
+            Whole image
+          </button>
+        )}
+        {mode === 'box' && boxes.length > 0 && (
           <button type="button" className="redact-tool" onClick={() => setBoxes([])}>
             Clear boxes
           </button>
@@ -109,11 +112,11 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
           </button>
         )}
         {isLast ? (
-          <button type="button" className="btn-primary" onClick={finish} disabled={finishing || detecting}>
+          <button type="button" className="btn-primary" onClick={finish} disabled={finishing}>
             {finishing ? 'Applying…' : 'Apply & add'}
           </button>
         ) : (
-          <button type="button" className="btn-primary" onClick={() => setIndex(i => i + 1)} disabled={detecting}>
+          <button type="button" className="btn-primary" onClick={() => setIndex(i => i + 1)}>
             Next
           </button>
         )}
