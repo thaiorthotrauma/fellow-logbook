@@ -160,9 +160,12 @@
 }
 
 .card {
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(14px) saturate(160%);
-  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  /* Opaque frosted fill instead of a per-card backdrop-filter: the form shows
+     ~11 cards at once, and a live blur layer on each one forces the GPU to
+     recomposite them on every button animation — the main cause of first-load
+     input lag on phones. A near-opaque background gives the same look far
+     cheaper. */
+  background: rgba(255, 255, 255, 0.86);
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 14px;
   padding: 22px 26px;
