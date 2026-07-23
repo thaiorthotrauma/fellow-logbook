@@ -1054,61 +1054,39 @@
   border-radius: 6px;
 }
 
-/* Dark bands over the area that will be blacked out (outside the keep-frame). */
-.redact-mask {
+/* SVG overlay: dark mask over everything outside the keep-quad + the quad
+   outline. Stretched to the image via preserveAspectRatio=none; purely visual
+   (corner handles below sit on top and take the pointer events). */
+.redact-svg {
   position: absolute;
-  background: rgba(6, 12, 10, 0.86);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   pointer-events: none;
 }
 
-.redact-mask.top,
-.redact-mask.bottom {
-  left: 0;
-  right: 0;
+.redact-mask-path {
+  fill: rgba(6, 12, 10, 0.86);
 }
 
-.redact-mask.bottom {
-  bottom: 0;
+.redact-keep-poly {
+  fill: none;
+  stroke: #34d399;
+  stroke-width: 2;
 }
 
-.redact-mask.left {
-  left: 0;
-}
-
-.redact-mask.right {
-  right: 0;
-}
-
-/* The keep-frame: what stays after redaction. */
-.redact-keep {
+/* Free-quad corner handles — each drags independently to follow perspective. */
+.redact-corner {
   position: absolute;
-  box-sizing: border-box;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
-  pointer-events: none;
-}
-
-.redact-keep.active {
-  border-color: #34d399;
-  cursor: move;
-  pointer-events: auto;
-  touch-action: none;
-}
-
-.redact-keep-handle {
-  position: absolute;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
   border-radius: 50%;
   background: #34d399;
   border: 2px solid #06110d;
+  cursor: grab;
   touch-action: none;
 }
-
-.redact-keep-handle.nw { top: -13px; left: -13px; cursor: nwse-resize; }
-.redact-keep-handle.ne { top: -13px; right: -13px; cursor: nesw-resize; }
-.redact-keep-handle.sw { bottom: -13px; left: -13px; cursor: nesw-resize; }
-.redact-keep-handle.se { bottom: -13px; right: -13px; cursor: nwse-resize; }
 
 .redact-box {
   position: absolute;

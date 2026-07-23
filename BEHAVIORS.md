@@ -101,12 +101,14 @@ burned in. There is no OCR/auto-detection: on X-rays it both missed real text
 and threw false boxes over anatomy, and PHI removal needs a guarantee, not a
 guess. Two tools:
 
-- **Crop margins** (default): a "keep" frame with draggable corners. Burned-in
+- **Crop margins** (default): a "keep" frame with four independently draggable
+  corners — a free quadrilateral, so it follows the **perspective tilt** of an
+  X-ray photographed at an angle (not just an upright rectangle). Burned-in
   identifiers (patient name, HN/ID, dates, hospital & system text) sit in the
-  black borders around the anatomy, so the fellow fits the frame to the image
-  and **everything outside it is blacked out** — all four margins in one
-  gesture. A live dark mask previews exactly what will be removed. "Whole image"
-  resets the frame for pictures with no margins.
+  black borders around the anatomy, so the fellow drops each corner on the
+  edges of the film and **everything outside the quad is blacked out** — all
+  margins in one framing. A live dark mask previews exactly what will be
+  removed. "Whole image" resets the frame for pictures with no margins.
 - **Cover text**: drag across anything left inside the frame to add a solid
   black box (move/resize/remove supported) — for the rare label over anatomy.
 - On "Apply & add", the outside-frame region and every box are burned in as

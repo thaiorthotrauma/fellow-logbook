@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { applyRedaction } from '../lib/redaction/applyRedaction';
-import { FULL_FRAME, type RedactionBox } from '../lib/redaction/types';
+import { FULL_QUAD, type Quad, type RedactionBox } from '../lib/redaction/types';
 import RedactionCanvas from './RedactionCanvas';
 
 interface RedactionEditorProps {
@@ -12,19 +12,25 @@ interface RedactionEditorProps {
 type Mode = 'crop' | 'box';
 
 // The keep-frame starts slightly inset so the removable margins are visible
-// immediately (the dark bands signal "this gets blacked out"); the fellow
-// drags it to hug the actual image.
-const DEFAULT_KEEP: RedactionBox = { x: 0.07, y: 0.05, w: 0.86, h: 0.9 };
+// immediately (the dark mask signals "this gets blacked out"); the fellow drags
+// each corner onto the edges of the actual X-ray — a free quad so it can follow
+// the perspective tilt of a photo taken at an angle.
+const DEFAULT_KEEP: Quad = [
+  { x: 0.08, y: 0.06 },
+  { x: 0.92, y: 0.06 },
+  { x: 0.92, y: 0.94 },
+  { x: 0.08, y: 0.94 },
+];
 
 /** Full-screen review step run entirely on-device (the un-redacted image never
- *  leaves the phone). The fellow fits a "keep" frame to the X-ray so the black
+ *  leaves the phone). The fellow fits a "keep" quad to the X-ray so the black
  *  margins — where burned-in name / ID / dates / hospital text live — are
  *  blacked out, then covers anything left inside with manual boxes. Everything
  *  is deterministic: what you see masked is exactly what gets burned in. */
 export default function RedactionEditor({ files, onComplete, onCancel }: RedactionEditorProps) {
   const [index, setIndex] = useState(0);
   const [boxesByFile, setBoxesByFile] = useState<Record<number, RedactionBox[]>>({});
-  const [keepByFile, setKeepByFile] = useState<Record<number, RedactionBox>>({});
+  const [keepByFile, setKeepByFile] = useState<Record<number, Quad>>({});
   const [mode, setMode] = useState<Mode>('crop');
   const [finishing, setFinishing] = useState(false);
 
@@ -34,7 +40,7 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
   const boxes = boxesByFile[index] ?? [];
   const keep = keepByFile[index] ?? DEFAULT_KEEP;
   const setBoxes = (next: RedactionBox[]) => setBoxesByFile(prev => ({ ...prev, [index]: next }));
-  const setKeep = (next: RedactionBox) => setKeepByFile(prev => ({ ...prev, [index]: next }));
+  const setKeep = (next: Quad) => setKeepByFile(prev => ({ ...prev, [index]: next }));
   const isLast = index === files.length - 1;
 
   async function finish() {
@@ -71,7 +77,7 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
         />
         <div className="redact-status">
           {mode === 'crop'
-            ? 'Drag the frame or its corners — everything outside it is blacked out.'
+            ? 'Drag each corner onto the edges of the X-ray — everything outside is blacked out.'
             : boxes.length > 0
               ? `Drag across any remaining text to cover it. ${boxes.length} area${boxes.length === 1 ? '' : 's'} marked.`
               : 'Drag across any remaining text to cover it.'}
@@ -88,7 +94,7 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
           </button>
         </div>
         {mode === 'crop' && (
-          <button type="button" className="redact-tool" onClick={() => setKeep(FULL_FRAME)}>
+          <button type="button" className="redact-tool" onClick={() => setKeep(FULL_QUAD)}>
             Whole image
           </button>
         )}

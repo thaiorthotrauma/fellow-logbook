@@ -1,29 +1,38 @@
 import { useRef } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
-import type { RedactionBox } from '../lib/redaction/types';
+import type { Point, Quad, RedactionBox } from '../lib/redaction/types';
 
 interface RedactionCanvasProps {
   imageUrl: string;
   boxes: RedactionBox[];
   onBoxes: (boxes: RedactionBox[]) => void;
-  keep: RedactionBox;
-  onKeep: (keep: RedactionBox) => void;
+  keep: Quad;
+  onKeep: (keep: Quad) => void;
   mode: 'crop' | 'box';
   onDrawEnd: () => void;
 }
 
-type Corner = 'nw' | 'ne' | 'sw' | 'se';
-
 type Gesture =
-  | { kind: 'keep-move'; startNX: number; startNY: number; start: RedactionBox }
-  | { kind: 'keep-corner'; corner: Corner; start: RedactionBox }
+  | { kind: 'quad-move'; startNX: number; startNY: number; start: Quad }
+  | { kind: 'quad-corner'; index: number }
   | { kind: 'box-move'; index: number; startNX: number; startNY: number; start: RedactionBox }
   | { kind: 'box-resize'; index: number }
   | { kind: 'box-draw'; index: number; anchorX: number; anchorY: number };
 
-const MIN_KEEP = 0.1;
 const MIN_BOX = 0.012;
 const clamp01 = (v: number) => Math.min(1, Math.max(0, v));
+
+/** Even-odd winding: a point is inside the quad iff a ray crosses its edges an
+ *  odd number of times. Used so a drag inside the frame moves the whole frame. */
+function pointInQuad(q: Quad, x: number, y: number): boolean {
+  let inside = false;
+  for (let i = 0, j = 3; i < 4; j = i++) {
+    const a = q[i];
+    const b = q[j];
+    if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
 
 export default function RedactionCanvas({ imageUrl, boxes, onBoxes, keep, onKeep, mode, onDrawEnd }: RedactionCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,21 +50,12 @@ export default function RedactionCanvas({ imageUrl, boxes, onBoxes, keep, onKeep
     containerRef.current?.setPointerCapture(e.pointerId);
   }
 
-  // ── Keep-frame gestures ──────────────────────────────────────────────────
-  function startKeepMove(e: ReactPointerEvent) {
+  function startCorner(e: ReactPointerEvent, index: number) {
     e.stopPropagation();
     capture(e);
-    const { nx, ny } = normPoint(e);
-    gestureRef.current = { kind: 'keep-move', startNX: nx, startNY: ny, start: keep };
+    gestureRef.current = { kind: 'quad-corner', index };
   }
 
-  function startKeepCorner(e: ReactPointerEvent, corner: Corner) {
-    e.stopPropagation();
-    capture(e);
-    gestureRef.current = { kind: 'keep-corner', corner, start: keep };
-  }
-
-  // ── Box gestures ─────────────────────────────────────────────────────────
   function startBoxMove(e: ReactPointerEvent, index: number) {
     if (mode !== 'box') return;
     e.stopPropagation();
@@ -76,12 +76,19 @@ export default function RedactionCanvas({ imageUrl, boxes, onBoxes, keep, onKeep
   }
 
   function handleBackgroundDown(e: ReactPointerEvent) {
-    if (mode !== 'box') return;
-    capture(e);
     const { nx, ny } = normPoint(e);
-    const next = [...boxes, { x: nx, y: ny, w: 0, h: 0 }];
-    gestureRef.current = { kind: 'box-draw', index: next.length - 1, anchorX: nx, anchorY: ny };
-    onBoxes(next);
+    if (mode === 'box') {
+      capture(e);
+      const next = [...boxes, { x: nx, y: ny, w: 0, h: 0 }];
+      gestureRef.current = { kind: 'box-draw', index: next.length - 1, anchorX: nx, anchorY: ny };
+      onBoxes(next);
+      return;
+    }
+    // Crop mode: dragging inside the frame moves the whole frame.
+    if (pointInQuad(keep, nx, ny)) {
+      capture(e);
+      gestureRef.current = { kind: 'quad-move', startNX: nx, startNY: ny, start: keep };
+    }
   }
 
   function handleMove(e: ReactPointerEvent) {
@@ -89,22 +96,17 @@ export default function RedactionCanvas({ imageUrl, boxes, onBoxes, keep, onKeep
     if (!g) return;
     const { nx, ny } = normPoint(e);
 
-    if (g.kind === 'keep-move') {
-      const x = Math.min(1 - g.start.w, Math.max(0, g.start.x + (nx - g.startNX)));
-      const y = Math.min(1 - g.start.h, Math.max(0, g.start.y + (ny - g.startNY)));
-      onKeep({ ...g.start, x, y });
+    if (g.kind === 'quad-corner') {
+      const next = keep.map((p, i) => (i === g.index ? { x: nx, y: ny } : p)) as Quad;
+      onKeep(next);
       return;
     }
-    if (g.kind === 'keep-corner') {
-      let left = g.start.x;
-      let top = g.start.y;
-      let right = g.start.x + g.start.w;
-      let bottom = g.start.y + g.start.h;
-      if (g.corner === 'nw' || g.corner === 'sw') left = Math.min(nx, right - MIN_KEEP);
-      if (g.corner === 'ne' || g.corner === 'se') right = Math.max(nx, left + MIN_KEEP);
-      if (g.corner === 'nw' || g.corner === 'ne') top = Math.min(ny, bottom - MIN_KEEP);
-      if (g.corner === 'sw' || g.corner === 'se') bottom = Math.max(ny, top + MIN_KEEP);
-      onKeep({ x: left, y: top, w: right - left, h: bottom - top });
+    if (g.kind === 'quad-move') {
+      const xs = g.start.map(p => p.x);
+      const ys = g.start.map(p => p.y);
+      const dx = Math.min(1 - Math.max(...xs), Math.max(-Math.min(...xs), nx - g.startNX));
+      const dy = Math.min(1 - Math.max(...ys), Math.max(-Math.min(...ys), ny - g.startNY));
+      onKeep(g.start.map(p => ({ x: p.x + dx, y: p.y + dy })) as Quad);
       return;
     }
 
@@ -144,7 +146,11 @@ export default function RedactionCanvas({ imageUrl, boxes, onBoxes, keep, onKeep
   }
 
   const pct = (v: number) => `${v * 100}%`;
-  const outside = { left: pct(keep.x), top: pct(keep.y), width: pct(keep.w), height: pct(keep.h) };
+  const polyPoints = keep.map(p => `${p.x} ${p.y}`).join(', ');
+  // Full-canvas rect + inner quad, even-odd filled → mask over everything outside the quad.
+  const maskPath =
+    `M0 0 H1 V1 H0 Z ` +
+    `M${keep[0].x} ${keep[0].y} L${keep[1].x} ${keep[1].y} L${keep[2].x} ${keep[2].y} L${keep[3].x} ${keep[3].y} Z`;
 
   return (
     <div
@@ -157,22 +163,20 @@ export default function RedactionCanvas({ imageUrl, boxes, onBoxes, keep, onKeep
     >
       <img src={imageUrl} alt="Redaction preview" className="redact-image" draggable={false} />
 
-      {/* Dark bands over everything that will be blacked out (outside keep). */}
-      <div className="redact-mask top" style={{ height: pct(keep.y) }} />
-      <div className="redact-mask bottom" style={{ top: pct(keep.y + keep.h) }} />
-      <div className="redact-mask left" style={{ top: pct(keep.y), height: pct(keep.h), width: pct(keep.x) }} />
-      <div className="redact-mask right" style={{ top: pct(keep.y), height: pct(keep.h), left: pct(keep.x + keep.w) }} />
+      <svg className="redact-svg" viewBox="0 0 1 1" preserveAspectRatio="none" aria-hidden="true">
+        <path className="redact-mask-path" d={maskPath} fillRule="evenodd" />
+        <polygon className="redact-keep-poly" points={polyPoints} vectorEffect="non-scaling-stroke" />
+      </svg>
 
-      {/* Keep-frame — draggable body + corner handles (crop mode only). */}
-      <div
-        className={`redact-keep ${mode === 'crop' ? 'active' : ''}`}
-        style={outside}
-        onPointerDown={mode === 'crop' ? startKeepMove : undefined}
-      >
-        {mode === 'crop' && (['nw', 'ne', 'sw', 'se'] as Corner[]).map(c => (
-          <span key={c} className={`redact-keep-handle ${c}`} onPointerDown={e => startKeepCorner(e, c)} />
-        ))}
-      </div>
+      {/* Corner handles (crop mode) — each corner drags independently to follow tilt. */}
+      {mode === 'crop' && keep.map((p: Point, i) => (
+        <span
+          key={i}
+          className="redact-corner"
+          style={{ left: pct(p.x), top: pct(p.y) }}
+          onPointerDown={e => startCorner(e, i)}
+        />
+      ))}
 
       {/* Manual black boxes. */}
       {boxes.map((b, i) => (

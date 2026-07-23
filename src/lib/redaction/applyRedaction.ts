@@ -1,24 +1,25 @@
-import type { RedactionBox } from './types';
+import { FULL_QUAD, type Quad, type RedactionBox } from './types';
 
 const EPS = 0.001;
 
-/** True when the keep-frame actually crops something (isn't the full image). */
-function cropsAnything(keep: RedactionBox): boolean {
-  return keep.x > EPS || keep.y > EPS || keep.w < 1 - EPS || keep.h < 1 - EPS;
+/** True when the keep-quad actually crops something (isn't the full image). */
+function cropsAnything(keep: Quad): boolean {
+  return keep.some((p, i) => Math.abs(p.x - FULL_QUAD[i].x) > EPS || Math.abs(p.y - FULL_QUAD[i].y) > EPS);
 }
 
 /** Flattens redaction into a new JPEG File:
- *   1. everything OUTSIDE the keep-frame is filled solid black (removes the
+ *   1. everything OUTSIDE the keep-quad is filled solid black (removes the
  *      black-margin annotations — patient name, ID, dates, hospital/system
- *      text — which is where burned-in PHI lives on an X-ray), then
- *   2. each manual box is filled solid black (for anything inside the frame).
+ *      text — which is where burned-in PHI lives on an X-ray). The quad can be
+ *      skewed, so this works even when the photo was taken at an angle, then
+ *   2. each manual box is filled solid black (for anything inside the quad).
  *  Destructive by design — for de-identification we want a guarantee of
  *  removal (a black box can't leave a ghost), not reconstruction. Returns the
  *  original file unchanged when there is nothing to redact. */
 export async function applyRedaction(
   file: File,
   boxes: RedactionBox[],
-  keep: RedactionBox,
+  keep: Quad,
 ): Promise<File> {
   if (boxes.length === 0 && !cropsAnything(keep)) return file;
   try {
@@ -35,16 +36,18 @@ export async function applyRedaction(
 
     ctx.fillStyle = '#000000';
 
-    // 1. Black out everything outside the keep-frame (four margin bands).
+    // 1. Black out everything outside the keep-quad. The full-canvas rect plus
+    //    the (inner) quad, filled with the even-odd rule, paints the region
+    //    between them — i.e. everything outside the quad.
     if (cropsAnything(keep)) {
-      const kx = Math.round(keep.x * W);
-      const ky = Math.round(keep.y * H);
-      const kw = Math.round(keep.w * W);
-      const kh = Math.round(keep.h * H);
-      ctx.fillRect(0, 0, W, ky); // top
-      ctx.fillRect(0, ky + kh, W, H - (ky + kh)); // bottom
-      ctx.fillRect(0, ky, kx, kh); // left
-      ctx.fillRect(kx + kw, ky, W - (kx + kw), kh); // right
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ctx.moveTo(keep[0].x * W, keep[0].y * H);
+      ctx.lineTo(keep[1].x * W, keep[1].y * H);
+      ctx.lineTo(keep[2].x * W, keep[2].y * H);
+      ctx.lineTo(keep[3].x * W, keep[3].y * H);
+      ctx.closePath();
+      ctx.fill('evenodd');
     }
 
     // 2. Black out each manual box.
