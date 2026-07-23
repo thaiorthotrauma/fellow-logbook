@@ -10,6 +10,7 @@ import {
   MAX_IMAGES_TOTAL_BYTES,
 } from './lib/casesApi';
 import { fetchCurrentPhysician, type Physician } from './lib/physicianApi';
+import { describeError } from './lib/errors';
 import { emptyAo, emptyForm, type AoState, type CaseEntry, type FormState } from './types';
 import NewEntryForm from './components/NewEntryForm';
 import CaseLog from './components/CaseLog';
@@ -92,8 +93,7 @@ function App() {
       setToast({ message: 'Case saved to logbook', sticky: false });
     } catch (err) {
       console.error(err);
-      const detail = err instanceof Error ? err.message : String(err);
-      setToast({ message: `Could not save: ${detail}`, sticky: true });
+      setToast({ message: `Could not save: ${describeError(err)}`, sticky: true });
     } finally {
       setSaving(false);
     }
@@ -108,7 +108,7 @@ function App() {
     } catch (err) {
       console.error(err);
       setCases(previous);
-      setToast({ message: 'Could not delete this case. Please try again.', sticky: true });
+      setToast({ message: `Could not delete: ${describeError(err)}`, sticky: true });
     }
   }
 

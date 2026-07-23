@@ -33,6 +33,9 @@ export type CaseRow = Record<string, unknown>;
 export function fromRow(row: CaseRow): CaseEntry {
   const entry: Record<string, unknown> = {};
   for (const [key, col] of FIELD_MAP) entry[key] = row[col];
+  // Guard against a missing/null image_paths column so the Case Log never
+  // crashes on `.length` — old rows or an un-migrated table yield undefined.
+  if (!Array.isArray(entry.imagePaths)) entry.imagePaths = [];
   return entry as unknown as CaseEntry;
 }
 
