@@ -25,8 +25,10 @@
     radial-gradient(120% 180% at 15% -20%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%),
     linear-gradient(135deg, #12a091 0%, #0d6e64 48%, #083d38 100%);
   background-blend-mode: screen, normal;
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  /* No backdrop-filter: the header is a sticky, full-width element with an
+     OPAQUE gradient background, so a live blur behind it is invisible yet
+     forces the whole header to re-rasterize on every repaint underneath
+     (button pops, tab switches, scroll) — the main source of UI lag. */
   border-bottom: 1px solid rgba(255, 255, 255, 0.16);
   box-shadow: 0 12px 28px -8px rgba(6, 38, 34, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
@@ -112,9 +114,9 @@
 .tabs {
   display: flex;
   gap: 4px;
-  background: rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  /* Slightly higher tint replaces the removed backdrop blur (it sat inside the
+     sticky header and added to the per-frame recomposite cost). */
+  background: rgba(255, 255, 255, 0.18);
   border: 1px solid rgba(255, 255, 255, 0.18);
   padding: 4px;
   border-radius: 11px;
