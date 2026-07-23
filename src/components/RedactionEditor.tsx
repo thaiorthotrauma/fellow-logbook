@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { applyRedaction } from '../lib/redaction/applyRedaction';
+import { detectContentQuad } from '../lib/redaction/autofit';
 import { FULL_QUAD, type Quad, type RedactionBox } from '../lib/redaction/types';
 import RedactionCanvas from './RedactionCanvas';
 
@@ -31,6 +32,8 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
   const [index, setIndex] = useState(0);
   const [boxesByFile, setBoxesByFile] = useState<Record<number, RedactionBox[]>>({});
   const [keepByFile, setKeepByFile] = useState<Record<number, Quad>>({});
+  const [fittedFor, setFittedFor] = useState<Record<number, boolean>>({});
+  const [fitting, setFitting] = useState(false);
   const [mode, setMode] = useState<Mode>('crop');
   const [finishing, setFinishing] = useState(false);
 
@@ -42,6 +45,34 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
   const setBoxes = (next: RedactionBox[]) => setBoxesByFile(prev => ({ ...prev, [index]: next }));
   const setKeep = (next: Quad) => setKeepByFile(prev => ({ ...prev, [index]: next }));
   const isLast = index === files.length - 1;
+
+  // Auto-fit the frame the first time each image is shown — a suggestion the
+  // fellow then confirms. Never overrides a frame they've already adjusted.
+  useEffect(() => {
+    if (fittedFor[index]) return;
+    let cancelled = false;
+    setFitting(true);
+    detectContentQuad(files[index])
+      .then(quad => {
+        if (cancelled) return;
+        if (quad) setKeepByFile(prev => (prev[index] ? prev : { ...prev, [index]: quad }));
+        setFittedFor(prev => ({ ...prev, [index]: true }));
+      })
+      .finally(() => !cancelled && setFitting(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [index, files, fittedFor]);
+
+  async function autoFit() {
+    setFitting(true);
+    try {
+      const quad = await detectContentQuad(files[index]);
+      if (quad) setKeep(quad);
+    } finally {
+      setFitting(false);
+    }
+  }
 
   async function finish() {
     setFinishing(true);
@@ -77,7 +108,9 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
         />
         <div className="redact-status">
           {mode === 'crop'
-            ? 'Drag each corner onto the edges of the X-ray — everything outside is blacked out.'
+            ? fitting
+              ? 'Finding the X-ray…'
+              : 'Drag each corner onto the edges of the X-ray — everything outside is blacked out.'
             : boxes.length > 0
               ? `Drag across any remaining text to cover it. ${boxes.length} area${boxes.length === 1 ? '' : 's'} marked.`
               : 'Drag across any remaining text to cover it.'}
@@ -94,9 +127,14 @@ export default function RedactionEditor({ files, onComplete, onCancel }: Redacti
           </button>
         </div>
         {mode === 'crop' && (
-          <button type="button" className="redact-tool" onClick={() => setKeep(FULL_QUAD)}>
-            Whole image
-          </button>
+          <>
+            <button type="button" className="redact-tool" onClick={autoFit} disabled={fitting}>
+              Auto-fit
+            </button>
+            <button type="button" className="redact-tool" onClick={() => setKeep(FULL_QUAD)}>
+              Whole image
+            </button>
+          </>
         )}
         {mode === 'box' && boxes.length > 0 && (
           <button type="button" className="redact-tool" onClick={() => setBoxes([])}>

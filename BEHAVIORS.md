@@ -109,6 +109,13 @@ guess. Two tools:
   edges of the film and **everything outside the quad is blacked out** — all
   margins in one framing. A live dark mask previews exactly what will be
   removed. "Whole image" resets the frame for pictures with no margins.
+  - **Auto-fit**: on first view of each image (and via the Auto-fit button) an
+    on-device pass suggests the frame — it thresholds the bright pixels (Otsu)
+    and snaps the quad to the **largest connected bright region** (the anatomy;
+    text/ticks are smaller separate blobs, so they're excluded). It's only a
+    suggestion the fellow confirms/adjusts — never authoritative — so a rough
+    fit is a convenience, not a risk. Runs on a downscaled copy; nothing leaves
+    the device. Falls back to the manual default when it isn't confident.
 - **Cover text**: drag across anything left inside the frame to add a solid
   black box (move/resize/remove supported) — for the rare label over anatomy.
 - On "Apply & add", the outside-frame region and every box are burned in as
