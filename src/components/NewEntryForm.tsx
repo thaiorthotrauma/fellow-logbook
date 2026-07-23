@@ -2,6 +2,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { OPTIME, PLACE, PROC_TYPE, ROLES, TIMING } from '../data';
 import type { AoState, FormState } from '../types';
 import AoClassification from './AoClassification';
+import BulletTextarea from './BulletTextarea';
 import ImageUpload from './ImageUpload';
 import Pill from './Pill';
 
@@ -54,12 +55,12 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
           <span className="step-title">Diagnosis</span>
           <span className="required-star">*</span>
         </div>
-        <textarea
+        <BulletTextarea
           className="field-textarea"
           value={form.diagnosis}
-          onChange={e => updateForm('diagnosis', e.target.value)}
+          onChange={v => updateForm('diagnosis', v)}
           placeholder="e.g. Closed fracture right distal femur"
-          rows={2}
+          rows={3}
         />
       </div>
 
@@ -71,12 +72,12 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
           <span className="step-title">Other Classification</span>
           <span className="required-star">*</span>
         </div>
-        <input
-          type="text"
-          className="field-input"
+        <BulletTextarea
+          className="field-textarea"
           value={form.otherClassification}
-          onChange={e => updateForm('otherClassification', e.target.value)}
+          onChange={v => updateForm('otherClassification', v)}
           placeholder="e.g. Schatzker, Weber, Gustilo-Anderson…"
+          rows={3}
         />
       </div>
 
@@ -86,12 +87,12 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
           <span className="step-title">Approach</span>
           <span className="required-star">*</span>
         </div>
-        <input
-          type="text"
-          className="field-input"
+        <BulletTextarea
+          className="field-textarea"
           value={form.approach}
-          onChange={e => updateForm('approach', e.target.value)}
+          onChange={v => updateForm('approach', v)}
           placeholder="e.g. Anterolateral"
+          rows={3}
         />
       </div>
 
