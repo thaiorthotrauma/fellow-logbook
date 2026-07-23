@@ -111,9 +111,13 @@ export async function detectContentQuad(file: File): Promise<Quad | null> {
     const x1 = (bb.maxx + 1) / w;
     const y0 = bb.miny / h;
     const y1 = (bb.maxy + 1) / h;
-    // Reject a suspiciously tiny blob, or a near-full box (nothing to crop).
+    // Reject a suspiciously tiny blob (nothing found) or a near-full box. The
+    // latter happens when the photo is of a whole monitor in a room: the entire
+    // bright screen is one connected region, so the box would "keep everything"
+    // and remove no annotations — a misleading suggestion. Falling back to null
+    // gives the fellow the manual inset default to crop from instead.
     if (bestSize / n < 0.03) return null;
-    if (x1 - x0 < 0.2 || y1 - y0 < 0.2 || (x1 - x0 > 0.98 && y1 - y0 > 0.98)) return null;
+    if (x1 - x0 < 0.2 || y1 - y0 < 0.2 || (x1 - x0) * (y1 - y0) > 0.7) return null;
 
     return [
       { x: x0, y: y0 },
