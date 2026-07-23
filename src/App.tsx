@@ -22,7 +22,7 @@ function App() {
   const [physician, setPhysician] = useState<Physician | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; sticky: boolean } | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm());
   const [ao, setAo] = useState<AoState>(emptyAo());
@@ -34,7 +34,7 @@ function App() {
       .then(setCases)
       .catch(err => {
         console.error(err);
-        setToast('Could not load your cases. Check your connection and reload.');
+        setToast({ message: 'Could not load your cases. Check your connection and reload.', sticky: false });
       });
 
     fetchCurrentPhysician()
@@ -44,7 +44,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!toast) return;
+    if (!toast || toast.sticky) return;
     const timer = setTimeout(() => setToast(null), 2600);
     return () => clearTimeout(timer);
   }, [toast]);
@@ -72,7 +72,7 @@ function App() {
     }
     const totalImageBytes = images.reduce((sum, f) => sum + f.size, 0);
     if (totalImageBytes > MAX_IMAGES_TOTAL_BYTES) {
-      setToast('Total image size exceeds 10 MB. Remove some images to save.');
+      setToast({ message: 'Total image size exceeds 10 MB. Remove some images to save.', sticky: false });
       return;
     }
     setSaving(true);
@@ -89,10 +89,11 @@ function App() {
       setForm(emptyForm());
       setAo(emptyAo());
       setImages([]);
-      setToast('Case saved to logbook');
+      setToast({ message: 'Case saved to logbook', sticky: false });
     } catch (err) {
       console.error(err);
-      setToast('Could not save this case. Please try again.');
+      const detail = err instanceof Error ? err.message : String(err);
+      setToast({ message: `Could not save: ${detail}`, sticky: true });
     } finally {
       setSaving(false);
     }
@@ -107,7 +108,7 @@ function App() {
     } catch (err) {
       console.error(err);
       setCases(previous);
-      setToast('Could not delete this case. Please try again.');
+      setToast({ message: 'Could not delete this case. Please try again.', sticky: true });
     }
   }
 
@@ -166,7 +167,16 @@ function App() {
         )}
       </div>
 
-      {toast && <div className="toast">{toast}</div>}
+      {toast && (
+        <div
+          className={`toast ${toast.sticky ? 'toast-sticky' : ''}`}
+          onClick={() => toast.sticky && setToast(null)}
+          role={toast.sticky ? 'button' : undefined}
+        >
+          {toast.message}
+          {toast.sticky && <span className="toast-dismiss-hint"> (tap to dismiss)</span>}
+        </div>
+      )}
     </div>
   );
 }

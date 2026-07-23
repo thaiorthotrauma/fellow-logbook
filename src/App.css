@@ -622,6 +622,18 @@
   font-weight: 600;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   z-index: 50;
+  max-width: calc(100vw - 40px);
+  word-break: break-word;
+}
+
+.toast-sticky {
+  background: #5c1a1a;
+  cursor: pointer;
+}
+
+.toast-dismiss-hint {
+  font-weight: 400;
+  opacity: 0.75;
 }
 
 /* ── Image upload (New Entry · section 11) ───────────────────────────────── */

@@ -39,7 +39,22 @@ async function fileToBase64(file: File): Promise<string> {
 
 async function invokeDrive<T>(body: Record<string, unknown>): Promise<T> {
   const { data, error } = await supabase.functions.invoke(DRIVE_FN, { body });
-  if (error) throw error;
+  if (error) {
+    // FunctionsHttpError/FunctionsRelayError carry the real response body in
+    // `context`, but `error.message` is just a generic "non-2xx status" —
+    // read the body so failures are actionable instead of a dead end.
+    const context = (error as { context?: Response }).context;
+    let detail: string | undefined;
+    if (context && typeof context.json === 'function') {
+      try {
+        const body = await context.clone().json();
+        if (body?.error) detail = String(body.error);
+      } catch {
+        // response body wasn't JSON — fall through to the generic error
+      }
+    }
+    throw new Error(detail ?? error.message);
+  }
   if (data && typeof data === 'object' && 'error' in data) {
     throw new Error(String((data as { error: unknown }).error));
   }
