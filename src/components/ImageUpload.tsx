@@ -86,6 +86,11 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
             ? `${images.length} file${images.length === 1 ? '' : 's'} · ${formatMB(totalBytes)} / 10 MB`
             : 'JPG, PNG, or HEIC · up to 10 MB total'}
       </div>
+      {images.length === 0 && !converting && (
+        <div className="upload-hint">
+          Tip: shoot straight-on and fill the frame with just the X-ray — it makes the redaction step faster.
+        </div>
+      )}
 
       {overLimit && (
         <div className="upload-error">Total image size exceeds 10 MB. Remove some images to save.</div>

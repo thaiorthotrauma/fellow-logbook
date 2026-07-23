@@ -35,7 +35,7 @@ export default function AoClassification({ ao, setAo }: AoClassificationProps) {
     <div className="card">
       <div className="card-header">
         <span className="step-badge">3</span>
-        <span className="step-title">Classification based on AO</span>
+        <span className="step-title">AO classification</span>
         {code && <span className="ao-code-badge">{code}</span>}
       </div>
       <div className="ao-hint">Click a region on the diagram, or use the dropdown, to classify the fracture location.</div>
