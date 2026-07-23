@@ -102,10 +102,10 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
           <span className="step-title">Procedure</span>
           <span className="required-star">*</span>
         </div>
-        <textarea
+        <BulletTextarea
           className="field-textarea"
           value={form.procedure}
-          onChange={e => updateForm('procedure', e.target.value)}
+          onChange={v => updateForm('procedure', v)}
           placeholder="Describe the procedure performed…"
           rows={3}
         />
