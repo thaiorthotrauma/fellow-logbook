@@ -112,10 +112,11 @@ on-device, so the **un-redacted image never leaves the phone**:
 - **Validation:** on Save, missing required fields surface in a banner listing
   each one; nothing is saved until all are filled. If the image total exceeds
   10 MB, save is blocked with a toast.
-- **Save:** a case id is generated client-side, any images upload to the private
-  `case-images` Storage bucket under `{user_id}/{case_id}/…` first, then the
-  case row (with the image paths) is inserted (scoped to the fellow via RLS). If
-  an image upload fails the case is not created, so there are no image-less
+- **Save:** a case id is generated client-side, any images upload to the app's
+  private **Google Drive** (via the `drive-images` Edge Function, which holds
+  the Google refresh token server-side) first, then the case row (with the
+  returned Drive file IDs) is inserted (scoped to the fellow via RLS). If an
+  image upload fails the case is not created, so there are no image-less
   orphans. Shows a "Case saved to logbook" toast, resets the form, increments
   the tab count. The Save button shows a saving state and is disabled during the
   request.
@@ -128,11 +129,13 @@ on-device, so the **un-redacted image never leaves the phone**:
 - **Tap a card** to expand full details (other classification, approach,
   position, procedure type, procedure). On phones < 380px the detail grid
   collapses to a single column.
-- If the case has images, the expanded view loads them via short-lived signed
-  URLs (the bucket is private) and shows tappable thumbnails that open full size.
+- If the case has images, the expanded view fetches them back through the
+  `drive-images` function (which downloads them from the app's private Drive)
+  and shows tappable thumbnails that open full size. Images are never shared
+  with a public link.
 - **Delete** removes a case optimistically; if the server rejects it, the case
   reappears and a toast reports the failure. On success, the case's images are
-  also removed from Storage (best-effort).
+  also removed from Drive (best-effort).
 - Empty state: a prompt to add the first case.
 
 ## 6. Data & persistence
@@ -144,9 +147,11 @@ on-device, so the **un-redacted image never leaves the phone**:
   values are rejected at write time.
 - Cases load once on entry; there is no live cross-device refresh (a personal
   logbook, so this is by design).
-- Case images live in a **private** Supabase Storage bucket (`case-images`),
-  pathed `{user_id}/{case_id}/…`; storage RLS scopes read/write/delete to each
-  fellow's own folder. They're only ever served through short-lived signed URLs.
+- Case images live in the app's **private Google Drive** (one program-owned
+  Drive), uploaded and read back through the JWT-protected `drive-images` Edge
+  Function — the browser never talks to Google directly (its OAuth is blocked
+  inside LINE's webview). The `cases.image_paths` column stores the Drive file
+  IDs. Images are never served via a public link.
 - A failed initial load shows a toast asking the user to check their connection
   and reload.
 

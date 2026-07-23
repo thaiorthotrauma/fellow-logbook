@@ -103,6 +103,9 @@ create table if not exists public.cases (
   role text not null,
   op_time text not null,
   place text not null,
+  -- Google Drive file IDs for the case's images (uploaded via the drive-images
+  -- edge function). Kept as image_paths for backward compatibility; the images
+  -- themselves live in the app's private Drive, not in Supabase.
   image_paths text[] not null default '{}',
   created_at timestamptz not null default now()
 );

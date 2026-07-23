@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { getImageUrls } from '../lib/casesApi';
 
-/** Renders a case's saved images as thumbnail links. The bucket is private, so
- *  short-lived signed URLs are fetched on mount (i.e. when the card expands). */
+/** Renders a case's saved images as thumbnail links. Images live in the app's
+ *  private Google Drive, so they're fetched back through the drive-images
+ *  function on mount (i.e. when the card expands) and shown as data URLs. */
 export default function CaseImages({ paths }: { paths: string[] }) {
   const [urls, setUrls] = useState<string[] | null>(null);
   const [failed, setFailed] = useState(false);

@@ -25,11 +25,11 @@ Then load the fellow roster: paste in and run
 [`supabase/seed_physicians.sql`](./supabase/seed_physicians.sql). Safe to
 re-run any time the roster changes — it upserts by email.
 
-Finally, set up image storage: paste in and run
-[`supabase/storage.sql`](./supabase/storage.sql). It creates the private
-`case-images` bucket (JPG/PNG/HEIC, 10 MB/file) and RLS policies so each
-fellow can only touch images under their own `{user_id}/` folder. Required
-for the New Entry "Images" field (Question 11) to work. Safe to re-run.
+Case images (the New Entry "Images" field, Question 11) are **not** stored in
+Supabase — they upload to a private Google Drive via the `drive-images` Edge
+Function. See [§3](#3-deploy-the-edge-functions) and
+[§3a](#3a-google-drive-for-case-images) below. No storage bucket or SQL is
+needed for images.
 
 ## 2. Configure Supabase Auth email OTP
 
@@ -53,7 +53,7 @@ email sender allows only a handful of emails/hour. Fine for a small fellow
 roster; if you outgrow it, attach a custom SMTP provider (e.g. Resend) under
 **Authentication → SMTP Settings**.
 
-## 3. Deploy the two Edge Functions
+## 3. Deploy the Edge Functions
 
 You'll need the [Supabase CLI](https://supabase.com/docs/guides/cli) logged
 into the `pong.poti@gmail.com` account.
@@ -67,11 +67,48 @@ supabase secrets set LINE_CHANNEL_ID=2010758904
 
 supabase functions deploy check-line-user
 supabase functions deploy link-line-user
+supabase functions deploy drive-images   # see §3a for its Google secrets
 ```
 
-`SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by
-Supabase — you don't need to set those, and there's no other secret to
-manage for this step.
+`SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
+injected automatically by Supabase — you don't need to set those.
+
+## 3a. Google Drive for case images
+
+Case images upload to a single private Google Drive (yours) through the
+`drive-images` function. The browser can't talk to Google directly — Google's
+OAuth flow is blocked inside LINE's in-app webview — so the function holds one
+long-lived refresh token and does the uploads/reads/deletes on the fellow's
+behalf. Images are still redacted **on the device** before they ever leave it.
+
+One-time Google setup (personal Gmail is fine):
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/), create a
+   project and **enable the Google Drive API**.
+2. **APIs & Services → OAuth consent screen**: external, add scope
+   `https://www.googleapis.com/auth/drive.file` (least-privilege — the app can
+   only see files it creates, so Google won't require app verification), then
+   **publish the app to Production** (in "Testing" mode refresh tokens expire
+   after 7 days).
+3. **Credentials → Create OAuth client ID → Web application**. Note the
+   **Client ID** and **Client Secret**.
+4. Use the [OAuth Playground](https://developers.google.com/oauthplayground/)
+   (gear icon → "Use your own OAuth credentials") to authorize the
+   `drive.file` scope and exchange the code for a **refresh token**.
+5. (Optional) Create a folder in your Drive to hold all case images and copy
+   its **folder ID** from the URL. Omit to upload to the Drive root.
+
+Then set the secrets (run from your machine — **do not paste these in chat**):
+
+```sh
+supabase secrets set GOOGLE_CLIENT_ID=...
+supabase secrets set GOOGLE_CLIENT_SECRET=...
+supabase secrets set GOOGLE_REFRESH_TOKEN=...
+supabase secrets set GOOGLE_DRIVE_FOLDER_ID=...   # optional
+supabase functions deploy drive-images            # redeploy after setting secrets
+```
+
+Until these are set, cases save fine — only cases *with images* will error.
 
 ## 4. LINE Developers console
 
