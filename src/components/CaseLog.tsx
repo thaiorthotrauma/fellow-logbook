@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { OPTIME_MAP, PLACE_MAP, PROC_MAP, ROLE_MAP, TIMING_MAP } from '../data';
-import { formatClassification } from '../lib/textFormat';
+import { formatClassification, stripBullets } from '../lib/textFormat';
 import type { CaseEntry } from '../types';
 import CaseImages from './CaseImages';
 
@@ -118,7 +118,7 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                     {c.aoCode && <span className="case-card-aocode">{c.aoCode}</span>}
                     <span className="case-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
                   </div>
-                  <div className="case-card-diagnosis">{c.diagnosis || '—'}</div>
+                  <div className="case-card-diagnosis">{stripBullets(c.diagnosis) || '—'}</div>
                   <div className="case-card-meta">
                     <span>{ROLE_MAP[c.role ?? ''] ?? '—'}</span>
                     <span className="dot">·</span>
