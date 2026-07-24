@@ -2,6 +2,14 @@
   box-sizing: border-box;
 }
 
+/* Kill the ~300ms double-tap-to-zoom delay on tappable controls (every option
+   pill / tab / segment renders as a <button>), so selection feels instant, and
+   drop the grey tap-flash. */
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .app {
   min-height: 100vh;
   min-height: 100dvh;
@@ -980,6 +988,7 @@
 /* ── Export logbook (PDF) panel ──────────────────────────────────────────── */
 .export-fields {
   display: flex;
+  flex-direction: column;
   gap: 12px;
 }
 

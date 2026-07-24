@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from 'react';
+import { memo, type Dispatch, type SetStateAction } from 'react';
 import aoBodyDiagram from '../assets/ao-body-diagram.svg';
 import { GROUP_OPTS, REGIONS, TYPE_OPTS } from '../data';
 import type { AoState } from '../types';
@@ -10,7 +10,10 @@ interface AoClassificationProps {
   setAo: Dispatch<SetStateAction<AoState>>;
 }
 
-export default function AoClassification({ ao, setAo }: AoClassificationProps) {
+// Memoized: this card renders the body-diagram SVG + 16 region dots + the
+// detail panel, and `ao`/`setAo` are stable across unrelated form edits, so it
+// can skip re-rendering every time another question's pill is tapped.
+function AoClassification({ ao, setAo }: AoClassificationProps) {
   const region = findRegion(ao.regionKey);
   const code = computeAoCode(ao);
 
@@ -145,3 +148,5 @@ export default function AoClassification({ ao, setAo }: AoClassificationProps) {
     </div>
   );
 }
+
+export default memo(AoClassification);
