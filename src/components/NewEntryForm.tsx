@@ -20,10 +20,9 @@ interface NewEntryFormProps {
   saving: boolean;
 }
 
-/** HN allows only digits, '/', '-', and single spaces — strip everything else
- *  and collapse runs of spaces as the fellow types. */
+/** HN allows only digits 0–9 — strip everything else as the fellow types. */
 function sanitizeHn(value: string): string {
-  return value.replace(/[^0-9/\- ]/g, '').replace(/ {2,}/g, ' ');
+  return value.replace(/\D/g, '');
 }
 
 export default function NewEntryForm({ form, ao, errors, images, updateForm, setAo, onAddImages, onRemoveImage, onReset, onSubmit, saving }: NewEntryFormProps) {
@@ -95,7 +94,7 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
           value={form.hn}
           onChange={e => updateForm('hn', sanitizeHn(e.target.value))}
           inputMode="numeric"
-          placeholder="e.g. 12-34-56"
+          placeholder="e.g. 1234567"
         />
       </div>
 

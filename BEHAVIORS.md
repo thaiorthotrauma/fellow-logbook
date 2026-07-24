@@ -71,9 +71,8 @@ Fourteen sections, all required unless noted:
 1. **Date of Operation** + timing (Official hours / After hours).
 2. **Place** (Home / Outside institution).
 3. **Staff** (single-line free text) — required.
-4. **HN** (single-line) — required; input is restricted as typed to digits,
-   `/`, `-`, and single spaces (anything else is stripped, runs of spaces
-   collapsed).
+4. **HN** (single-line) — required; input is restricted as typed to digits
+   0–9 (anything else is stripped), with a numeric keypad on mobile.
 5. **Diagnosis** (free text).
 6. **AO classification** — pick a region on the body map or via dropdown, then
    narrow by bone / segment / subtype / fracture type / group. A live AO/OTA

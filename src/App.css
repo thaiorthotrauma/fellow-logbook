@@ -1003,22 +1003,20 @@ button {
   color: #5f6b6a;
 }
 
+/* iOS renders a native month input's value in a pseudo-element that isn't
+   left- or vertically-aligned inside a full-width box (the value floated right,
+   then sat off-centre). Making the input a flex box centres the value
+   vertically, and text-align:left pins it to the left under the From/To labels. */
 .export-field .field-input {
   min-width: 0;
+  display: flex;
+  align-items: center;
   text-align: left;
 }
 
-/* iOS renders a native month input's value in this pseudo-element and does not
-   left-align it, so on a full-width box the "July 2569 BE" text floats to the
-   right. Force it left so it lines up under the "From"/"To" labels. */
 .export-field .field-input::-webkit-date-and-time-value {
   text-align: left;
   margin: 0;
-}
-
-.export-field .field-input::-webkit-datetime-edit {
-  text-align: left;
-  padding: 0;
 }
 
 .export-note {
