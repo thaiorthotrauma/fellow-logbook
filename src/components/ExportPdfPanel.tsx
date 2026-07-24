@@ -22,8 +22,9 @@ function rangeLabel(from: string, to: string): string {
   return from === to ? monthLabel(from) : `${monthLabel(from)} – ${monthLabel(to)}`;
 }
 
+// 'shared' has no note: the native share sheet is itself the feedback that
+// the PDF is ready, so an extra message here would just be redundant.
 const DONE_NOTE: Record<string, string> = {
-  shared: 'PDF ready — choose where to save or send it.',
   opened: 'PDF opened in your browser — save it from there.',
   downloaded: 'PDF downloaded.',
 };
@@ -61,7 +62,7 @@ export default function ExportPdfPanel({ cases, fellowName, institution }: Expor
         cases: selected,
       });
       const result = await deliverPdf(blob, `TOTS-Logbook_${from}_to_${to}.pdf`);
-      setDone(DONE_NOTE[result] ?? 'PDF ready.');
+      setDone(DONE_NOTE[result] ?? '');
     } catch (err) {
       console.error(err);
       setError(describeError(err));
