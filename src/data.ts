@@ -179,11 +179,13 @@ export const ROLE_MAP = labelMap(ROLES);
 export const OPTIME_MAP = labelMap(OPTIME);
 export const PROC_MAP = labelMap(PROC_TYPE);
 
+// Fields that are individually required. AO classification (Q3) and Other
+// classification (Q4) are NOT here — they're an "answer at least one" pair,
+// enforced separately in App.validate().
 export const REQUIRED: { key: RequiredFormKey; label: string }[] = [
   { key: 'date', label: 'Date of operation' },
   { key: 'timing', label: 'Timing (in/out of hours)' },
   { key: 'diagnosis', label: 'Diagnosis' },
-  { key: 'otherClassification', label: 'Other classification' },
   { key: 'approach', label: 'Approach' },
   { key: 'procedure', label: 'Procedure' },
   { key: 'procedureType', label: 'Type of procedure' },
@@ -193,5 +195,5 @@ export const REQUIRED: { key: RequiredFormKey; label: string }[] = [
 ];
 
 export type RequiredFormKey =
-  | 'date' | 'timing' | 'diagnosis' | 'otherClassification' | 'approach'
+  | 'date' | 'timing' | 'diagnosis' | 'approach'
   | 'procedure' | 'procedureType' | 'role' | 'opTime' | 'place';

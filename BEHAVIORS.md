@@ -70,10 +70,16 @@ Eleven sections, all required unless noted:
 
 1. **Date of Operation** + timing (Official hours / After hours).
 2. **Diagnosis** (free text).
-3. **AO classification** (optional to submit unless configured otherwise) — pick
-   a region on the body map or via dropdown, then narrow by bone / segment /
-   subtype / fracture type / group. A live AO/OTA code is computed and shown.
+3. **AO classification** — pick a region on the body map or via dropdown, then
+   narrow by bone / segment / subtype / fracture type / group. A live AO/OTA
+   code is computed and shown.
 4. **Other classification** (free text).
+
+   Q3 and Q4 are an **"answer at least one" pair** (both cards show an
+   "Answer #3 or #4" tag): a case saves as long as *either* an AO
+   classification (a computed code) *or* an Other classification is provided.
+   Only if **both** are empty does validation block save, listing
+   "AO classification or Other classification".
 5. **Approach & Position** (two fields).
 6. **Procedure** (free text).
 7. **Type of Procedure** (Primary / Revision / Staged).

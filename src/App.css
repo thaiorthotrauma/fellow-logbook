@@ -219,6 +219,17 @@
   border-radius: 6px;
 }
 
+/* Marks Q3/Q4 as an "answer at least one" pair. */
+.pair-tag {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #0d6e64;
+  background: #eaf4f2;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
 .field-input,
 .field-textarea,
 .field-select {

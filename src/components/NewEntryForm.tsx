@@ -70,7 +70,7 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
         <div className="card-header">
           <span className="step-badge">4</span>
           <span className="step-title">Other Classification</span>
-          <span className="required-star">*</span>
+          <span className="pair-tag">Answer #3 or #4</span>
         </div>
         <BulletTextarea
           className="field-textarea"

@@ -57,7 +57,12 @@ function App() {
   }
 
   function validate(): string[] {
-    return REQUIRED.filter(r => !form[r.key]).map(r => r.label);
+    const missing = REQUIRED.filter(r => !form[r.key]).map(r => r.label);
+    // Q3 (AO classification) and Q4 (Other classification): at least one.
+    const hasAo = computeAoCode(ao).trim() !== '';
+    const hasOther = form.otherClassification.trim() !== '';
+    if (!hasAo && !hasOther) missing.push('AO classification or Other classification');
+    return missing;
   }
 
   function resetForm() {
