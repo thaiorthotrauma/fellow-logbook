@@ -78,7 +78,7 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
           className="field-input"
           value={form.staff}
           onChange={e => updateForm('staff', e.target.value)}
-          placeholder="e.g. Attending / consultant name"
+          placeholder="Staff surgeon's name"
         />
       </div>
 
