@@ -663,6 +663,16 @@ button {
   gap: 14px;
   font-size: 13px;
   color: #24302e;
+  /* A value with one long unbroken run of characters (no spaces) would
+     otherwise overflow past the card instead of wrapping, since the browser
+     has no space to break on. min-width:0 lets grid children shrink below
+     their content size so overflow-wrap actually gets a chance to apply. */
+  min-width: 0;
+}
+
+.case-detail-grid > * {
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .case-detail-grid .k {
@@ -677,7 +687,11 @@ button {
 
 /* A bulleted detail-row value (Diagnosis, Classification, Approach,
    Procedure(s), Memo). A wrapped line hangs indented under its own text
-   rather than under the bullet marker. */
+   rather than under the bullet marker. Bullet and text are separate flex
+   items (rather than a ::before + negative text-indent) because a long
+   run with no spaces needs its own shrinkable box to wrap inside instead
+   of overflowing — text-indent breaks in a way that fights word-wrapping
+   on unbreakable text. */
 .bullet-list {
   list-style: none;
   margin: 0;
@@ -685,21 +699,25 @@ button {
 }
 
 .bullet-list li {
-  padding-left: 14px;
-  text-indent: -14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
 }
 
 .bullet-list li:not(:last-child) {
   margin-bottom: 3px;
 }
 
-.bullet-list li::before {
-  content: "-";
-  display: inline-block;
-  width: 14px;
-  text-indent: 0;
+.bullet-mark {
+  flex: 0 0 auto;
   color: #0d6e64;
   font-weight: 700;
+}
+
+.bullet-text {
+  flex: 1 1 0%;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .case-card-actions {

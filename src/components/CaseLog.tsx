@@ -35,7 +35,10 @@ function BulletedText({ text }: { text: string }) {
   return (
     <ul className="bullet-list">
       {lines.map((line, i) => (
-        <li key={i}>{line.replace(/^- /, '')}</li>
+        <li key={i}>
+          <span className="bullet-mark" aria-hidden="true">-</span>
+          <span className="bullet-text">{line.replace(/^- /, '')}</span>
+        </li>
       ))}
     </ul>
   );
