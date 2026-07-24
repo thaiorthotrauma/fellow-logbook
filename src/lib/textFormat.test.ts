@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatClassification, stripBullets } from './textFormat';
+import { formatBulletedField, formatClassification, stripBullets } from './textFormat';
 
 describe('stripBullets', () => {
   it('removes leading "- " markers from each line', () => {
@@ -44,5 +44,31 @@ describe('formatClassification', () => {
 
   it('whitespace-only inputs count as unanswered', () => {
     expect(formatClassification('  ', '   \n  ')).toBe('');
+  });
+});
+
+describe('formatBulletedField', () => {
+  it('a single bulleted row → plain text, no bullet', () => {
+    expect(formatBulletedField('- Anterolateral')).toBe('Anterolateral');
+  });
+
+  it('a single plain row (no bullet in source) → unchanged', () => {
+    expect(formatBulletedField('Anterolateral')).toBe('Anterolateral');
+  });
+
+  it('more than one row → each row keeps its bullet', () => {
+    expect(formatBulletedField('- ORIF plate\n- Bone graft')).toBe('- ORIF plate\n- Bone graft');
+  });
+
+  it('more than one row without source bullets → bullets are added', () => {
+    expect(formatBulletedField('ORIF plate\nBone graft')).toBe('- ORIF plate\n- Bone graft');
+  });
+
+  it('blank lines are dropped when counting rows', () => {
+    expect(formatBulletedField('- ORIF plate\n\n- Bone graft')).toBe('- ORIF plate\n- Bone graft');
+  });
+
+  it('empty input → empty string', () => {
+    expect(formatBulletedField('')).toBe('');
   });
 });

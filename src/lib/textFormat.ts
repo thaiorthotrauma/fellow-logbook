@@ -4,6 +4,21 @@ export function stripBullets(text: string): string {
   return text.replace(/^[ \t]*-[ \t]+/gm, '').trim();
 }
 
+/** Displays a BulletTextarea field's value:
+ *   - a single row      → plain text, no bullet
+ *   - more than one row → each row on its own line, with its bullet retained
+ *  Bullets are normalized (re-added) rather than trusted as-is, so this is
+ *  consistent regardless of how the source text was formatted. Returns ''
+ *  for empty input. */
+export function formatBulletedField(text: string): string {
+  const lines = stripBullets(text)
+    .split('\n')
+    .map(l => l.trim())
+    .filter(Boolean);
+  if (lines.length <= 1) return lines[0] ?? '';
+  return lines.map(l => `- ${l}`).join('\n');
+}
+
 /** Combines Q6 (AO classification code) and Q7 (Other classification) into
  *  one display value:
  *   - only Q6 answered  → "AO/OTA <code>", no bullet

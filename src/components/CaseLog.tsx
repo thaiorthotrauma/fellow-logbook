@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { OPTIME_MAP, PLACE_MAP, PROC_MAP, ROLE_MAP, TIMING_MAP } from '../data';
-import { formatClassification, stripBullets } from '../lib/textFormat';
+import { formatBulletedField, formatClassification, stripBullets } from '../lib/textFormat';
 import type { CaseEntry } from '../types';
 import CaseImages from './CaseImages';
 
@@ -135,11 +135,22 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                         <span className="k">Classification</span>
                         <span className="multiline-val">{formatClassification(c.aoCode, c.otherClassification) || '—'}</span>
                       </div>
-                      <div><span className="k">Approach</span>{c.approach || '—'}</div>
+                      <div>
+                        <span className="k">Approach</span>
+                        <span className="multiline-val">{formatBulletedField(c.approach) || '—'}</span>
+                      </div>
                       {c.position && <div><span className="k">Position</span>{c.position}</div>}
                       <div><span className="k">Type of procedure</span>{PROC_MAP[c.procedureType ?? ''] ?? '—'}</div>
-                      <div><span className="k">Procedure(s)</span>{c.procedure || '—'}</div>
-                      {c.memo && <div><span className="k">Memo</span>{c.memo}</div>}
+                      <div>
+                        <span className="k">Procedure(s)</span>
+                        <span className="multiline-val">{formatBulletedField(c.procedure) || '—'}</span>
+                      </div>
+                      {c.memo && (
+                        <div>
+                          <span className="k">Memo</span>
+                          <span className="multiline-val">{formatBulletedField(c.memo)}</span>
+                        </div>
+                      )}
                     </div>
                     {c.imagePaths.length > 0 && <CaseImages paths={c.imagePaths} />}
                     <div className="case-card-actions">
