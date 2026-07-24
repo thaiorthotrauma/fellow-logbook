@@ -9,7 +9,12 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyLineIdToken } from '../_shared/line.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+// After a project migrates to JWT Signing Keys (ES256), the auto-injected
+// SUPABASE_SERVICE_ROLE_KEY (a legacy JWT) can stop verifying (bad_jwt /
+// "unrecognized kid ES256"), breaking admin calls like generateLink. Prefer an
+// explicitly-set key — a new `sb_secret_...` API key set as SB_SECRET_KEY — and
+// fall back to the injected service_role key when it isn't set.
+const SERVICE_ROLE_KEY = Deno.env.get('SB_SECRET_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const LINE_CHANNEL_ID = Deno.env.get('LINE_CHANNEL_ID')!;
 
 const CORS_HEADERS = {

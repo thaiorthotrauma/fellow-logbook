@@ -73,6 +73,23 @@ supabase functions deploy drive-images   # see §3a for its Google secrets
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
 injected automatically by Supabase — you don't need to set those.
 
+**If you migrate the project to JWT Signing Keys (ES256):** the auto-injected
+`SUPABASE_SERVICE_ROLE_KEY` (a legacy JWT) can stop verifying (`bad_jwt` /
+"unrecognized kid ES256"), which breaks `check-line-user` / `link-line-user`
+(they call the Auth admin API). Fix: from **Project Settings → API keys**, copy
+the new **Secret key** (`sb_secret_…`) and set it, then redeploy those two
+functions:
+
+```sh
+supabase secrets set SB_SECRET_KEY=sb_secret_xxxxxxxx
+supabase functions deploy check-line-user
+supabase functions deploy link-line-user
+```
+
+The functions use `SB_SECRET_KEY` when present and fall back to the injected
+service_role key otherwise. (`drive-images` is unaffected — it uses the
+caller's token, not the service role.)
+
 ## 3a. Google Drive for case images
 
 Case images upload to a single private Google Drive (yours) through the

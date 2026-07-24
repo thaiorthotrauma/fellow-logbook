@@ -9,7 +9,10 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyLineIdToken } from '../_shared/line.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
-const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+// See check-line-user: prefer an explicitly-set SB_SECRET_KEY (a new
+// `sb_secret_...` API key) over the auto-injected service_role JWT, which can
+// fail to verify after a JWT Signing Keys migration.
+const SERVICE_ROLE_KEY = Deno.env.get('SB_SECRET_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const LINE_CHANNEL_ID = Deno.env.get('LINE_CHANNEL_ID')!;
 
 const CORS_HEADERS = {
