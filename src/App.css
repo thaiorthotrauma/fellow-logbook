@@ -672,6 +672,12 @@ button {
   margin-bottom: 2px;
 }
 
+/* Preserves the line breaks in a combined multi-line value (e.g. the
+   Classification row's bulleted AO/OTA + Other classification list). */
+.multiline-val {
+  white-space: pre-line;
+}
+
 .case-card-actions {
   margin-top: 16px;
   display: flex;

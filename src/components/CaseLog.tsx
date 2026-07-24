@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { OPTIME_MAP, PLACE_MAP, PROC_MAP, ROLE_MAP, TIMING_MAP } from '../data';
+import { formatClassification } from '../lib/textFormat';
 import type { CaseEntry } from '../types';
 import CaseImages from './CaseImages';
 
@@ -130,7 +131,10 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                     <div className="case-detail-grid">
                       <div><span className="k">Staff</span>{c.staff || '—'}</div>
                       <div><span className="k">HN</span>{c.hn || '—'}</div>
-                      <div><span className="k">Other classification</span>{c.otherClassification || '—'}</div>
+                      <div>
+                        <span className="k">Classification</span>
+                        <span className="multiline-val">{formatClassification(c.aoCode, c.otherClassification) || '—'}</span>
+                      </div>
                       <div><span className="k">Approach</span>{c.approach || '—'}</div>
                       {c.position && <div><span className="k">Position</span>{c.position}</div>}
                       <div><span className="k">Type of procedure</span>{PROC_MAP[c.procedureType ?? ''] ?? '—'}</div>

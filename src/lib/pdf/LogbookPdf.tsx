@@ -12,6 +12,7 @@ import {
   ROLES,
   TIMING_MAP,
 } from '../../data';
+import { stripBullets } from '../textFormat';
 import type { CaseEntry } from '../../types';
 
 export interface LogbookPdfProps {
@@ -76,12 +77,6 @@ function formatDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
   if (!y || !m || !d) return iso || '—';
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-}
-
-/** Removes leading "- " bullet markers (added by the form's BulletTextarea)
- *  from each line, so the PDF content reads as plain prose, not a bulleted list. */
-function stripBullets(text: string): string {
-  return text.replace(/^[ \t]*-[ \t]+/gm, '').trim();
 }
 
 function RankTable({ title, items }: { title: string; items: RankItem[] }) {

@@ -122,9 +122,14 @@ RLS-scoped rows and is not included in the exported PDF.
 
 - Lists the fellow's own saved cases, newest first, with a count.
 - Each card shows date, timing, AO code, diagnosis, role · op-time · place.
-- **Tap a card** to expand full details (staff, HN, other classification,
-  approach, position, type of procedure, procedure(s), memo) — always a
-  single column, on both phone and tablet.
+- **Tap a card** to expand full details (staff, HN, classification, approach,
+  position, type of procedure, procedure(s), memo) — always a single column,
+  on both phone and tablet.
+  - The **Classification** row combines Q6 (AO classification) and Q7 (Other
+    classification): if only Q6 was answered it shows "AO/OTA &lt;code&gt;"
+    with no bullet; if only Q7 was answered it shows that text with bullet
+    markers stripped; if both were answered it shows a bulleted list — the
+    AO/OTA line first, then each of Q7's lines.
 - If the case has images, the expanded view fetches them back through the
   `drive-images` function (which downloads them from the app's private Drive)
   and shows tappable thumbnails that open full size. Images are never shared
