@@ -25,6 +25,22 @@ function formatDate(iso: string): string {
   });
 }
 
+/** Renders a formatted field value (from formatClassification/formatBulletedField):
+ *  a single line renders as plain text; multiple "- " prefixed lines render as a
+ *  bulleted list where a wrapped line hangs indented under its own text. */
+function BulletedText({ text }: { text: string }) {
+  if (!text) return <>—</>;
+  const lines = text.split('\n');
+  if (lines.length <= 1) return <>{lines[0]}</>;
+  return (
+    <ul className="bullet-list">
+      {lines.map((line, i) => (
+        <li key={i}>{line.replace(/^- /, '')}</li>
+      ))}
+    </ul>
+  );
+}
+
 export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseLogProps) {
   const [query, setQuery] = useState('');
   const [place, setPlace] = useState<PlaceFilter>('all');
@@ -118,7 +134,7 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                     {c.aoCode && <span className="case-card-aocode">{c.aoCode}</span>}
                     <span className="case-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
                   </div>
-                  <div className="case-card-diagnosis">{stripBullets(c.diagnosis) || '—'}</div>
+                  <div className="case-card-diagnosis case-card-diagnosis-truncated">{stripBullets(c.diagnosis) || '—'}</div>
                   <div className="case-card-meta">
                     <span>{ROLE_MAP[c.role ?? ''] ?? '—'}</span>
                     <span className="dot">·</span>
@@ -132,23 +148,27 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                       <div><span className="k">Staff</span>{c.staff || '—'}</div>
                       <div><span className="k">HN</span>{c.hn || '—'}</div>
                       <div>
+                        <span className="k">Diagnosis</span>
+                        <BulletedText text={formatBulletedField(c.diagnosis)} />
+                      </div>
+                      <div>
                         <span className="k">Classification</span>
-                        <span className="multiline-val">{formatClassification(c.aoCode, c.otherClassification) || '—'}</span>
+                        <BulletedText text={formatClassification(c.aoCode, c.otherClassification)} />
                       </div>
                       <div>
                         <span className="k">Approach</span>
-                        <span className="multiline-val">{formatBulletedField(c.approach) || '—'}</span>
+                        <BulletedText text={formatBulletedField(c.approach)} />
                       </div>
                       {c.position && <div><span className="k">Position</span>{c.position}</div>}
                       <div><span className="k">Type of procedure</span>{PROC_MAP[c.procedureType ?? ''] ?? '—'}</div>
                       <div>
                         <span className="k">Procedure(s)</span>
-                        <span className="multiline-val">{formatBulletedField(c.procedure) || '—'}</span>
+                        <BulletedText text={formatBulletedField(c.procedure)} />
                       </div>
                       {c.memo && (
                         <div>
                           <span className="k">Memo</span>
-                          <span className="multiline-val">{formatBulletedField(c.memo)}</span>
+                          <BulletedText text={formatBulletedField(c.memo)} />
                         </div>
                       )}
                     </div>

@@ -635,6 +635,14 @@ button {
   line-height: 1.35;
 }
 
+/* Collapsed card: keep the diagnosis to one line so the card height stays
+   predictable in the list; the full text is available once expanded. */
+.case-card-diagnosis-truncated {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .case-card-meta {
   display: flex;
   align-items: center;
@@ -672,10 +680,31 @@ button {
   margin-bottom: 2px;
 }
 
-/* Preserves the line breaks in a combined multi-line value (e.g. the
-   Classification row's bulleted AO/OTA + Other classification list). */
-.multiline-val {
-  white-space: pre-line;
+/* A bulleted detail-row value (Diagnosis, Classification, Approach,
+   Procedure(s), Memo). A wrapped line hangs indented under its own text
+   rather than under the bullet marker. */
+.bullet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.bullet-list li {
+  padding-left: 14px;
+  text-indent: -14px;
+}
+
+.bullet-list li:not(:last-child) {
+  margin-bottom: 3px;
+}
+
+.bullet-list li::before {
+  content: "-";
+  display: inline-block;
+  width: 14px;
+  text-indent: 0;
+  color: #0d6e64;
+  font-weight: 700;
 }
 
 .case-card-actions {
