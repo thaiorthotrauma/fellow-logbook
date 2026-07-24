@@ -996,6 +996,20 @@
 
 .export-field .field-input {
   min-width: 0;
+  text-align: left;
+}
+
+/* iOS renders a native month input's value in this pseudo-element and does not
+   left-align it, so on a full-width box the "July 2569 BE" text floats to the
+   right. Force it left so it lines up under the "From"/"To" labels. */
+.export-field .field-input::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0;
+}
+
+.export-field .field-input::-webkit-datetime-edit {
+  text-align: left;
+  padding: 0;
 }
 
 .export-note {
