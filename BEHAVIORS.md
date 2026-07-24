@@ -122,9 +122,9 @@ RLS-scoped rows and is not included in the exported PDF.
 
 - Lists the fellow's own saved cases, newest first, with a count.
 - Each card shows date, timing, AO code, diagnosis, role · op-time · place.
-- **Tap a card** to expand full details (other classification, approach,
-  position, procedure type, procedure). On phones < 380px the detail grid
-  collapses to a single column.
+- **Tap a card** to expand full details (staff, HN, other classification,
+  approach, position, type of procedure, procedure(s), memo) — always a
+  single column, on both phone and tablet.
 - If the case has images, the expanded view fetches them back through the
   `drive-images` function (which downloads them from the app's private Drive)
   and shows tappable thumbnails that open full size. Images are never shared

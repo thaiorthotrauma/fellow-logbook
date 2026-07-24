@@ -648,16 +648,6 @@ button {
   color: #c0c8c6;
 }
 
-.case-card-imgcount {
-  margin-left: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  color: #0d6e64;
-  background: #eaf4f2;
-  padding: 2px 8px;
-  border-radius: 5px;
-}
-
 .case-card-expanded {
   padding: 0 18px 16px;
 }
@@ -666,14 +656,10 @@ button {
   padding-top: 14px;
   border-top: 1px solid #eef1f0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 24px;
+  grid-template-columns: 1fr;
+  gap: 14px;
   font-size: 13px;
   color: #24302e;
-}
-
-.case-detail-grid .full {
-  grid-column: 1 / -1;
 }
 
 .case-detail-grid .k {
@@ -684,14 +670,6 @@ button {
   letter-spacing: 0.03em;
   color: #8a938f;
   margin-bottom: 2px;
-}
-
-/* On the narrowest phones the two-column detail grid gets cramped —
-   collapse it to a single column. */
-@media (max-width: 380px) {
-  .case-detail-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .case-card-actions {
@@ -864,13 +842,26 @@ button {
 }
 
 .case-images-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
   color: #8a938f;
   margin-bottom: 8px;
+}
+
+.case-images-count {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: normal;
+  color: #0d6e64;
+  background: #eaf4f2;
+  padding: 2px 8px;
+  border-radius: 5px;
 }
 
 .case-images {

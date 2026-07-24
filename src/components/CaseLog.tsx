@@ -122,11 +122,6 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                     <span>{ROLE_MAP[c.role ?? ''] ?? '—'}</span>
                     <span className="dot">·</span>
                     <span>{OPTIME_MAP[c.opTime ?? ''] ?? '—'}</span>
-                    {c.imagePaths.length > 0 && (
-                      <span className="case-card-imgcount">
-                        {c.imagePaths.length} image{c.imagePaths.length === 1 ? '' : 's'}
-                      </span>
-                    )}
                   </div>
                 </button>
 
@@ -139,8 +134,8 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                       <div><span className="k">Approach</span>{c.approach || '—'}</div>
                       {c.position && <div><span className="k">Position</span>{c.position}</div>}
                       <div><span className="k">Type of procedure</span>{PROC_MAP[c.procedureType ?? ''] ?? '—'}</div>
-                      <div className="full"><span className="k">Procedure(s)</span>{c.procedure || '—'}</div>
-                      {c.memo && <div className="full"><span className="k">Memo</span>{c.memo}</div>}
+                      <div><span className="k">Procedure(s)</span>{c.procedure || '—'}</div>
+                      {c.memo && <div><span className="k">Memo</span>{c.memo}</div>}
                     </div>
                     {c.imagePaths.length > 0 && <CaseImages paths={c.imagePaths} />}
                     <div className="case-card-actions">

@@ -28,7 +28,10 @@ export default function CaseImages({ paths }: { paths: string[] }) {
 
   return (
     <div className="case-images-block">
-      <span className="case-images-label">Images</span>
+      <span className="case-images-label">
+        Images
+        <span className="case-images-count">{paths.length} image{paths.length === 1 ? '' : 's'}</span>
+      </span>
       {failed ? (
         <span>Could not load images.</span>
       ) : !urls ? (
