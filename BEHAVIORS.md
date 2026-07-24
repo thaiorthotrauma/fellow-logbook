@@ -120,11 +120,11 @@ Eleven sections, all required unless noted:
   also removed from Drive (best-effort).
 - Empty state: a prompt to add the first case.
 
-### Export PDF
+## 5a. PDF export
 
-An **Export PDF** button (next to the search box) opens a dialog to export the
-logbook for a **month range** (two `month` pickers, defaulting to the full span
-of existing cases). The whole document is built **on-device** with
+A third header tab, **PDF**, is a full-screen panel to export the logbook for a
+**month range** (two `month` pickers, defaulting to the full span of existing
+cases). The whole document is built **on-device** with
 `@react-pdf/renderer` (lazy-loaded, ~1 MB, only when exporting) from cases
 already in memory — no server round-trip. It ignores the Case Log's
 search/institution filters; the export is always the complete record for the

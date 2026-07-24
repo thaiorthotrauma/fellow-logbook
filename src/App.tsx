@@ -15,9 +15,9 @@ import { describeError } from './lib/errors';
 import { emptyAo, emptyForm, type AoState, type CaseEntry, type FormState } from './types';
 import NewEntryForm from './components/NewEntryForm';
 import CaseLog from './components/CaseLog';
-import ExportPdfDialog from './components/ExportPdfDialog';
+import ExportPdfPanel from './components/ExportPdfPanel';
 
-type Tab = 'form' | 'log';
+type Tab = 'form' | 'log' | 'pdf';
 
 function App() {
   const [tab, setTab] = useState<Tab>('form');
@@ -31,7 +31,6 @@ function App() {
   const [ao, setAo] = useState<AoState>(emptyAo());
   const [images, setImages] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
-  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     fetchCases()
@@ -146,11 +145,14 @@ function App() {
           <button type="button" className={`tab ${tab === 'log' ? 'active' : ''}`} onClick={() => setTab('log')}>
             Case Log ({cases.length})
           </button>
+          <button type="button" className={`tab ${tab === 'pdf' ? 'active' : ''}`} onClick={() => setTab('pdf')}>
+            PDF
+          </button>
         </div>
       </div>
 
       <div className="content">
-        {tab === 'form' ? (
+        {tab === 'form' && (
           <NewEntryForm
             form={form}
             ao={ao}
@@ -164,25 +166,23 @@ function App() {
             onSubmit={handleSubmit}
             saving={saving}
           />
-        ) : (
+        )}
+        {tab === 'log' && (
           <CaseLog
             cases={cases}
             expandedId={expandedId}
             onToggle={id => setExpandedId(cur => (cur === id ? null : id))}
             onDelete={deleteCase}
-            onExport={() => setShowExport(true)}
+          />
+        )}
+        {tab === 'pdf' && (
+          <ExportPdfPanel
+            cases={cases}
+            fellowName={physician?.fullName ?? ''}
+            institution={physician?.institution ?? null}
           />
         )}
       </div>
-
-      {showExport && (
-        <ExportPdfDialog
-          cases={cases}
-          fellowName={physician?.fullName ?? ''}
-          institution={physician?.institution ?? null}
-          onClose={() => setShowExport(false)}
-        />
-      )}
 
       {toast && (
         <div
