@@ -15,6 +15,7 @@ import { describeError } from './lib/errors';
 import { emptyAo, emptyForm, type AoState, type CaseEntry, type FormState } from './types';
 import NewEntryForm from './components/NewEntryForm';
 import CaseLog from './components/CaseLog';
+import ExportPdfDialog from './components/ExportPdfDialog';
 
 type Tab = 'form' | 'log';
 
@@ -30,6 +31,7 @@ function App() {
   const [ao, setAo] = useState<AoState>(emptyAo());
   const [images, setImages] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   useEffect(() => {
     fetchCases()
@@ -168,9 +170,19 @@ function App() {
             expandedId={expandedId}
             onToggle={id => setExpandedId(cur => (cur === id ? null : id))}
             onDelete={deleteCase}
+            onExport={() => setShowExport(true)}
           />
         )}
       </div>
+
+      {showExport && (
+        <ExportPdfDialog
+          cases={cases}
+          fellowName={physician?.fullName ?? ''}
+          institution={physician?.institution ?? null}
+          onClose={() => setShowExport(false)}
+        />
+      )}
 
       {toast && (
         <div

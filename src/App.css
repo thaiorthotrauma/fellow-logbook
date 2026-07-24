@@ -471,7 +471,8 @@
 }
 
 .log-search {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   box-sizing: border-box;
   padding: 11px 14px;
   border: 1px solid #d9e0dd;
@@ -487,6 +488,30 @@
   outline: none;
   border-color: #0d6e64;
   box-shadow: 0 0 0 3px rgba(13, 110, 100, 0.15);
+}
+
+.log-controls-top {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.export-btn {
+  flex-shrink: 0;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1.5px solid #0d6e64;
+  background: #0d6e64;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.export-btn:active {
+  background: #0a534b;
 }
 
 .log-search::placeholder {
@@ -964,4 +989,65 @@
   background: rgba(255, 255, 255, 0.12);
   padding: 4px 12px;
   border-radius: 20px;
+}
+
+/* ── Export logbook (PDF) dialog ─────────────────────────────────────────── */
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(6, 12, 10, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.export-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 20px 50px -12px rgba(6, 38, 34, 0.4);
+}
+
+.export-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #16231f;
+  margin-bottom: 16px;
+}
+
+.export-fields {
+  display: flex;
+  gap: 12px;
+}
+
+.export-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5f6b6a;
+}
+
+.export-note {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: #6b7674;
+}
+
+.export-note.error {
+  color: #b23b3b;
+  font-weight: 600;
+}
+
+.export-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
 }

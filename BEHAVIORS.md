@@ -120,6 +120,28 @@ Eleven sections, all required unless noted:
   also removed from Drive (best-effort).
 - Empty state: a prompt to add the first case.
 
+### Export PDF
+
+An **Export PDF** button (next to the search box) opens a dialog to export the
+logbook for a **month range** (two `month` pickers, defaulting to the full span
+of existing cases). The whole document is built **on-device** with
+`@react-pdf/renderer` (lazy-loaded, ~1 MB, only when exporting) from cases
+already in memory — no server round-trip. It ignores the Case Log's
+search/institution filters; the export is always the complete record for the
+chosen range. IBM Plex Sans Thai TTFs are bundled and registered so the Thai
+fellow name/institution render.
+
+- **Page 1 — summary:** fellow name/institution/year, case count, **Top 5
+  Diagnoses (Q2)** and **Top 5 Procedures (Q6)** ranked by normalized text
+  frequency, and pie charts of **Type (Q7)**, **Role (Q8)** and **Place (Q10)**.
+- **Content pages:** one block per case, **oldest → newest**, each with date +
+  timing/place/AO-code chips and the Q2–Q9 fields. Images are not embedded.
+- **Delivery (on-device):** the finished PDF goes to the native share sheet
+  (`navigator.share` with files) — Save to Files, email, or the user can send it
+  into a LINE chat themselves. Falls back to opening in the external browser,
+  then a plain download. A LINE *bot* can't attach a file to chat, so there's no
+  auto-push into the OA chatbox.
+
 ## 6. Data & persistence
 
 - All cases live in Supabase (Postgres); **each fellow sees only their own** via

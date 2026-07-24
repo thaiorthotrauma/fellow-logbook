@@ -8,6 +8,7 @@ interface CaseLogProps {
   expandedId: string | null;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onExport: () => void;
 }
 
 type PlaceFilter = 'all' | 'own' | 'outside';
@@ -24,7 +25,7 @@ function formatDate(iso: string): string {
   });
 }
 
-export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseLogProps) {
+export default function CaseLog({ cases, expandedId, onToggle, onDelete, onExport }: CaseLogProps) {
   const [query, setQuery] = useState('');
   const [place, setPlace] = useState<PlaceFilter>('all');
   const [sort, setSort] = useState<SortOrder>('newest');
@@ -58,14 +59,17 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
     <div>
       {cases.length > 0 && (
         <div className="log-controls">
-          <input
-            type="search"
-            className="log-search"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            placeholder="Search diagnosis, procedure, AO code…"
-            aria-label="Search cases"
-          />
+          <div className="log-controls-top">
+            <input
+              type="search"
+              className="log-search"
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search diagnosis, procedure, AO code…"
+              aria-label="Search cases"
+            />
+            <button type="button" className="export-btn" onClick={onExport}>Export PDF</button>
+          </div>
           <div className="log-filters">
             <div className="seg" role="group" aria-label="Filter by institution">
               <button type="button" className={`seg-btn ${place === 'all' ? 'active' : ''}`} onClick={() => setPlace('all')}>
