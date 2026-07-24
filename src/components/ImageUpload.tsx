@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { isAllowedImage, MAX_IMAGES_TOTAL_BYTES } from '../lib/casesApi';
 import { convertHeicFiles } from '../lib/heic';
 import { resizeImages } from '../lib/imageResize';
-import RedactionEditor from './RedactionEditor';
 
 interface ImageUploadProps {
   images: File[];
@@ -23,7 +22,6 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
   const inputRef = useRef<HTMLInputElement>(null);
   const [rejected, setRejected] = useState(false);
   const [converting, setConverting] = useState(false);
-  const [pendingReview, setPendingReview] = useState<File[] | null>(null);
 
   const totalBytes = useMemo(() => images.reduce((sum, f) => sum + f.size, 0), [images]);
   const overLimit = totalBytes > MAX_IMAGES_TOTAL_BYTES;
@@ -51,9 +49,7 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
     try {
       const converted = await convertHeicFiles(allowed);
       const resized = await resizeImages(converted);
-      // Hand off to the redaction review step before accepting the files.
-      // Only the reviewed/flattened images (from onComplete) ever enter state.
-      setPendingReview(resized);
+      onAdd(resized);
     } finally {
       setConverting(false);
     }
@@ -86,11 +82,6 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
             ? `${images.length} file${images.length === 1 ? '' : 's'} · ${formatMB(totalBytes)} / 10 MB`
             : 'JPG, PNG, or HEIC · up to 10 MB total'}
       </div>
-      {images.length === 0 && !converting && (
-        <div className="upload-hint">
-          Tip: shoot straight-on and fill the frame with just the X-ray — it makes the redaction step faster.
-        </div>
-      )}
 
       {overLimit && (
         <div className="upload-error">Total image size exceeds 10 MB. Remove some images to save.</div>
@@ -122,17 +113,6 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
             </div>
           ))}
         </div>
-      )}
-
-      {pendingReview && (
-        <RedactionEditor
-          files={pendingReview}
-          onComplete={redacted => {
-            onAdd(redacted);
-            setPendingReview(null);
-          }}
-          onCancel={() => setPendingReview(null)}
-        />
       )}
     </div>
   );

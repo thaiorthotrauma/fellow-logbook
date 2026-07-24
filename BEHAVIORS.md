@@ -87,42 +87,9 @@ Eleven sections, all required unless noted:
     (converter lazy-loads only when a HEIC is picked), then every image is
     **downscaled to a 2048px long edge and re-encoded to JPEG (q0.92)** to save
     storage — which also strips EXIF metadata (camera GPS/timestamp) and fixes
-    orientation. Each processed image then goes through the **redaction review**
-    (below) before being accepted. Files show thumbnails, are removable, and a
-    running total is shown that turns red over 10 MB.
-
-### Redaction review (removing burned-in patient info)
-
-Before any image is accepted for upload, a full-screen review step opens — all
-on-device, so the **un-redacted image never leaves the phone**:
-
-The editor is **deterministic** — what you see masked is exactly what gets
-burned in. There is no OCR/auto-detection: on X-rays it both missed real text
-and threw false boxes over anatomy, and PHI removal needs a guarantee, not a
-guess. Two tools:
-
-- **Crop margins** (default): a "keep" frame with four independently draggable
-  corners — a free quadrilateral, so it follows the **perspective tilt** of an
-  X-ray photographed at an angle (not just an upright rectangle). Burned-in
-  identifiers (patient name, HN/ID, dates, hospital & system text) sit in the
-  black borders around the anatomy, so the fellow drops each corner on the
-  edges of the film and **everything outside the quad is blacked out** — all
-  margins in one framing. A live dark mask previews exactly what will be
-  removed. "Whole image" resets the frame for pictures with no margins.
-  - **Auto-fit**: on first view of each image (and via the Auto-fit button) an
-    on-device pass suggests the frame — it thresholds the bright pixels (Otsu)
-    and snaps the quad to the **largest connected bright region** (the anatomy;
-    text/ticks are smaller separate blobs, so they're excluded). It's only a
-    suggestion the fellow confirms/adjusts — never authoritative — so a rough
-    fit is a convenience, not a risk. Runs on a downscaled copy; nothing leaves
-    the device. Falls back to the manual default when it isn't confident.
-- **Cover text**: drag across anything left inside the frame to add a solid
-  black box (move/resize/remove supported) — for the rare label over anatomy.
-- On "Apply & add", the outside-frame region and every box are burned in as
-  **solid black** (a guaranteed removal that can't leave a ghost, unlike
-  inpainting) and the flattened JPEG is what gets stored. The original is
-  discarded. Runs fully on-device with no network dependency.
-- "Cancel" discards the whole batch (nothing is added or uploaded).
+    orientation — and accepted immediately. Files show thumbnails, are
+    removable, and a running total is shown that turns red over 10 MB. There is
+    no redaction/annotation-removal step — images are uploaded as captured.
 
 - **Validation:** on Save, missing required fields surface in a banner listing
   each one; nothing is saved until all are filled. If the image total exceeds

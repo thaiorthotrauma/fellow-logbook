@@ -79,7 +79,8 @@ Case images upload to a single private Google Drive (yours) through the
 `drive-images` function. The browser can't talk to Google directly — Google's
 OAuth flow is blocked inside LINE's in-app webview — so the function holds one
 long-lived refresh token and does the uploads/reads/deletes on the fellow's
-behalf. Images are still redacted **on the device** before they ever leave it.
+behalf. Images are resized on-device before upload but not otherwise altered
+— there is no annotation-removal step.
 
 One-time Google setup (personal Gmail is fine):
 
