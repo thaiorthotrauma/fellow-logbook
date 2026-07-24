@@ -611,16 +611,6 @@ button {
   color: #b5651d;
 }
 
-.case-card-aocode {
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 11px;
-  font-weight: 700;
-  background: #eef2f0;
-  color: #384a46;
-  padding: 2px 8px;
-  border-radius: 5px;
-}
-
 .case-card-chevron {
   margin-left: auto;
   font-size: 9px;

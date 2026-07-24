@@ -131,7 +131,6 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                     <span className={`case-card-place ${c.place === 'outside' ? 'outside' : ''}`}>
                       {PLACE_MAP[c.place ?? ''] ?? '—'}
                     </span>
-                    {c.aoCode && <span className="case-card-aocode">{c.aoCode}</span>}
                     <span className="case-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
                   </div>
                   <div className="case-card-diagnosis case-card-diagnosis-truncated">{stripBullets(c.diagnosis) || '—'}</div>
