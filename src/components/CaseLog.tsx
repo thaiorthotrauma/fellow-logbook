@@ -133,11 +133,14 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                 {expanded && (
                   <div className="case-card-expanded">
                     <div className="case-detail-grid">
+                      <div><span className="k">Staff</span>{c.staff || '—'}</div>
+                      <div><span className="k">HN</span>{c.hn || '—'}</div>
                       <div><span className="k">Other classification</span>{c.otherClassification || '—'}</div>
                       <div><span className="k">Approach</span>{c.approach || '—'}</div>
                       {c.position && <div><span className="k">Position</span>{c.position}</div>}
                       <div><span className="k">Type of procedure</span>{PROC_MAP[c.procedureType ?? ''] ?? '—'}</div>
-                      <div className="full"><span className="k">Procedure</span>{c.procedure || '—'}</div>
+                      <div className="full"><span className="k">Procedure(s)</span>{c.procedure || '—'}</div>
+                      {c.memo && <div className="full"><span className="k">Memo</span>{c.memo}</div>}
                     </div>
                     {c.imagePaths.length > 0 && <CaseImages paths={c.imagePaths} />}
                     <div className="case-card-actions">

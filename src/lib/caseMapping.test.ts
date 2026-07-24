@@ -5,6 +5,9 @@ import type { CaseEntry, FormState } from '../types';
 const sampleForm: FormState = {
   date: '2026-07-21',
   timing: 'in',
+  place: 'own',
+  staff: 'Dr. Somchai',
+  hn: '12-34-56',
   diagnosis: 'Closed fracture, right distal femur',
   otherClassification: 'AO/OTA 33-A2',
   approach: 'Lateral parapatellar',
@@ -13,7 +16,7 @@ const sampleForm: FormState = {
   procedureType: 'primary',
   role: 'primary_surgeon',
   opTime: '1-2',
-  place: 'own',
+  memo: 'Follow up in 2 weeks',
 };
 
 describe('toRow', () => {

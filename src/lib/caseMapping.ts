@@ -12,6 +12,9 @@ const FIELD_MAP: readonly (readonly [keyof CaseEntry, string])[] = [
   ['id', 'id'],
   ['date', 'date'],
   ['timing', 'timing'],
+  ['place', 'place'],
+  ['staff', 'staff'],
+  ['hn', 'hn'],
   ['diagnosis', 'diagnosis'],
   ['aoCode', 'ao_code'],
   ['aoRegionLabel', 'ao_region_label'],
@@ -22,7 +25,7 @@ const FIELD_MAP: readonly (readonly [keyof CaseEntry, string])[] = [
   ['procedureType', 'procedure_type'],
   ['role', 'role'],
   ['opTime', 'op_time'],
-  ['place', 'place'],
+  ['memo', 'memo'],
   ['imagePaths', 'image_paths'],
 ];
 

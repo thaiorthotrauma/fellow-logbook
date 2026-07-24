@@ -3,6 +3,9 @@ import type { OpTime, Place, ProcedureType, Role, Timing } from './data';
 export interface FormState {
   date: string;
   timing: Timing | null;
+  place: Place | null;
+  staff: string;
+  hn: string;
   diagnosis: string;
   otherClassification: string;
   approach: string;
@@ -11,7 +14,7 @@ export interface FormState {
   procedureType: ProcedureType | null;
   role: Role | null;
   opTime: OpTime | null;
-  place: Place | null;
+  memo: string;
 }
 
 export interface AoState {
@@ -36,6 +39,9 @@ export interface CaseEntry extends FormState {
 export const emptyForm = (): FormState => ({
   date: '',
   timing: null,
+  place: null,
+  staff: '',
+  hn: '',
   diagnosis: '',
   otherClassification: '',
   approach: '',
@@ -44,7 +50,7 @@ export const emptyForm = (): FormState => ({
   procedureType: null,
   role: null,
   opTime: null,
-  place: null,
+  memo: '',
 });
 
 export const emptyAo = (): AoState => ({

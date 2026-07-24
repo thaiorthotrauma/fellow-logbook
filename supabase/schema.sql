@@ -92,6 +92,9 @@ create table if not exists public.cases (
   user_id uuid not null default auth.uid() references auth.users (id) on delete cascade,
   date date not null,
   timing text not null,
+  place text not null,
+  staff text not null default '',
+  hn text not null default '',
   diagnosis text not null,
   ao_code text not null default '',
   ao_region_label text not null default '',
@@ -102,7 +105,7 @@ create table if not exists public.cases (
   procedure_type text not null,
   role text not null,
   op_time text not null,
-  place text not null,
+  memo text not null default '',
   -- Google Drive file IDs for the case's images (uploaded via the drive-images
   -- edge function). Kept as image_paths for backward compatibility; the images
   -- themselves live in the app's private Drive, not in Supabase.
@@ -111,8 +114,13 @@ create table if not exists public.cases (
 );
 
 -- Added after the initial table creation — explicit ALTER so re-running this
--- script against a table created before this column existed still works.
+-- script against a table created before these columns existed still works.
+-- (staff/hn/memo default to '' so existing rows are valid; the app enforces
+-- staff and hn as required at write time.)
 alter table public.cases add column if not exists image_paths text[] not null default '{}';
+alter table public.cases add column if not exists staff text not null default '';
+alter table public.cases add column if not exists hn text not null default '';
+alter table public.cases add column if not exists memo text not null default '';
 
 -- Constrain the enumerated columns to the exact value sets the app uses (these
 -- mirror the option arrays in src/data.ts). Dropped-then-added so the script

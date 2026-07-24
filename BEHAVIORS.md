@@ -66,28 +66,32 @@ showing a placeholder name.
 
 ## 4. New Entry form
 
-Eleven sections, all required unless noted:
+Fourteen sections, all required unless noted:
 
 1. **Date of Operation** + timing (Official hours / After hours).
-2. **Diagnosis** (free text).
-3. **AO classification** — pick a region on the body map or via dropdown, then
+2. **Place** (Home / Outside institution).
+3. **Staff** (single-line free text) — required.
+4. **HN** (single-line) — required; input is restricted as typed to digits,
+   `/`, `-`, and single spaces (anything else is stripped, runs of spaces
+   collapsed).
+5. **Diagnosis** (free text).
+6. **AO classification** — pick a region on the body map or via dropdown, then
    narrow by bone / segment / subtype / fracture type / group. A live AO/OTA
    code is computed and shown.
-4. **Other classification** (free text).
+7. **Other classification** (free text).
 
-   Q3 and Q4 are an **"answer at least one" pair** (both cards show an
-   "Answer #3 or #4" tag): a case saves as long as *either* an AO
+   Q6 and Q7 are an **"answer at least one" pair** (both cards show an
+   "Answer #6 or #7" tag): a case saves as long as *either* an AO
    classification (a computed code) *or* an Other classification is provided.
    Only if **both** are empty does validation block save, listing
    "AO classification or Other classification".
-5. **Approach & Position** (two fields).
-6. **Procedure** (free text).
-7. **Type of Procedure** (Primary / Revision / Staged).
-8. **Your Role** (Primary surgeon / Primary assist / Secondary assist / Observer
-   / Uncertain) — shown in a 2-column grid.
-9. **Operative Time** (skin to skin, ranges).
-10. **Place** (Home / Outside institution).
-11. **Images** *(optional)* — pre/post-op films, intra-op findings. Multiple
+8. **Approach** (free text).
+9. **Procedure(s)** (free text).
+10. **Type of Procedure** (Primary / Revision / Staged).
+11. **Your Role** (Primary surgeon / Primary assist / Secondary assist / Observer
+    / Uncertain) — shown in a 2-column grid.
+12. **Operative Time** (skin to skin, ranges).
+13. **Image(s)** *(optional)* — pre/post-op films, intra-op findings. Multiple
     JPG / PNG / HEIC files, **10 MB total** cap. On selection, entirely
     **in the browser** (nothing leaves the device): HEIC is converted to JPEG
     (converter lazy-loads only when a HEIC is picked), then every image is
@@ -96,6 +100,11 @@ Eleven sections, all required unless noted:
     orientation — and accepted immediately. Files show thumbnails, are
     removable, and a running total is shown that turns red over 10 MB. There is
     no redaction/annotation-removal step — images are uploaded as captured.
+14. **Memo** *(optional)* — free-text notes, 3-row textarea.
+
+Staff, HN, and Memo are stored on the `cases` row (`staff` / `hn` / `memo`
+columns). Note HN is a patient identifier — it lives in the fellow's own
+RLS-scoped rows and is not included in the exported PDF.
 
 - **Validation:** on Save, missing required fields surface in a banner listing
   each one; nothing is saved until all are filled. If the image total exceeds

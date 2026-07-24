@@ -185,15 +185,17 @@ export const PROC_MAP = labelMap(PROC_TYPE);
 export const REQUIRED: { key: RequiredFormKey; label: string }[] = [
   { key: 'date', label: 'Date of operation' },
   { key: 'timing', label: 'Timing (in/out of hours)' },
+  { key: 'place', label: 'Place' },
+  { key: 'staff', label: 'Staff' },
+  { key: 'hn', label: 'HN' },
   { key: 'diagnosis', label: 'Diagnosis' },
   { key: 'approach', label: 'Approach' },
-  { key: 'procedure', label: 'Procedure' },
+  { key: 'procedure', label: 'Procedure(s)' },
   { key: 'procedureType', label: 'Type of procedure' },
   { key: 'role', label: 'Your role' },
   { key: 'opTime', label: 'Operative time' },
-  { key: 'place', label: 'Place' },
 ];
 
 export type RequiredFormKey =
-  | 'date' | 'timing' | 'diagnosis' | 'approach'
-  | 'procedure' | 'procedureType' | 'role' | 'opTime' | 'place';
+  | 'date' | 'timing' | 'place' | 'staff' | 'hn' | 'diagnosis' | 'approach'
+  | 'procedure' | 'procedureType' | 'role' | 'opTime';
