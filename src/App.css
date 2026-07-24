@@ -1000,20 +1000,13 @@ button {
   color: #5f6b6a;
 }
 
-/* iOS renders a native month input's value in a pseudo-element that isn't
-   left- or vertically-aligned inside a full-width box (the value floated right,
-   then sat off-centre). Making the input a flex box centres the value
-   vertically, and text-align:left pins it to the left under the From/To labels. */
-.export-field .field-input {
+/* Range is picked with plain <select> dropdowns rather than a native month
+   input — the native picker rendered its value misaligned on iOS and showed a
+   Buddhist-era locale; a select renders consistently and shows a label we
+   control ("Jul 2026"). */
+.export-field .field-select {
   min-width: 0;
-  display: flex;
-  align-items: center;
-  text-align: left;
-}
-
-.export-field .field-input::-webkit-date-and-time-value {
-  text-align: left;
-  margin: 0;
+  width: 100%;
 }
 
 .export-note {

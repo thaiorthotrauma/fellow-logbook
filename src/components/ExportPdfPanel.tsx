@@ -22,6 +22,23 @@ function rangeLabel(from: string, to: string): string {
   return from === to ? monthLabel(from) : `${monthLabel(from)} – ${monthLabel(to)}`;
 }
 
+/** All "YYYY-MM" months from min to max inclusive, for the dropdown options. */
+function monthsBetween(min: string, max: string): string[] {
+  const out: string[] = [];
+  let [y, m] = min.split('-').map(Number);
+  const [ey, em] = max.split('-').map(Number);
+  if (!y || !m || !ey || !em) return out;
+  while (y < ey || (y === ey && m <= em)) {
+    out.push(`${y}-${String(m).padStart(2, '0')}`);
+    m += 1;
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+  }
+  return out;
+}
+
 // 'shared' has no note: the native share sheet is itself the feedback that
 // the PDF is ready, so an extra message here would just be redundant.
 const DONE_NOTE: Record<string, string> = {
@@ -37,6 +54,7 @@ export default function ExportPdfPanel({ cases, fellowName, institution }: Expor
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
 
+  const monthOptions = useMemo(() => (bounds ? monthsBetween(bounds.min, bounds.max) : []), [bounds]);
   const inRange = useMemo(
     () => (from && to && from <= to ? filterByMonthRange(cases, from, to).length : 0),
     [cases, from, to],
@@ -89,11 +107,19 @@ export default function ExportPdfPanel({ cases, fellowName, institution }: Expor
           <div className="export-fields">
             <label className="export-field">
               <span>From</span>
-              <input type="month" className="field-input" value={from} min={bounds.min} max={bounds.max} onChange={e => { setFrom(e.target.value); setDone(''); }} />
+              <select className="field-select" value={from} onChange={e => { setFrom(e.target.value); setDone(''); }}>
+                {monthOptions.map(mo => (
+                  <option key={mo} value={mo}>{monthLabel(mo)}</option>
+                ))}
+              </select>
             </label>
             <label className="export-field">
               <span>To</span>
-              <input type="month" className="field-input" value={to} min={bounds.min} max={bounds.max} onChange={e => { setTo(e.target.value); setDone(''); }} />
+              <select className="field-select" value={to} onChange={e => { setTo(e.target.value); setDone(''); }}>
+                {monthOptions.map(mo => (
+                  <option key={mo} value={mo}>{monthLabel(mo)}</option>
+                ))}
+              </select>
             </label>
           </div>
 
