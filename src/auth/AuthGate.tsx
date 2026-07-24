@@ -112,16 +112,24 @@ export default function AuthGate({ children }: { children: ReactNode }) {
 
   async function handleOtpSubmit(code: string) {
     const { error: verifyError } = await supabase.auth.verifyOtp({ email, token: code, type: 'email' });
-    if (verifyError) throw verifyError;
+    if (verifyError) throw verifyError; // wrong/expired code — OtpStep shows it and lets them retry
 
-    const { error: claimError } = await supabase.rpc('claim_physician_row');
-    if (claimError) throw claimError;
+    // From here the user is verified and holds a session, so never bounce them
+    // back to re-enter a now-consumed code. Linking their physician row and
+    // LINE identity is best-effort: if it fails (e.g. transient), let them in
+    // anyway — it self-heals on the next re-authentication.
+    try {
+      const { error: claimError } = await supabase.rpc('claim_physician_row');
+      if (claimError) throw claimError;
 
-    const idToken = getLineIdToken();
-    const { error: linkError } = await supabase.functions.invoke('link-line-user', {
-      body: { id_token: idToken },
-    });
-    if (linkError) throw linkError;
+      const idToken = getLineIdToken();
+      const { error: linkError } = await supabase.functions.invoke('link-line-user', {
+        body: { id_token: idToken },
+      });
+      if (linkError) throw linkError;
+    } catch (err) {
+      console.error('Post-verification linking failed (continuing):', err);
+    }
 
     setStage('authenticated');
   }

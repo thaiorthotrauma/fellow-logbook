@@ -172,11 +172,28 @@ Deno.serve(async req => {
     if (action === 'get') {
       const { id } = payload;
       if (!id || typeof id !== 'string') return json({ error: 'id is required' }, 400);
+      // Authorization: only serve an image the caller actually owns. The query
+      // runs through the caller-scoped client, so RLS ("auth.uid() = user_id")
+      // limits it to their own cases; a file id from someone else's case
+      // matches no row. 404 (not 403) so we don't confirm the id exists.
+      const { data: owning, error: ownErr } = await user
+        .from('cases')
+        .select('id')
+        .contains('image_paths', [id])
+        .limit(1);
+      if (ownErr) throw ownErr;
+      if (!owning || owning.length === 0) return json({ error: 'not found' }, 404);
+
       const { bytes, contentType } = await driveGet(token, id);
       return json({ contentType, dataBase64: bytesToBase64(bytes) });
     }
 
     if (action === 'delete') {
+      // No case-ownership check here (unlike `get`): both legitimate callers
+      // run when no owning row exists — deleteCaseById removes the DB row before
+      // this cleanup, and the orphan-cleanup path fires when the insert failed
+      // so a row never existed. Delete only removes a file whose id the caller
+      // already holds; it discloses nothing.
       const ids: unknown = payload?.ids;
       if (!Array.isArray(ids)) return json({ error: 'ids[] is required' }, 400);
       await Promise.all(ids.filter((x): x is string => typeof x === 'string').map(id => driveDelete(token, id)));

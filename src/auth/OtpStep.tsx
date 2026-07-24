@@ -14,7 +14,10 @@ export default function OtpStep({ email, onSubmit }: OtpStepProps) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (code.length !== CODE_LENGTH || busy) return;
+    // Auto-submit only a complete, all-digit code. Guarding on the digit
+    // pattern (not just length) avoids firing on a value that reached length 6
+    // with a gap/space from filling the boxes out of order.
+    if (!new RegExp(`^\\d{${CODE_LENGTH}}$`).test(code) || busy) return;
 
     let cancelled = false;
     setBusy(true);
