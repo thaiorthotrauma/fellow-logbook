@@ -22,13 +22,13 @@ export default function PieChart({ title, slices, size = 96 }: PieChartProps) {
   const r = size / 2;
 
   return (
-    <View style={{ alignItems: 'center', width: 150 }}>
-      <Text style={{ fontFamily: PDF_FONT, fontSize: 9, fontWeight: 600, color: '#16231f', marginBottom: 6 }}>
+    <View style={{ alignItems: 'center', width: 158 }}>
+      <Text style={{ fontFamily: PDF_FONT, fontSize: 11, fontWeight: 600, color: '#16231f', marginBottom: 6 }}>
         {title}
       </Text>
 
       {total === 0 ? (
-        <Text style={{ fontFamily: PDF_FONT, fontSize: 8, color: '#8a938f' }}>No data</Text>
+        <Text style={{ fontFamily: PDF_FONT, fontSize: 9.5, color: '#8a938f' }}>No data</Text>
       ) : (
         <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
           {slices.length === 1 ? (
@@ -54,8 +54,8 @@ export default function PieChart({ title, slices, size = 96 }: PieChartProps) {
             <View
               style={{ width: 7, height: 7, borderRadius: 1.5, backgroundColor: SLICE_COLORS[i % SLICE_COLORS.length], marginRight: 4 }}
             />
-            <Text style={{ fontFamily: PDF_FONT, fontSize: 7.5, color: '#3c4746', flex: 1 }}>{slice.label}</Text>
-            <Text style={{ fontFamily: PDF_FONT, fontSize: 7.5, color: '#16231f', fontWeight: 600 }}>
+            <Text style={{ fontFamily: PDF_FONT, fontSize: 9, color: '#3c4746', flex: 1 }}>{slice.label}</Text>
+            <Text style={{ fontFamily: PDF_FONT, fontSize: 9, color: '#16231f', fontWeight: 600 }}>
               {slice.value} ({Math.round((slice.value / total) * 100)}%)
             </Text>
           </View>

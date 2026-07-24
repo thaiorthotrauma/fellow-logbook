@@ -30,51 +30,58 @@ const MUTED = '#6b7674';
 const LINE = '#e5e9e7';
 
 const s = StyleSheet.create({
-  page: { fontFamily: PDF_FONT, fontSize: 9, color: INK, paddingTop: 34, paddingBottom: 40, paddingHorizontal: 34 },
+  page: { fontFamily: PDF_FONT, fontSize: 11, color: INK, paddingTop: 34, paddingBottom: 42, paddingHorizontal: 34 },
 
+  // Front-page header band — intentionally left at its original sizes.
   titleBand: { backgroundColor: TEAL, borderRadius: 6, padding: 14, marginBottom: 16 },
   titleMain: { color: '#fff', fontSize: 15, fontWeight: 700 },
   titleSub: { color: 'rgba(255,255,255,0.85)', fontSize: 9, marginTop: 2 },
 
-  fellowName: { fontSize: 16, fontWeight: 700, marginBottom: 2 },
-  metaLine: { fontSize: 10, color: MUTED, marginBottom: 1 },
+  fellowName: { fontSize: 18, fontWeight: 700, marginBottom: 2 },
+  metaLine: { fontSize: 11.5, color: MUTED, marginBottom: 1.5 },
   rangeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8, marginBottom: 16 },
-  bigCount: { fontSize: 22, fontWeight: 700, color: TEAL },
+  bigCount: { fontSize: 24, fontWeight: 700, color: TEAL },
 
   sectionRow: { flexDirection: 'row', gap: 18, marginBottom: 18 },
   col: { flex: 1 },
-  sectionTitle: { fontSize: 10, fontWeight: 700, color: INK, marginBottom: 6, paddingBottom: 3, borderBottomWidth: 1, borderBottomColor: LINE },
+  sectionTitle: { fontSize: 12.5, fontWeight: 700, color: INK, marginBottom: 7, paddingBottom: 3, borderBottomWidth: 1, borderBottomColor: LINE },
 
-  rankRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 },
-  rankNum: { width: 14, fontSize: 9, fontWeight: 700, color: TEAL },
-  rankLabel: { flex: 1, fontSize: 9, color: '#24302e', paddingRight: 6 },
-  rankCount: { fontSize: 9, fontWeight: 600 },
-  emptyNote: { fontSize: 8.5, color: '#8a938f' },
+  rankRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 5 },
+  rankNum: { width: 16, fontSize: 11, fontWeight: 700, color: TEAL },
+  rankLabel: { flex: 1, fontSize: 11, color: '#24302e', paddingRight: 6 },
+  rankCount: { fontSize: 11, fontWeight: 600 },
+  emptyNote: { fontSize: 10.5, color: '#8a938f' },
 
   chartsWrap: { marginTop: 4 },
   chartsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
 
-  runHeader: { position: 'absolute', top: 14, left: 34, right: 34, flexDirection: 'row', justifyContent: 'space-between', color: MUTED, fontSize: 7.5 },
-  footer: { position: 'absolute', bottom: 18, left: 34, right: 34, flexDirection: 'row', justifyContent: 'space-between', color: MUTED, fontSize: 7.5, borderTopWidth: 1, borderTopColor: LINE, paddingTop: 5 },
+  runHeader: { position: 'absolute', top: 14, left: 34, right: 34, flexDirection: 'row', justifyContent: 'space-between', color: MUTED, fontSize: 9 },
+  footer: { position: 'absolute', bottom: 18, left: 34, right: 34, flexDirection: 'row', justifyContent: 'space-between', color: MUTED, fontSize: 9, borderTopWidth: 1, borderTopColor: LINE, paddingTop: 5 },
 
-  caseBlock: { borderBottomWidth: 1, borderBottomColor: LINE, paddingVertical: 8 },
-  caseHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, gap: 6 },
-  caseNum: { fontSize: 9, fontWeight: 700, color: TEAL },
-  caseDate: { fontSize: 9.5, fontWeight: 700 },
-  chip: { fontSize: 7.5, color: '#5f6b6a', backgroundColor: '#f0f2f1', paddingVertical: 1.5, paddingHorizontal: 5, borderRadius: 3 },
-  chipPlace: { fontSize: 7.5, color: TEAL, backgroundColor: '#eaf4f2', paddingVertical: 1.5, paddingHorizontal: 5, borderRadius: 3 },
-  chipOutside: { fontSize: 7.5, color: '#b5651d', backgroundColor: '#fdf1e7', paddingVertical: 1.5, paddingHorizontal: 5, borderRadius: 3 },
+  caseBlock: { borderBottomWidth: 1, borderBottomColor: LINE, paddingVertical: 9 },
+  caseHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, gap: 6 },
+  caseNum: { fontSize: 11, fontWeight: 700, color: TEAL },
+  caseDate: { fontSize: 11.5, fontWeight: 700 },
+  chip: { fontSize: 9, color: '#5f6b6a', backgroundColor: '#f0f2f1', paddingVertical: 1.5, paddingHorizontal: 5, borderRadius: 3 },
+  chipPlace: { fontSize: 9, color: TEAL, backgroundColor: '#eaf4f2', paddingVertical: 1.5, paddingHorizontal: 5, borderRadius: 3 },
+  chipOutside: { fontSize: 9, color: '#b5651d', backgroundColor: '#fdf1e7', paddingVertical: 1.5, paddingHorizontal: 5, borderRadius: 3 },
 
-  fieldRow: { flexDirection: 'row', marginBottom: 1.5 },
-  fieldKey: { width: 62, fontSize: 8, color: MUTED },
-  fieldVal: { flex: 1, fontSize: 8.5, color: '#24302e' },
-  metaRow: { fontSize: 8, color: MUTED, marginTop: 2 },
+  fieldRow: { flexDirection: 'row', marginBottom: 2.5 },
+  fieldKey: { width: 74, fontSize: 10, color: MUTED },
+  fieldVal: { flex: 1, fontSize: 10.5, color: '#24302e' },
+  metaRow: { fontSize: 10, color: MUTED, marginTop: 3 },
 });
 
 function formatDate(iso: string): string {
   const [y, m, d] = iso.split('-').map(Number);
   if (!y || !m || !d) return iso || '—';
   return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+/** Removes leading "- " bullet markers (added by the form's BulletTextarea)
+ *  from each line, so the PDF content reads as plain prose, not a bulleted list. */
+function stripBullets(text: string): string {
+  return text.replace(/^[ \t]*-[ \t]+/gm, '').trim();
 }
 
 function RankTable({ title, items }: { title: string; items: RankItem[] }) {
@@ -119,7 +126,7 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
         <View style={s.rangeRow}>
           <View>
             <Text style={s.metaLine}>Range</Text>
-            <Text style={{ fontSize: 12, fontWeight: 600 }}>{rangeLabel}</Text>
+            <Text style={{ fontSize: 14, fontWeight: 600 }}>{rangeLabel}</Text>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={s.bigCount}>{cases.length}</Text>
@@ -165,7 +172,7 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
           <Text>{rangeLabel}</Text>
         </View>
 
-        <Text style={{ fontSize: 11, fontWeight: 700, marginBottom: 6, marginTop: 6 }}>
+        <Text style={{ fontSize: 13, fontWeight: 700, marginBottom: 7, marginTop: 6 }}>
           Cases ({cases.length})
         </Text>
 
@@ -181,14 +188,14 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
                 {c.aoCode ? <Text style={s.chip}>{c.aoCode}</Text> : null}
               </View>
 
-              <View style={s.fieldRow}><Text style={s.fieldKey}>Diagnosis</Text><Text style={s.fieldVal}>{c.diagnosis || '—'}</Text></View>
+              <View style={s.fieldRow}><Text style={s.fieldKey}>Diagnosis</Text><Text style={s.fieldVal}>{stripBullets(c.diagnosis) || '—'}</Text></View>
               {c.otherClassification ? (
-                <View style={s.fieldRow}><Text style={s.fieldKey}>Other class.</Text><Text style={s.fieldVal}>{c.otherClassification}</Text></View>
+                <View style={s.fieldRow}><Text style={s.fieldKey}>Other class.</Text><Text style={s.fieldVal}>{stripBullets(c.otherClassification)}</Text></View>
               ) : null}
               {c.approach ? (
-                <View style={s.fieldRow}><Text style={s.fieldKey}>Approach</Text><Text style={s.fieldVal}>{c.approach}</Text></View>
+                <View style={s.fieldRow}><Text style={s.fieldKey}>Approach</Text><Text style={s.fieldVal}>{stripBullets(c.approach)}</Text></View>
               ) : null}
-              <View style={s.fieldRow}><Text style={s.fieldKey}>Procedure</Text><Text style={s.fieldVal}>{c.procedure || '—'}</Text></View>
+              <View style={s.fieldRow}><Text style={s.fieldKey}>Procedure</Text><Text style={s.fieldVal}>{stripBullets(c.procedure) || '—'}</Text></View>
 
               <Text style={s.metaRow}>
                 {(PROC_MAP[c.procedureType ?? ''] ?? '—')} · {(ROLE_MAP[c.role ?? ''] ?? '—')} · {(OPTIME_MAP[c.opTime ?? ''] ?? '—')}
