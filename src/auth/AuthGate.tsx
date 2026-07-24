@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { functionErrorMessage } from '../lib/errors';
 import { getLineIdToken, initLiff, isLikelyDesktop, liff } from '../lib/liff';
 import EmailStep from './EmailStep';
 import OtpStep from './OtpStep';
@@ -65,7 +66,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.functions.invoke<CheckLineUserResponse>('check-line-user', {
         body: { id_token: idToken },
       });
-      if (error) throw error;
+      if (error) throw new Error(await functionErrorMessage(error));
 
       if (data?.status === 'verified' && data.redeem_token) {
         // redeem_token is the *hashed* token from the server's generateLink
@@ -126,7 +127,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       const { error: linkError } = await supabase.functions.invoke('link-line-user', {
         body: { id_token: idToken },
       });
-      if (linkError) throw linkError;
+      if (linkError) throw new Error(await functionErrorMessage(linkError));
     } catch (err) {
       console.error('Post-verification linking failed (continuing):', err);
     }

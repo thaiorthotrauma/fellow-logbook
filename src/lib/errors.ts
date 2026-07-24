@@ -2,6 +2,23 @@
 // bare object) into a human-readable string. Supabase's PostgrestError is a
 // plain object — not an Error — so `String(err)` on it yields "[object Object]";
 // this pulls out message/details/hint/code instead so failures are actionable.
+/** supabase.functions.invoke collapses a failed call to a generic "Edge
+ *  Function returned a non-2xx status code" message and stashes the real
+ *  HTTP response on `error.context`. Read the function's JSON `{ error }` body
+ *  so the actual reason (not the generic wrapper) surfaces. */
+export async function functionErrorMessage(error: unknown): Promise<string> {
+  const context = (error as { context?: Response }).context;
+  if (context && typeof context.json === 'function') {
+    try {
+      const body = await context.clone().json();
+      if (body?.error) return String(body.error);
+    } catch {
+      // response body wasn't JSON — fall back to the generic message
+    }
+  }
+  return describeError(error);
+}
+
 export function describeError(err: unknown): string {
   if (err == null) return 'Unknown error';
   if (typeof err === 'string') return err;
