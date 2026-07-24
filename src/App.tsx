@@ -4,6 +4,7 @@ import { REQUIRED } from './data';
 import { computeAoCode, findRegion } from './logic';
 import {
   deleteCaseById,
+  deleteDriveImages,
   fetchCases,
   insertCase,
   uploadCaseImages,
@@ -77,12 +78,13 @@ function App() {
       return;
     }
     setSaving(true);
+    // Generate the id up front so images can be named per-case and uploaded to
+    // Drive before the row exists. If any upload fails we abort before
+    // inserting, so we never create a case that's missing its images.
+    const caseId = crypto.randomUUID();
+    let imagePaths: string[] = [];
     try {
-      // Generate the id up front so images upload under {uid}/{caseId}/ before
-      // the row exists. If any upload fails we abort before inserting, so we
-      // never create a case that's missing its images.
-      const caseId = crypto.randomUUID();
-      const imagePaths = await uploadCaseImages(caseId, images);
+      imagePaths = await uploadCaseImages(caseId, images);
       const region = findRegion(ao.regionKey);
       const entry = await insertCase(caseId, form, computeAoCode(ao), region ? region.name : '', imagePaths);
       setCases(prev => [...prev, entry]);
@@ -93,6 +95,9 @@ function App() {
       setToast({ message: 'Case saved to logbook', sticky: false });
     } catch (err) {
       console.error(err);
+      // If images uploaded but the row didn't save, remove the now-orphaned
+      // Drive files so patient images don't linger unreferenced.
+      void deleteDriveImages(imagePaths);
       setToast({ message: `Could not save: ${describeError(err)}`, sticky: true });
     } finally {
       setSaving(false);

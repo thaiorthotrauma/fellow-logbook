@@ -39,9 +39,10 @@ export function fromRow(row: CaseRow): CaseEntry {
   return entry as unknown as CaseEntry;
 }
 
-/** Form values + computed AO fields + uploaded image paths → DB row
+/** Form values + computed AO fields + uploaded image references → DB row
  *  (snake_case). `id` is omitted so the caller supplies it (needed because the
- *  images are uploaded under {uid}/{caseId}/ before the row is inserted). */
+ *  images are uploaded to Drive, under a per-case name, before the row is
+ *  inserted). */
 export function toRow(
   form: FormState,
   aoCode: string,

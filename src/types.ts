@@ -28,7 +28,8 @@ export interface CaseEntry extends FormState {
   id: string;
   aoCode: string;
   aoRegionLabel: string;
-  /** Storage object paths ({uid}/{caseId}/{uuid}.ext) for this case's images. */
+  /** Google Drive file IDs for this case's images (kept as `imagePaths` /
+   *  `image_paths` for backward compatibility). */
   imagePaths: string[];
 }
 

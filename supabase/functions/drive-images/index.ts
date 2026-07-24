@@ -4,8 +4,8 @@
 // (`disallowed_useragent`), so the browser can't talk to Drive directly. Instead
 // this function holds a single Google refresh token (the program's own Drive)
 // and performs uploads/reads/deletes on the fellow's behalf. Images are
-// processed and redacted ON THE DEVICE first; only the finished JPEG reaches
-// here, and it goes straight to Drive — nothing is stored in Supabase.
+// converted/resized ON THE DEVICE first; the finished JPEG reaches here and
+// goes straight to Drive — the image bytes are never stored in Supabase.
 //
 // The function is JWT-protected (Supabase verifies the caller's session before
 // this runs); we additionally resolve the user to reject anonymous callers.

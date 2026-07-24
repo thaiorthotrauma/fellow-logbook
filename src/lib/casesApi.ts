@@ -68,22 +68,28 @@ export async function fetchCases(): Promise<CaseEntry[]> {
 }
 
 /** Uploads the given files to Google Drive (via the drive-images function) and
- *  returns their Drive file IDs, in order. Throws on the first failed upload so
- *  the caller can abort before inserting the case row (avoiding an orphan). */
+ *  returns their Drive file IDs, in order. If any upload fails, the images
+ *  already uploaded in this call are rolled back (best-effort) before throwing,
+ *  so a partially-uploaded case never leaves orphaned files in Drive. */
 export async function uploadCaseImages(caseId: string, files: File[]): Promise<string[]> {
   if (files.length === 0) return [];
   const ids: string[] = [];
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const dataBase64 = await fileToBase64(file);
-    const { id } = await invokeDrive<{ id: string }>({
-      action: 'upload',
-      caseId,
-      filename: `${caseId}-${i + 1}.jpg`,
-      contentType: imageMime(file),
-      dataBase64,
-    });
-    ids.push(id);
+  try {
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const dataBase64 = await fileToBase64(file);
+      const { id } = await invokeDrive<{ id: string }>({
+        action: 'upload',
+        caseId,
+        filename: `${caseId}-${i + 1}.jpg`,
+        contentType: imageMime(file),
+        dataBase64,
+      });
+      ids.push(id);
+    }
+  } catch (err) {
+    await deleteDriveImages(ids);
+    throw err;
   }
   return ids;
 }
@@ -127,15 +133,21 @@ export async function getImageUrls(fileIds: string[]): Promise<string[]> {
   return results.filter((url): url is string => url !== null);
 }
 
+/** Best-effort removal of Drive files by id, without touching the database.
+ *  Used to clean up images that were uploaded for a case whose row then failed
+ *  to insert, so orphaned patient images don't linger in Drive. Never throws. */
+export async function deleteDriveImages(ids: string[]): Promise<void> {
+  if (ids.length === 0) return;
+  try {
+    await invokeDrive({ action: 'delete', ids });
+  } catch (err) {
+    console.error('Failed to remove orphaned images from Drive:', err);
+  }
+}
+
 export async function deleteCaseById(id: string, imagePaths: string[] = []): Promise<void> {
   const { error } = await supabase.from('cases').delete().eq('id', id);
   if (error) throw error;
   // Best-effort Drive cleanup — don't fail the delete if this doesn't.
-  if (imagePaths.length > 0) {
-    try {
-      await invokeDrive({ action: 'delete', ids: imagePaths });
-    } catch (err) {
-      console.error('Failed to remove case images from Drive:', err);
-    }
-  }
+  await deleteDriveImages(imagePaths);
 }
