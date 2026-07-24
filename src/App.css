@@ -1,5 +1,10 @@
 * {
   box-sizing: border-box;
+  /* Without this, iOS Safari's font-boosting heuristic inflates short text
+     runs (a single word/digit value in a narrow column) to arbitrary sizes
+     and can let long lines bleed past the container instead of wrapping. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Kill the ~300ms double-tap-to-zoom delay on tappable controls (every option
