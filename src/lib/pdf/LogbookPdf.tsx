@@ -166,7 +166,7 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
       {/* ── Content · one block per case, oldest → newest ────────────────── */}
       <Page size="A4" style={s.page}>
         <View style={s.runHeader} fixed>
-          <Text>{fellowName}</Text>
+          <Text>{institution ? `${fellowName}, ${institution}` : fellowName}</Text>
           <Text>{rangeLabel}</Text>
         </View>
 
