@@ -5,8 +5,10 @@ import { computeAoCode, findRegion } from './logic';
 import {
   deleteCaseById,
   deleteDriveImages,
+  diffCaseColumns,
   fetchCases,
   insertCase,
+  notifyCase,
   updateCase,
   uploadCaseImages,
   MAX_IMAGES_TOTAL_BYTES,
@@ -121,6 +123,8 @@ function App() {
 
   async function saveEdit(id: string) {
     if (!checkBeforeSave()) return;
+    // Captured before the update so the notification can report what changed.
+    const before = cases.find(c => c.id === id);
     setSaving(true);
     // Name new uploads past the case's existing ones so an edit can't reuse a
     // filename already in the Drive folder.
@@ -133,6 +137,11 @@ function App() {
         ...addedIds,
       ]);
       setCases(prev => prev.map(c => (c.id === id ? entry : c)));
+      // Advisory only, and skipped when the save changed nothing.
+      if (before) {
+        const previous = diffCaseColumns(before, entry);
+        if (Object.keys(previous).length > 0) void notifyCase('updated', id, previous);
+      }
       // Drop de-selected images only now that the row no longer points at them,
       // so a failed update never leaves the case referencing deleted files.
       void deleteDriveImages(savedImages.filter(p => !keptImages.includes(p)));
@@ -168,6 +177,8 @@ function App() {
       const region = findRegion(ao.regionKey);
       const entry = await insertCase(caseId, form, computeAoCode(ao), region ? region.name : '', imagePaths);
       setCases(prev => [...prev, entry]);
+      // Advisory only, so it runs after the save is committed and isn't awaited.
+      void notifyCase('created', entry.id);
       setErrors([]);
       setForm(emptyForm());
       setAo(emptyAo());

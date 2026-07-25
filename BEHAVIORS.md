@@ -134,6 +134,22 @@ RLS-scoped rows and is not included in the exported PDF.
   `drive-images` function (which downloads them from the app's private Drive)
   and shows tappable thumbnails that open full size. Images are never shared
   with a public link.
+- **Edit** reopens the case in the entry form, prefilled, with the first tab
+  relabelled "Edit Case", a banner above the form, and Cancel / Save Changes
+  instead of Reset / Save Case. Saving returns to the log with that card
+  expanded.
+  - The AO picker's selection is rebuilt from the stored code (a row keeps only
+    the flat code plus the region name), so the diagram and pills come back
+    preselected. Round-tripping is covered for every selection the picker can
+    produce, which pins the property that matters: re-saving an untouched case
+    cannot change its AO code.
+  - Saved images can be removed and new ones added. On save the added files
+    upload first, then the row updates, and only then are dropped Drive files
+    deleted — so a failed save never leaves a case pointing at deleted images.
+    A failed update rolls back that edit's uploads instead of orphaning them.
+  - The 10 MB limit applies to newly added images only; already-saved ones don't
+    count against it.
+  - Deleting a case that's open for editing abandons the edit.
 - **Delete** removes a case optimistically; if the server rejects it, the case
   reappears and a toast reports the failure. On success, the case's images are
   also removed from Drive (best-effort).
@@ -177,6 +193,39 @@ fellow name/institution render.
   IDs. Images are never served via a public link.
 - A failed initial load shows a toast asking the user to check their connection
   and reload.
+
+## 6a. Telegram notifications (admin)
+
+Three situations post a message to a single admin Telegram chat. The bot token
+is a server-side secret, so the browser never talks to Telegram itself.
+
+- **New case logged** and **case edited** go through the JWT-protected
+  `notify-case` Edge Function, called after the save has committed. The function
+  re-reads the case from the database rather than trusting the request body, so
+  a notification always reflects a real stored row owned by the caller and the
+  request can't push arbitrary text into the admin chat. The fellow's name and
+  institution likewise come from the `physicians` table, not the client.
+  - An edit reports **only the fields that changed**, as struck-through old →
+    new (Telegram has no coloured text). Short values sit inline; long or
+    multi-line ones stack. Images report as a count, not Drive file IDs. A save
+    that changed nothing sends no message.
+  - The prior values behind that diff are the one thing supplied by the client —
+    only it knows the pre-update state. These are advisory notifications, not an
+    audit log.
+- **Inbound LINE chat** goes through `line-webhook`, called by LINE rather than
+  the browser. It has no Supabase session, so authenticity comes from the
+  `X-Line-Signature` HMAC instead and it must be deployed with
+  `--no-verify-jwt`. It reports the sender's LINE user ID in full as tappable
+  `code`, plus the message quoted. Senders with no `physicians` row are labelled
+  as unregistered — the common case, since anyone who finds the official account
+  can message it, and that's exactly who the raw ID is needed for.
+- **PHI:** Telegram is outside the app's Supabase + private-Drive perimeter, bot
+  messages aren't end-to-end encrypted, and they persist in chat history and
+  lock-screen previews. **HN is therefore masked to its last four digits** in
+  both case notifications. Clinical text (diagnosis, procedure) is sent in full.
+- Notifications are **advisory and best-effort**: they are never awaited, a
+  Telegram outage can never turn into a failed save, and with the Telegram
+  secrets unset every send silently no-ops so the app works without them.
 
 ## 7. Display & rendering
 

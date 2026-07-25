@@ -1,8 +1,9 @@
 import { supabase } from './supabaseClient';
-import { fromRow, toRow, type CaseRow } from './caseMapping';
+import { entryToRow, fromRow, toRow, type CaseRow } from './caseMapping';
 import type { CaseEntry, FormState } from '../types';
 
 const DRIVE_FN = 'drive-images';
+const NOTIFY_FN = 'notify-case';
 
 export const MAX_IMAGES_TOTAL_BYTES = 10 * 1024 * 1024; // 10 MB across all images
 export const ALLOWED_IMAGE_EXT = ['jpg', 'jpeg', 'png', 'heic', 'heif'] as const;
@@ -116,6 +117,47 @@ export async function insertCase(
     .single();
   if (error) throw error;
   return fromRow(data as CaseRow);
+}
+
+/** The stored columns whose old values a case edit reports, keyed as the DB
+ *  names the notifier expects. Derived from the row mappers so it can't drift
+ *  from the column list. */
+export type PreviousValues = Record<string, unknown>;
+
+/** Columns that differ between two versions of a case, as
+ *  { column: previous value } — the shape `notify-case` renders its diff from.
+ *  Compared on the DB row shape so the notifier never has to know app keys. */
+export function diffCaseColumns(before: CaseEntry, after: CaseEntry): PreviousValues {
+  const beforeRow = entryToRow(before);
+  const afterRow = entryToRow(after);
+  const previous: PreviousValues = {};
+  for (const col of Object.keys(beforeRow)) {
+    const a = beforeRow[col];
+    const b = afterRow[col];
+    const same = Array.isArray(a) && Array.isArray(b)
+      ? a.length === b.length && a.every((v, i) => v === b[i])
+      : a === b;
+    if (!same) previous[col] = a;
+  }
+  return previous;
+}
+
+/** Tells the server to post a Telegram notification for a case. Best-effort and
+ *  never throws: the case is already saved by the time this runs, so a Telegram
+ *  problem must not surface to the fellow as a failed save. */
+export async function notifyCase(
+  kind: 'created' | 'updated',
+  caseId: string,
+  previous?: PreviousValues,
+): Promise<void> {
+  try {
+    const body: Record<string, unknown> = { kind, caseId };
+    if (previous) body.previous = previous;
+    const { error } = await supabase.functions.invoke(NOTIFY_FN, { body });
+    if (error) console.error('Case notification failed:', error);
+  } catch (err) {
+    console.error('Case notification failed:', err);
+  }
 }
 
 /** Overwrites an existing case with edited values. `imagePaths` is the case's

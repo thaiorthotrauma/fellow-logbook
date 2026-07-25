@@ -42,6 +42,18 @@ export function fromRow(row: CaseRow): CaseEntry {
   return entry as unknown as CaseEntry;
 }
 
+/** App entry (camelCase) → DB row (snake_case), `id` omitted. Used to compare
+ *  two versions of a case in the DB's own column names, so the change list sent
+ *  to the notifier doesn't depend on the app's key spellings. */
+export function entryToRow(entry: CaseEntry): CaseRow {
+  const row: CaseRow = {};
+  for (const [key, col] of FIELD_MAP) {
+    if (key === 'id') continue;
+    row[col] = entry[key];
+  }
+  return row;
+}
+
 /** Form values + computed AO fields + uploaded image references → DB row
  *  (snake_case). `id` is omitted so the caller supplies it (needed because the
  *  images are uploaded to Drive, under a per-case name, before the row is

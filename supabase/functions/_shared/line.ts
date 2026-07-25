@@ -20,6 +20,37 @@ async function fetchWithRetry(url: string, init: RequestInit): Promise<Response>
   throw lastError;
 }
 
+/** Constant-time string compare, so a signature check can't be narrowed by
+ *  timing how long the comparison took. */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/** Verifies a Messaging API webhook request really came from LINE: the
+ *  X-Line-Signature header is base64(HMAC-SHA256(channel secret, raw body)).
+ *  Must be given the EXACT raw body text — re-serializing the parsed JSON
+ *  changes the bytes and the signature will never match. */
+export async function verifyLineSignature(
+  rawBody: string,
+  signature: string,
+  channelSecret: string,
+): Promise<boolean> {
+  if (!signature || !channelSecret) return false;
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(channelSecret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const mac = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(rawBody));
+  const expected = btoa(String.fromCharCode(...new Uint8Array(mac)));
+  return timingSafeEqual(expected, signature);
+}
+
 export async function verifyLineIdToken(idToken: string, channelId: string): Promise<string> {
   const res = await fetchWithRetry('https://api.line.me/oauth2/v2.1/verify', {
     method: 'POST',
