@@ -15,11 +15,11 @@ interface ExportPdfPanelProps {
 
 const YEAR_LABEL = '2026–2027';
 
-/** "2026-07" → "Jul 2026". */
+/** "2026-07" → "July 2026". */
 function monthLabel(month: string): string {
   const [y, m] = month.split('-').map(Number);
   if (!y || !m) return month;
-  return new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
+  return new Date(y, m - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
 }
 
 function rangeLabel(from: string, to: string): string {
