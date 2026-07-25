@@ -12,7 +12,7 @@ import {
   ROLES,
   TIMING_MAP,
 } from '../../data';
-import { formatClassification, stripBullets } from '../textFormat';
+import { formatBulletedField, formatClassification } from '../textFormat';
 import type { CaseEntry } from '../../types';
 
 export interface LogbookPdfProps {
@@ -184,7 +184,7 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
                 <Text style={outside ? s.chipOutside : s.chipPlace}>{PLACE_MAP[c.place ?? ''] ?? '—'}</Text>
               </View>
 
-              <View style={s.fieldRow}><Text style={s.fieldKey}>Diagnosis</Text><Text style={s.fieldVal}>{stripBullets(c.diagnosis) || '—'}</Text></View>
+              <View style={s.fieldRow}><Text style={s.fieldKey}>Diagnosis</Text><Text style={s.fieldVal}>{formatBulletedField(c.diagnosis) || '—'}</Text></View>
               {(() => {
                 const classification = formatClassification(c.aoCode, c.otherClassification);
                 return classification ? (
@@ -192,9 +192,9 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
                 ) : null;
               })()}
               {c.approach ? (
-                <View style={s.fieldRow}><Text style={s.fieldKey}>Approach</Text><Text style={s.fieldVal}>{stripBullets(c.approach)}</Text></View>
+                <View style={s.fieldRow}><Text style={s.fieldKey}>Approach</Text><Text style={s.fieldVal}>{formatBulletedField(c.approach)}</Text></View>
               ) : null}
-              <View style={s.fieldRow}><Text style={s.fieldKey}>Procedure</Text><Text style={s.fieldVal}>{stripBullets(c.procedure) || '—'}</Text></View>
+              <View style={s.fieldRow}><Text style={s.fieldKey}>Procedure</Text><Text style={s.fieldVal}>{formatBulletedField(c.procedure) || '—'}</Text></View>
 
               <Text style={s.metaRow}>
                 {(PROC_MAP[c.procedureType ?? ''] ?? '—')} · {(ROLE_MAP[c.role ?? ''] ?? '—')} · {(OPTIME_MAP[c.opTime ?? ''] ?? '—')}
