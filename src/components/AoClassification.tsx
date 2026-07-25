@@ -38,7 +38,7 @@ function AoClassification({ ao, setAo }: AoClassificationProps) {
     <div className="card">
       <div className="card-header">
         <span className="step-badge">6</span>
-        <span className="step-title">AO classification</span>
+        <span className="step-title">AO/OTA classification</span>
         <span className="pair-tag">Answer #6 or #7</span>
         {code && <span className="ao-code-badge">{code}</span>}
       </div>
