@@ -7,6 +7,17 @@
   text-size-adjust: 100%;
 }
 
+/* Some in-app browsers (e.g. LINE's) disable text selection and the
+   long-press copy/cut menu by default on any element unless it's explicitly
+   opted back in — make sure every text entry field stays selectable. */
+input,
+textarea,
+select {
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-touch-callout: default;
+}
+
 /* Kill the ~300ms double-tap-to-zoom delay on tappable controls (every option
    pill / tab / segment renders as a <button>), so selection feels instant, and
    drop the grey tap-flash. */
