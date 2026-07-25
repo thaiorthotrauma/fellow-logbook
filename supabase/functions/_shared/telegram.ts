@@ -11,12 +11,23 @@
 // Notifications are advisory: when the secrets are absent, sends are skipped
 // rather than failing, so the app keeps working with Telegram unconfigured.
 
-const BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '';
-const CHAT_ID = Deno.env.get('TELEGRAM_CHAT_ID') ?? '';
+/** Read per call rather than once at module load: a warm isolate would
+ *  otherwise keep serving the values captured at cold start, so correcting a
+ *  secret would appear to have no effect until the function was redeployed.
+ *  Trimmed because a value pasted with a trailing space or newline is
+ *  indistinguishable from a wrong one in Telegram's errors — a padded chat id
+ *  fails as "chat not found". */
+function config(): { token: string; chatId: string } {
+  return {
+    token: (Deno.env.get('TELEGRAM_BOT_TOKEN') ?? '').trim(),
+    chatId: (Deno.env.get('TELEGRAM_CHAT_ID') ?? '').trim(),
+  };
+}
 
 /** False when the Telegram secrets aren't set, in which case sends no-op. */
 export function telegramConfigured(): boolean {
-  return BOT_TOKEN !== '' && CHAT_ID !== '';
+  const { token, chatId } = config();
+  return token !== '' && chatId !== '';
 }
 
 export interface SendResult {
@@ -27,15 +38,16 @@ export interface SendResult {
 /** Posts an HTML message. Never throws: a Telegram outage must not turn into a
  *  failed case save, so the outcome is returned for the caller to log. */
 export async function sendTelegram(html: string): Promise<SendResult> {
-  if (!telegramConfigured()) {
+  const { token, chatId } = config();
+  if (token === '' || chatId === '') {
     return { sent: false, error: 'telegram not configured' };
   }
   try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        chat_id: CHAT_ID,
+        chat_id: chatId,
         text: html,
         parse_mode: 'HTML',
         // These are internal notes, not link previews.
