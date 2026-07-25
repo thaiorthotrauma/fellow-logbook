@@ -130,10 +130,10 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                 >
                   <div className="case-card-badges">
                     <span className="case-card-date">{formatDate(c.date)}</span>
-                    <span className="case-card-timing">{TIMING_MAP[c.timing ?? ''] ?? '—'}</span>
                     <span className={`case-card-place ${c.place === 'outside' ? 'outside' : ''}`}>
                       {PLACE_MAP[c.place ?? ''] ?? '—'}
                     </span>
+                    <span className="case-card-timing">{TIMING_MAP[c.timing ?? ''] ?? '—'}</span>
                     <span className="case-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
                   </div>
                   <div className="case-card-diagnosis case-card-diagnosis-truncated">{stripBullets(c.diagnosis) || '—'}</div>
