@@ -149,6 +149,8 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                     <div className="case-detail-grid">
                       <div><span className="k">Staff</span>{c.staff || '—'}</div>
                       <div><span className="k">HN</span>{c.hn || '—'}</div>
+                      <div><span className="k">Place</span>{PLACE_MAP[c.place ?? ''] ?? '—'}</div>
+                      <div><span className="k">Hours</span>{TIMING_MAP[c.timing ?? ''] ?? '—'}</div>
                       <div>
                         <span className="k">Diagnosis</span>
                         <BulletedText text={formatBulletedField(c.diagnosis)} />
