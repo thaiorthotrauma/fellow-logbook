@@ -171,7 +171,7 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
         </View>
 
         <Text style={{ fontSize: 13, fontWeight: 700, marginBottom: 7, marginTop: 6 }}>
-          Cases ({cases.length})
+          Recorded Cases (total of {cases.length})
         </Text>
 
         {cases.map((c, i) => {
