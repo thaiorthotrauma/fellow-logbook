@@ -22,6 +22,24 @@ function rangeLabel(from: string, to: string): string {
   return from === to ? monthLabel(from) : `${monthLabel(from)} – ${monthLabel(to)}`;
 }
 
+/** "2026-07" → "07-2026", for the filename's month segments. */
+function monthFileSegment(month: string): string {
+  const [y, m] = month.split('-');
+  return `${m}-${y}`;
+}
+
+/** Fellow's Thai full name ("ปองสิทธิ์ โพธิคุณ") → "ปองสิทธิ์-โพธิคุณ" for the
+ *  filename. Falls back to the name as-is if it doesn't split into two parts. */
+function nameFileSegment(fullName: string): string {
+  const parts = fullName.trim().split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return parts.join('-');
+  return `${parts[0]}-${parts.slice(1).join('')}`;
+}
+
+function pdfFileName(fellowName: string, from: string, to: string): string {
+  return `TOTS-fellow-logbook_${nameFileSegment(fellowName)}_${monthFileSegment(from)}_to_${monthFileSegment(to)}.pdf`;
+}
+
 /** All "YYYY-MM" months from min to max inclusive, for the dropdown options. */
 function monthsBetween(min: string, max: string): string[] {
   const out: string[] = [];
@@ -79,7 +97,7 @@ export default function ExportPdfPanel({ cases, fellowName, institution }: Expor
         generatedLabel: `Generated ${today}`,
         cases: selected,
       });
-      const result = await deliverPdf(blob, `TOTS-Logbook_${from}_to_${to}.pdf`);
+      const result = await deliverPdf(blob, pdfFileName(fellowName, from, to));
       setDone(DONE_NOTE[result] ?? '');
     } catch (err) {
       console.error(err);
