@@ -24,7 +24,7 @@ export interface LogbookPdfProps {
   cases: CaseEntry[];
 }
 
-const FOOTER_ORG = 'Thai Orthopaedic Trauma Society';
+const FOOTER_ORG = 'RCOST Orthopaedic Trauma Fellowship Program';
 
 const TEAL = '#0d6e64';
 const INK = '#16231f';
