@@ -59,7 +59,7 @@ const s = StyleSheet.create({
   chartsWrap: { marginTop: 4 },
   chartsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
 
-  runHeader: { position: 'absolute', top: 14, left: 34, right: 34, flexDirection: 'row', justifyContent: 'space-between', color: MUTED, fontSize: 9 },
+  runHeader: { position: 'absolute', top: 14, left: 34, right: 34, flexDirection: 'row', justifyContent: 'flex-end', color: MUTED, fontSize: 9 },
   footer: { position: 'absolute', bottom: 18, left: 34, right: 34, flexDirection: 'row', justifyContent: 'space-between', color: MUTED, fontSize: 9, borderTopWidth: 1, borderTopColor: LINE, paddingTop: 5 },
 
   caseBlock: { borderBottomWidth: 1, borderBottomColor: LINE, paddingVertical: 9 },
@@ -167,7 +167,6 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
       <Page size="A4" style={s.page}>
         <View style={s.runHeader} fixed>
           <Text>{institution ? `${fellowName}, ${institution}` : fellowName}</Text>
-          <Text>{rangeLabel}</Text>
         </View>
 
         <Text style={{ fontSize: 13, fontWeight: 700, marginBottom: 7, marginTop: 6 }}>
