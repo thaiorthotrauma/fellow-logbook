@@ -18,6 +18,11 @@ interface NewEntryFormProps {
   onReset: () => void;
   onSubmit: () => void;
   saving: boolean;
+  /** Set when editing a saved case rather than logging a new one: the actions
+   *  become Cancel / Save changes and the case's stored images are shown. */
+  editing?: boolean;
+  existingImages?: string[];
+  onRemoveExistingImage?: (index: number) => void;
 }
 
 /** HN allows only digits 0–9 — strip everything else as the fellow types. */
@@ -25,9 +30,15 @@ function sanitizeHn(value: string): string {
   return value.replace(/\D/g, '');
 }
 
-export default function NewEntryForm({ form, ao, errors, images, updateForm, setAo, onAddImages, onRemoveImage, onReset, onSubmit, saving }: NewEntryFormProps) {
+export default function NewEntryForm({ form, ao, errors, images, updateForm, setAo, onAddImages, onRemoveImage, onReset, onSubmit, saving, editing, existingImages, onRemoveExistingImage }: NewEntryFormProps) {
   return (
     <div>
+      {editing && (
+        <div className="edit-banner">
+          Editing a saved case — changes replace the existing record.
+        </div>
+      )}
+
       {errors.length > 0 && (
         <div className="error-banner">Please complete: {errors.join(', ')}</div>
       )}
@@ -208,7 +219,13 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
         <div className="field-label" style={{ marginBottom: 12 }}>
           i.e. pre &amp; post-op films, intra-op findings
         </div>
-        <ImageUpload images={images} onAdd={onAddImages} onRemove={onRemoveImage} />
+        <ImageUpload
+          images={images}
+          onAdd={onAddImages}
+          onRemove={onRemoveImage}
+          existing={existingImages}
+          onRemoveExisting={onRemoveExistingImage}
+        />
       </div>
 
       <div className="card">
@@ -227,9 +244,11 @@ export default function NewEntryForm({ form, ao, errors, images, updateForm, set
       </div>
 
       <div className="form-actions">
-        <button type="button" className="btn-secondary" onClick={onReset}>Reset</button>
+        <button type="button" className="btn-secondary" onClick={onReset}>
+          {editing ? 'Cancel' : 'Reset'}
+        </button>
         <button type="button" className="btn-primary" onClick={onSubmit} disabled={saving}>
-          {saving ? 'Saving…' : 'Save Case'}
+          {saving ? 'Saving…' : editing ? 'Save Changes' : 'Save Case'}
         </button>
       </div>
     </div>

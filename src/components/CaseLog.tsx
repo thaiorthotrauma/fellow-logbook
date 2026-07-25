@@ -8,6 +8,7 @@ interface CaseLogProps {
   cases: CaseEntry[];
   expandedId: string | null;
   onToggle: (id: string) => void;
+  onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }
 
@@ -44,7 +45,7 @@ function BulletedText({ text }: { text: string }) {
   );
 }
 
-export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseLogProps) {
+export default function CaseLog({ cases, expandedId, onToggle, onEdit, onDelete }: CaseLogProps) {
   const [query, setQuery] = useState('');
   const [place, setPlace] = useState<PlaceFilter>('all');
   const [sort, setSort] = useState<SortOrder>('newest');
@@ -178,6 +179,13 @@ export default function CaseLog({ cases, expandedId, onToggle, onDelete }: CaseL
                     </div>
                     {c.imagePaths.length > 0 && <CaseImages paths={c.imagePaths} />}
                     <div className="case-card-actions">
+                      <button
+                        type="button"
+                        className="case-card-edit"
+                        onClick={e => { e.stopPropagation(); onEdit(c.id); }}
+                      >
+                        Edit case
+                      </button>
                       <button
                         type="button"
                         className="case-card-delete"

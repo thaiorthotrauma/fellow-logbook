@@ -735,6 +735,36 @@ button {
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+  gap: 8px;
+}
+
+.case-card-edit {
+  font-size: 12.5px;
+  color: #0d6e64;
+  cursor: pointer;
+  font-weight: 600;
+  background: #eaf4f2;
+  border: 1px solid #cfe0dc;
+  border-radius: 8px;
+  padding: 7px 14px;
+  font-family: inherit;
+}
+
+.case-card-edit:active {
+  background: #dcebe8;
+}
+
+/* Shown above the entry form when it's editing a saved case rather than
+   logging a new one, so a prefilled form can't be mistaken for a fresh one. */
+.edit-banner {
+  background: #eaf4f2;
+  border: 1px solid #cfe0dc;
+  color: #0b5c54;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
 }
 
 .case-card-delete {

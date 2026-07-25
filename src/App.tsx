@@ -7,12 +7,14 @@ import {
   deleteDriveImages,
   fetchCases,
   insertCase,
+  updateCase,
   uploadCaseImages,
   MAX_IMAGES_TOTAL_BYTES,
 } from './lib/casesApi';
 import { fetchCurrentPhysician, type Physician } from './lib/physicianApi';
+import { parseAoCode } from './lib/aoCode';
 import { describeError } from './lib/errors';
-import { emptyAo, emptyForm, type AoState, type CaseEntry, type FormState } from './types';
+import { emptyAo, emptyForm, formFromEntry, type AoState, type CaseEntry, type FormState } from './types';
 import NewEntryForm from './components/NewEntryForm';
 import CaseLog from './components/CaseLog';
 import ExportPdfPanel from './components/ExportPdfPanel';
@@ -31,6 +33,12 @@ function App() {
   const [ao, setAo] = useState<AoState>(emptyAo());
   const [images, setImages] = useState<File[]>([]);
   const [saving, setSaving] = useState(false);
+  /** Id of the case being edited, or null when the form is logging a new case. */
+  const [editingId, setEditingId] = useState<string | null>(null);
+  /** The edited case's saved images that are still being kept. */
+  const [keptImages, setKeptImages] = useState<string[]>([]);
+  /** Its image set as loaded, so removals can be detected on save. */
+  const [savedImages, setSavedImages] = useState<string[]>([]);
 
   useEffect(() => {
     fetchCases()
@@ -70,19 +78,85 @@ function App() {
     setAo(emptyAo());
     setImages([]);
     setErrors([]);
+    setEditingId(null);
+    setKeptImages([]);
+    setSavedImages([]);
   }
 
-  async function handleSubmit() {
+  /** Opens a saved case in the entry form. The AO picker's structured selection
+   *  is rebuilt from the stored code so the diagram/pills come back preselected
+   *  rather than blank. */
+  function startEdit(id: string) {
+    const target = cases.find(c => c.id === id);
+    if (!target) return;
+    setForm(formFromEntry(target));
+    setAo(parseAoCode(target.aoCode, target.aoRegionLabel));
+    setImages([]);
+    setKeptImages(target.imagePaths);
+    setSavedImages(target.imagePaths);
+    setErrors([]);
+    setEditingId(id);
+    setTab('form');
+  }
+
+  function cancelEdit() {
+    resetForm();
+    setTab('log');
+  }
+
+  /** Shared pre-flight for both saving a new case and saving an edit. */
+  function checkBeforeSave(): boolean {
     const missing = validate();
     if (missing.length) {
       setErrors(missing);
-      return;
+      return false;
     }
     const totalImageBytes = images.reduce((sum, f) => sum + f.size, 0);
     if (totalImageBytes > MAX_IMAGES_TOTAL_BYTES) {
       setToast({ message: 'Total image size exceeds 10 MB. Remove some images to save.', sticky: false });
+      return false;
+    }
+    return true;
+  }
+
+  async function saveEdit(id: string) {
+    if (!checkBeforeSave()) return;
+    setSaving(true);
+    // Name new uploads past the case's existing ones so an edit can't reuse a
+    // filename already in the Drive folder.
+    let addedIds: string[] = [];
+    try {
+      addedIds = await uploadCaseImages(id, images, savedImages.length);
+      const region = findRegion(ao.regionKey);
+      const entry = await updateCase(id, form, computeAoCode(ao), region ? region.name : '', [
+        ...keptImages,
+        ...addedIds,
+      ]);
+      setCases(prev => prev.map(c => (c.id === id ? entry : c)));
+      // Drop de-selected images only now that the row no longer points at them,
+      // so a failed update never leaves the case referencing deleted files.
+      void deleteDriveImages(savedImages.filter(p => !keptImages.includes(p)));
+      resetForm();
+      setTab('log');
+      setExpandedId(id);
+      setToast({ message: 'Case updated', sticky: false });
+    } catch (err) {
+      console.error(err);
+      // The row still references the original images, so this edit's uploads
+      // are now orphaned — remove them.
+      void deleteDriveImages(addedIds);
+      setToast({ message: `Could not save: ${describeError(err)}`, sticky: true });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleSubmit() {
+    if (editingId) {
+      await saveEdit(editingId);
       return;
     }
+    if (!checkBeforeSave()) return;
     setSaving(true);
     // Generate the id up front so images can be named per-case and uploaded to
     // Drive before the row exists. If any upload fails we abort before
@@ -113,6 +187,9 @@ function App() {
   async function deleteCase(id: string) {
     const target = cases.find(c => c.id === id);
     const previous = cases;
+    // Abandon an in-progress edit of this case — its row is going away, so
+    // saving the form later could only fail.
+    if (editingId === id) resetForm();
     setCases(cases.filter(c => c.id !== id));
     try {
       await deleteCaseById(id, target?.imagePaths ?? []);
@@ -145,7 +222,7 @@ function App() {
         </div>
         <div className="tabs">
           <button type="button" className={`tab ${tab === 'form' ? 'active' : ''}`} onClick={() => setTab('form')}>
-            New Entry
+            {editingId ? 'Edit Case' : 'New Entry'}
           </button>
           <button type="button" className={`tab ${tab === 'log' ? 'active' : ''}`} onClick={() => setTab('log')}>
             Case Log ({cases.length})
@@ -167,9 +244,14 @@ function App() {
             setAo={setAo}
             onAddImages={files => setImages(prev => [...prev, ...files])}
             onRemoveImage={index => setImages(prev => prev.filter((_, i) => i !== index))}
-            onReset={resetForm}
+            onReset={editingId ? cancelEdit : resetForm}
             onSubmit={handleSubmit}
             saving={saving}
+            editing={editingId !== null}
+            existingImages={editingId ? keptImages : undefined}
+            onRemoveExistingImage={
+              editingId ? index => setKeptImages(prev => prev.filter((_, i) => i !== index)) : undefined
+            }
           />
         )}
         {tab === 'log' && (
@@ -177,6 +259,7 @@ function App() {
             cases={cases}
             expandedId={expandedId}
             onToggle={id => setExpandedId(cur => (cur === id ? null : id))}
+            onEdit={startEdit}
             onDelete={deleteCase}
           />
         )}

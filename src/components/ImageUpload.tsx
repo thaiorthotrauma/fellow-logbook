@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { isAllowedImage, MAX_IMAGES_TOTAL_BYTES } from '../lib/casesApi';
+import { getImageUrlsPositional, isAllowedImage, MAX_IMAGES_TOTAL_BYTES } from '../lib/casesApi';
 import { convertHeicFiles } from '../lib/heic';
 import { resizeImages } from '../lib/imageResize';
 
@@ -7,6 +7,64 @@ interface ImageUploadProps {
   images: File[];
   onAdd: (files: File[]) => void;
   onRemove: (index: number) => void;
+  /** Drive file IDs of images already saved on the case being edited. Absent
+   *  when logging a new case. */
+  existing?: string[];
+  onRemoveExisting?: (index: number) => void;
+}
+
+/** Thumbnails of a case's already-saved images, each removable. Loaded
+ *  positionally so a failed image still occupies its slot and the remove
+ *  buttons stay aligned with the caller's id list. */
+function SavedImages({ paths, onRemove }: { paths: string[]; onRemove: (index: number) => void }) {
+  const [urls, setUrls] = useState<(string | null)[] | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getImageUrlsPositional(paths)
+      .then(u => !cancelled && setUrls(u))
+      .catch(err => {
+        console.error(err);
+        if (!cancelled) setUrls(paths.map(() => null));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [paths]);
+
+  if (paths.length === 0) return null;
+
+  return (
+    <>
+      <div className="upload-meta">
+        {paths.length} image{paths.length === 1 ? '' : 's'} already saved
+      </div>
+      <div className="upload-tiles">
+        {paths.map((id, i) => (
+          <div className="upload-tile" key={id}>
+            {urls === null ? (
+              <div className="upload-chip">Loading…</div>
+            ) : urls[i] ? (
+              <img className="upload-thumb" src={urls[i] as string} alt={`Saved image ${i + 1}`} />
+            ) : (
+              <div className="upload-chip">
+                <span className="upload-chip-name">Image {i + 1}</span>
+                <span className="upload-chip-size">preview unavailable</span>
+              </div>
+            )}
+            <button
+              type="button"
+              className="upload-remove"
+              aria-label={`Remove saved image ${i + 1}`}
+              onClick={() => onRemove(i)}
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </div>
+    </>
+  );
 }
 
 function formatMB(bytes: number): string {
@@ -18,7 +76,7 @@ function isThumbnailable(file: File): boolean {
   return type === 'image/jpeg' || type === 'image/png';
 }
 
-export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProps) {
+export default function ImageUpload({ images, onAdd, onRemove, existing, onRemoveExisting }: ImageUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [rejected, setRejected] = useState(false);
   const [converting, setConverting] = useState(false);
@@ -66,6 +124,8 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
         style={{ display: 'none' }}
       />
 
+      {existing && onRemoveExisting && <SavedImages paths={existing} onRemove={onRemoveExisting} />}
+
       <button
         type="button"
         className="upload-btn"
@@ -79,7 +139,7 @@ export default function ImageUpload({ images, onAdd, onRemove }: ImageUploadProp
         {converting
           ? 'Processing images…'
           : images.length > 0
-            ? `${images.length} file${images.length === 1 ? '' : 's'} · ${formatMB(totalBytes)} / 10 MB`
+            ? `${images.length} new file${images.length === 1 ? '' : 's'} · ${formatMB(totalBytes)} / 10 MB`
             : 'JPG, PNG, or HEIC · up to 10 MB total'}
       </div>
 

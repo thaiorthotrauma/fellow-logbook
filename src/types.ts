@@ -53,6 +53,18 @@ export const emptyForm = (): FormState => ({
   memo: '',
 });
 
+/** The editable form fields of a saved case, i.e. everything except its id and
+ *  the derived AO/image columns. Written as a destructure of exactly those
+ *  non-form keys so that a field added to FormState carries over on its own,
+ *  and the compiler rejects this if the two types ever stop lining up. */
+export const formFromEntry = ({
+  id: _id,
+  aoCode: _aoCode,
+  aoRegionLabel: _aoRegionLabel,
+  imagePaths: _imagePaths,
+  ...form
+}: CaseEntry): FormState => form;
+
 export const emptyAo = (): AoState => ({
   regionKey: null,
   boneKey: null,

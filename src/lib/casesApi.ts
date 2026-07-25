@@ -70,8 +70,16 @@ export async function fetchCases(): Promise<CaseEntry[]> {
 /** Uploads the given files to Google Drive (via the drive-images function) and
  *  returns their Drive file IDs, in order. If any upload fails, the images
  *  already uploaded in this call are rolled back (best-effort) before throwing,
- *  so a partially-uploaded case never leaves orphaned files in Drive. */
-export async function uploadCaseImages(caseId: string, files: File[]): Promise<string[]> {
+ *  so a partially-uploaded case never leaves orphaned files in Drive.
+ *
+ *  `startIndex` offsets the generated filenames so images added while editing a
+ *  case don't reuse the names of the ones already on it. Drive addresses files
+ *  by id, not name, so this is purely for legibility in the Drive folder. */
+export async function uploadCaseImages(
+  caseId: string,
+  files: File[],
+  startIndex = 0,
+): Promise<string[]> {
   if (files.length === 0) return [];
   const ids: string[] = [];
   try {
@@ -81,7 +89,7 @@ export async function uploadCaseImages(caseId: string, files: File[]): Promise<s
       const { id } = await invokeDrive<{ id: string }>({
         action: 'upload',
         caseId,
-        filename: `${caseId}-${i + 1}.jpg`,
+        filename: `${caseId}-${startIndex + i + 1}.jpg`,
         contentType: imageMime(file),
         dataBase64,
       });
@@ -110,13 +118,34 @@ export async function insertCase(
   return fromRow(data as CaseRow);
 }
 
-/** Fetches a case's Drive images back through the function and returns them as
- *  data URLs (usable directly in <img src> / <a href>). Files stay private to
- *  the app — they are never shared with a public link. Missing/failed images
- *  are skipped rather than failing the whole set. */
-export async function getImageUrls(fileIds: string[]): Promise<string[]> {
+/** Overwrites an existing case with edited values. `imagePaths` is the case's
+ *  full final image set (kept existing ids + newly uploaded ones); Drive files
+ *  the edit dropped are deleted separately, only once this succeeds. RLS scopes
+ *  the update to the signed-in fellow's own rows. */
+export async function updateCase(
+  id: string,
+  form: FormState,
+  aoCode: string,
+  aoRegionLabel: string,
+  imagePaths: string[],
+): Promise<CaseEntry> {
+  const { data, error } = await supabase
+    .from('cases')
+    .update(toRow(form, aoCode, aoRegionLabel, imagePaths))
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return fromRow(data as CaseRow);
+}
+
+/** Fetches a case's Drive images back through the function as data URLs, one
+ *  entry per input id and `null` where an image couldn't be loaded. Callers that
+ *  index back into the id list (e.g. removing an image while editing) need this
+ *  positional alignment; use `getImageUrls` when only the loadable ones matter. */
+export async function getImageUrlsPositional(fileIds: string[]): Promise<(string | null)[]> {
   if (fileIds.length === 0) return [];
-  const results = await Promise.all(
+  return await Promise.all(
     fileIds.map(async id => {
       try {
         const { contentType, dataBase64 } = await invokeDrive<{ contentType: string; dataBase64: string }>({
@@ -130,6 +159,14 @@ export async function getImageUrls(fileIds: string[]): Promise<string[]> {
       }
     }),
   );
+}
+
+/** Fetches a case's Drive images back through the function and returns them as
+ *  data URLs (usable directly in <img src> / <a href>). Files stay private to
+ *  the app — they are never shared with a public link. Missing/failed images
+ *  are skipped rather than failing the whole set. */
+export async function getImageUrls(fileIds: string[]): Promise<string[]> {
+  const results = await getImageUrlsPositional(fileIds);
   return results.filter((url): url is string => url !== null);
 }
 
