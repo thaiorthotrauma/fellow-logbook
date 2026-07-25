@@ -1,4 +1,5 @@
-// Sends admin notifications to a Telegram chat via the Bot API.
+// Sends messages via the Telegram Bot API — admin notifications to a fixed
+// chat, and replies to whoever messaged the bot (the roster commands below).
 //
 // The bot token is a secret, so every send happens server-side — the browser
 // never holds it and never talks to Telegram directly.
@@ -35,13 +36,7 @@ export interface SendResult {
   error?: string;
 }
 
-/** Posts an HTML message. Never throws: a Telegram outage must not turn into a
- *  failed case save, so the outcome is returned for the caller to log. */
-export async function sendTelegram(html: string): Promise<SendResult> {
-  const { token, chatId } = config();
-  if (token === '' || chatId === '') {
-    return { sent: false, error: 'telegram not configured' };
-  }
+async function postMessage(token: string, chatId: string, html: string): Promise<SendResult> {
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
       method: 'POST',
@@ -61,4 +56,24 @@ export async function sendTelegram(html: string): Promise<SendResult> {
   } catch (err) {
     return { sent: false, error: err instanceof Error ? err.message : 'send failed' };
   }
+}
+
+/** Posts an HTML message to the fixed notification chat (TELEGRAM_CHAT_ID).
+ *  Never throws: a Telegram outage must not turn into a failed case save, so
+ *  the outcome is returned for the caller to log. */
+export async function sendTelegram(html: string): Promise<SendResult> {
+  const { token, chatId } = config();
+  if (token === '' || chatId === '') {
+    return { sent: false, error: 'telegram not configured' };
+  }
+  return postMessage(token, chatId, html);
+}
+
+/** Posts an HTML message to a specific chat — used to reply to whoever sent a
+ *  command, which may not be TELEGRAM_CHAT_ID. Only needs the bot token, since
+ *  the destination is given explicitly rather than read from config. */
+export async function sendTelegramTo(chatId: string, html: string): Promise<SendResult> {
+  const { token } = config();
+  if (token === '') return { sent: false, error: 'telegram not configured' };
+  return postMessage(token, chatId, html);
 }

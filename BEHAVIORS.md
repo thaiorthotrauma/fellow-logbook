@@ -227,6 +227,51 @@ is a server-side secret, so the browser never talks to Telegram itself.
   Telegram outage can never turn into a failed save, and with the Telegram
   secrets unset every send silently no-ops so the app works without them.
 
+## 6b. Telegram roster commands (admin)
+
+The same bot also accepts commands, via a second webhook function,
+`telegram-webhook`, so the fellow whitelist (`physicians`) can be managed from
+a phone instead of the SQL editor. Two independent gates run before anything is
+read or written, since that table is the access whitelist for an app holding
+patient data:
+1. `X-Telegram-Bot-Api-Secret-Token` header must match `TELEGRAM_WEBHOOK_SECRET`
+   — proves the request came from Telegram. Set via `setWebhook`'s
+   `secret_token` param; the function must be deployed with `--no-verify-jwt`,
+   same as `line-webhook`.
+2. The sender's numeric Telegram user id must be in `TELEGRAM_ADMIN_IDS` —
+   proves it's actually an admin. Gate 1 alone only proves Telegram delivered
+   the request; anyone who finds the bot can message it.
+
+A message that fails either gate gets **no reply at all** (not "not
+authorised", which would confirm to a stranger that they'd found an admin
+tool) — logged server-side instead.
+
+- **`/add name | email | institution`** — fields split on `|` rather than
+  whitespace, since Thai names contain spaces and emails don't; institution is
+  optional. Inserts an unverified, unlinked row — exactly the state
+  `seed_physicians.sql` produces. Adding someone does **not** create a login or
+  notify them; they still sign in the normal way (email → one-time code →
+  optional LINE link), which is what flips them to verified. The reply echoes
+  back exactly what was stored, since **the email is the login identity** — a
+  typo that happens to match a real address would let that person sign in as a
+  fellow, so it needs to be visible immediately, not discovered later.
+  - A duplicate email is **refused**, not overwritten — the reply shows who
+    already holds it (name, institution, verified) and nothing changes.
+  - Email match is case-insensitive but done with `ilike` on an **escaped**
+    pattern (`escapeLikePattern`), not a raw one — `_` is ordinary in an email
+    address and would otherwise act as an SQL wildcard, matching the wrong row.
+- **`/remove email`** — restricted to a row that has **never been signed
+  into** (not verified, no linked `user_id` or `line_user_id`). This makes it a
+  typo eraser that is physically incapable of removing an active fellow or
+  affecting anything they've logged; the reply for a row that fails this check
+  doesn't say which specific field blocked it, just that it's already real —
+  fixing an active account goes through the SQL editor.
+- **`/list`** — name and verified status only, **emails omitted**, so the
+  roster's address list doesn't end up sitting in Telegram chat history.
+- The command parser and reply text are pure functions
+  (`_shared/physicianCommands.ts`) with no Deno/Supabase dependency, so they're
+  unit-tested from the app's own vitest suite rather than only by hand.
+
 ## 7. Display & rendering
 
 - **Responsive:** a single content column capped at 960px and centered. On
