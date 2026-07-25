@@ -180,8 +180,8 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
               <View style={s.caseHead}>
                 <Text style={s.caseNum}>#{i + 1}</Text>
                 <Text style={s.caseDate}>{formatDate(c.date)}</Text>
-                {c.timing ? <Text style={s.chip}>{TIMING_MAP[c.timing] ?? c.timing}</Text> : null}
                 <Text style={outside ? s.chipOutside : s.chipPlace}>{PLACE_MAP[c.place ?? ''] ?? '—'}</Text>
+                {c.timing ? <Text style={s.chip}>{TIMING_MAP[c.timing] ?? c.timing}</Text> : null}
               </View>
 
               <View style={s.fieldRow}><Text style={s.fieldKey}>Diagnosis</Text><Text style={s.fieldVal}>{formatBulletedField(c.diagnosis) || '—'}</Text></View>
