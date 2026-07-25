@@ -12,7 +12,7 @@ import {
   ROLES,
   TIMING_MAP,
 } from '../../data';
-import { stripBullets } from '../textFormat';
+import { formatClassification, stripBullets } from '../textFormat';
 import type { CaseEntry } from '../../types';
 
 export interface LogbookPdfProps {
@@ -182,13 +182,15 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
                 <Text style={s.caseDate}>{formatDate(c.date)}</Text>
                 {c.timing ? <Text style={s.chip}>{TIMING_MAP[c.timing] ?? c.timing}</Text> : null}
                 <Text style={outside ? s.chipOutside : s.chipPlace}>{PLACE_MAP[c.place ?? ''] ?? '—'}</Text>
-                {c.aoCode ? <Text style={s.chip}>{c.aoCode}</Text> : null}
               </View>
 
               <View style={s.fieldRow}><Text style={s.fieldKey}>Diagnosis</Text><Text style={s.fieldVal}>{stripBullets(c.diagnosis) || '—'}</Text></View>
-              {c.otherClassification ? (
-                <View style={s.fieldRow}><Text style={s.fieldKey}>Other class.</Text><Text style={s.fieldVal}>{stripBullets(c.otherClassification)}</Text></View>
-              ) : null}
+              {(() => {
+                const classification = formatClassification(c.aoCode, c.otherClassification);
+                return classification ? (
+                  <View style={s.fieldRow}><Text style={s.fieldKey}>Classification</Text><Text style={s.fieldVal}>{classification}</Text></View>
+                ) : null;
+              })()}
               {c.approach ? (
                 <View style={s.fieldRow}><Text style={s.fieldKey}>Approach</Text><Text style={s.fieldVal}>{stripBullets(c.approach)}</Text></View>
               ) : null}
