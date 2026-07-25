@@ -203,6 +203,11 @@ function App() {
     if (editingId === id) resetForm();
     setCases(cases.filter(c => c.id !== id));
     try {
+      // Notified (and awaited) before the row is gone: unlike created/updated,
+      // a deleted row can't be re-read afterward, so the server builds this
+      // message from the still-live row. notifyCase never throws, so this
+      // can't turn a Telegram problem into a failed delete.
+      await notifyCase('deleted', id);
       await deleteCaseById(id, target?.imagePaths ?? []);
     } catch (err) {
       console.error(err);

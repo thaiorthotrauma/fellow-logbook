@@ -143,10 +143,14 @@ export function diffCaseColumns(before: CaseEntry, after: CaseEntry): PreviousVa
 }
 
 /** Tells the server to post a Telegram notification for a case. Best-effort and
- *  never throws: the case is already saved by the time this runs, so a Telegram
- *  problem must not surface to the fellow as a failed save. */
+ *  never throws — a Telegram problem must not surface to the fellow as a failed
+ *  save (or, for 'deleted', a failed delete).
+ *
+ *  Call order matters for 'deleted': the server re-reads the row to build the
+ *  message, and a deleted row can't be re-read afterwards — so call this
+ *  BEFORE deleteCaseById, not after, unlike 'created'/'updated'. */
 export async function notifyCase(
-  kind: 'created' | 'updated',
+  kind: 'created' | 'updated' | 'deleted',
   caseId: string,
   previous?: PreviousValues,
 ): Promise<void> {

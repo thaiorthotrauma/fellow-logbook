@@ -1,7 +1,9 @@
-// Sends a Telegram notification when a fellow adds or edits a case.
+// Sends a Telegram notification when a fellow adds, edits, or deletes a case.
 //
-// Called by the app right after a successful insert/update. The bot token must
-// stay server-side, so the browser can't post to Telegram itself.
+// Called by the app right after a successful insert/update — and, for a
+// delete, right BEFORE the row is removed (see the 'deleted' case below for
+// why). The bot token must stay server-side, so the browser can't post to
+// Telegram itself.
 //
 // The case content is re-read from the database here rather than accepted from
 // the caller, so a notification always reflects a real, stored row owned by the
@@ -12,6 +14,7 @@
 // Actions (POST JSON):
 //   { kind: 'created', caseId }
 //   { kind: 'updated', caseId, previous: { <column>: <old value>, ... } }
+//   { kind: 'deleted', caseId }   — call this BEFORE deleting the row
 //
 // Always answers 200 with { sent } — a notification failure must never surface
 // as a failed save. Deployed like the other functions (JWT verified):
@@ -20,7 +23,12 @@
 // Required secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID (see _shared/telegram.ts)
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { sendTelegram, telegramConfigured } from '../_shared/telegram.ts';
-import { editedCaseMessage, newCaseMessage, type CaseRow } from '../_shared/caseMessage.ts';
+import {
+  deletedCaseMessage,
+  editedCaseMessage,
+  newCaseMessage,
+  type CaseRow,
+} from '../_shared/caseMessage.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -58,7 +66,7 @@ Deno.serve(async req => {
     const payload = await req.json();
     const { kind, caseId } = payload ?? {};
     if (typeof caseId !== 'string' || !caseId) return json({ error: 'caseId is required' }, 400);
-    if (kind !== 'created' && kind !== 'updated') {
+    if (kind !== 'created' && kind !== 'updated' && kind !== 'deleted') {
       return json({ error: `unknown kind: ${kind}` }, 400);
     }
 
@@ -84,6 +92,17 @@ Deno.serve(async req => {
     if (kind === 'created') {
       const { count } = await user.from('cases').select('id', { count: 'exact', head: true });
       message = newCaseMessage(row as unknown as CaseRow, fellowName, institution, count ?? 0);
+    } else if (kind === 'deleted') {
+      // The row still exists at this point (called before the delete), so the
+      // current total still counts it — subtract one to report what the
+      // roster will have once the caller goes on to actually delete it.
+      const { count } = await user.from('cases').select('id', { count: 'exact', head: true });
+      message = deletedCaseMessage(
+        row as unknown as CaseRow,
+        fellowName,
+        institution,
+        Math.max(0, (count ?? 1) - 1),
+      );
     } else {
       const previous = payload?.previous;
       if (previous === null || typeof previous !== 'object' || Array.isArray(previous)) {

@@ -196,15 +196,15 @@ fellow name/institution render.
 
 ## 6a. Telegram notifications (admin)
 
-Three situations post a message to a single admin Telegram chat. The bot token
+Four situations post a message to a single admin Telegram chat. The bot token
 is a server-side secret, so the browser never talks to Telegram itself.
 
-- **New case logged** and **case edited** go through the JWT-protected
-  `notify-case` Edge Function, called after the save has committed. The function
-  re-reads the case from the database rather than trusting the request body, so
-  a notification always reflects a real stored row owned by the caller and the
-  request can't push arbitrary text into the admin chat. The fellow's name and
-  institution likewise come from the `physicians` table, not the client.
+- **New case logged**, **case edited**, and **case deleted** all go through the
+  JWT-protected `notify-case` Edge Function. The function re-reads the case from
+  the database rather than trusting the request body, so a notification always
+  reflects a real stored row owned by the caller and the request can't push
+  arbitrary text into the admin chat. The fellow's name and institution likewise
+  come from the `physicians` table, not the client.
   - An edit reports **only the fields that changed**, as struck-through old →
     new (Telegram has no coloured text). Short values sit inline; long or
     multi-line ones stack. Images report as a count, not Drive file IDs. A save
@@ -212,6 +212,15 @@ is a server-side secret, so the browser never talks to Telegram itself.
   - The prior values behind that diff are the one thing supplied by the client —
     only it knows the pre-update state. These are advisory notifications, not an
     audit log.
+  - **Delete is the one exception to "called after the save has committed"**:
+    it's called with the row still intact, right *before* `deleteCaseById` runs
+    and awaited first — a deleted row can't be re-read afterward the way a
+    created/updated one can be, so the message has to be built from the still-
+    live row while it still exists. The reported roster count is therefore the
+    current total minus one, not a fresh query after the row is actually gone.
+    A delete that then fails would leave a "deleted" notification for a case
+    that's technically still there — accepted as an edge case consistent with
+    these being advisory, best-effort notifications, not an audit log.
 - **Inbound LINE chat** goes through `line-webhook`, called by LINE rather than
   the browser. It has no Supabase session, so authenticity comes from the
   `X-Line-Signature` HMAC instead and it must be deployed with

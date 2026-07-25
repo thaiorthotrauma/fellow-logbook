@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   chatMessage,
+  deletedCaseMessage,
   editedCaseMessage,
   maskHn,
   newCaseMessage,
@@ -142,6 +143,40 @@ describe('editedCaseMessage', () => {
 
   it('ignores unknown columns rather than rendering them', () => {
     expect(editedCaseMessage(row, { not_a_column: 1 }, 'A', null)).toBeNull();
+  });
+});
+
+describe('deletedCaseMessage', () => {
+  it('identifies the case with the same identity line as the other two', () => {
+    const msg = deletedCaseMessage(row, 'ปองสิทธิ์ โพธิคุณ', 'สมุทรสาคร', 11);
+    expect(msg).toContain('🗑 <b>Case deleted</b>');
+    expect(msg).toContain('ปองสิทธิ์ โพธิคุณ · สมุทรสาคร');
+    expect(msg).toContain('Case of 24 July 2026 · HN <code>•••4567</code>');
+  });
+
+  it('includes the diagnosis for recognition, bullets stripped', () => {
+    const msg = deletedCaseMessage({ ...row, diagnosis: '- Line one\n- Line two' }, 'A', null, 0);
+    expect(msg).toContain('<b>Diagnosis</b>\n• Line one\n• Line two');
+  });
+
+  it('reports images removed only when there were any', () => {
+    const withImages = deletedCaseMessage(row, 'A', null, 11);
+    expect(withImages).toContain('2 images removed · Roster now has 11 cases');
+
+    const noImages = deletedCaseMessage({ ...row, image_paths: [] }, 'A', null, 5);
+    expect(noImages).not.toContain('removed');
+    expect(noImages).toContain('Roster now has 5 cases');
+  });
+
+  it('pluralizes the roster count correctly at one', () => {
+    const msg = deletedCaseMessage({ ...row, image_paths: [] }, 'A', null, 1);
+    expect(msg).toContain('Roster now has 1 case');
+    expect(msg).not.toContain('1 cases');
+  });
+
+  it('never sends a full HN', () => {
+    const msg = deletedCaseMessage(row, 'A', null, 0);
+    expect(msg).not.toContain('1234567');
   });
 });
 

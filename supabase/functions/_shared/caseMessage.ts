@@ -235,7 +235,28 @@ export function editedCaseMessage(
   );
 }
 
-/** Situation 3 — an inbound LINE message. `fellowName` is null for a LINE
+/** Situation 3 — a saved case was deleted. Called with the row still intact
+ *  (a deleted row can't be re-read afterwards, unlike created/updated), so
+ *  `remainingCount` is supplied by the caller as "current total minus one"
+ *  rather than queried fresh here. */
+export function deletedCaseMessage(
+  row: CaseRow,
+  fellowName: string,
+  institution: string | null,
+  remainingCount: number,
+): string {
+  const images = (row.image_paths ?? []).length;
+  return (
+    `🗑 <b>Case deleted</b>\n` +
+    `${who(fellowName, institution)}\n` +
+    `Case of ${esc(formatDate(row.date))} · HN <code>${esc(maskHn(row.hn))}</code>` +
+    block('Diagnosis', bulleted(row.diagnosis)) +
+    `\n\n${images > 0 ? `${images} image${images === 1 ? '' : 's'} removed · ` : ''}` +
+    `Roster now has ${remainingCount} case${remainingCount === 1 ? '' : 's'}`
+  );
+}
+
+/** Situation 4 — an inbound LINE message. `fellowName` is null for a LINE
  *  account with no physician record, which is the common case in practice:
  *  anyone who finds the official account can message it, and that's precisely
  *  who the raw user id is needed for. */
