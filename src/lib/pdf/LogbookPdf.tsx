@@ -20,10 +20,11 @@ export interface LogbookPdfProps {
   institution: string | null;
   yearLabel: string;
   rangeLabel: string;
-  generatedLabel: string;
   /** Already filtered to the range and sorted oldest → newest. */
   cases: CaseEntry[];
 }
+
+const FOOTER_ORG = 'Thai Orthopaedic Trauma Society';
 
 const TEAL = '#0d6e64';
 const INK = '#16231f';
@@ -100,7 +101,7 @@ function RankTable({ title, items }: { title: string; items: RankItem[] }) {
   );
 }
 
-export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLabel, generatedLabel, cases }: LogbookPdfProps) {
+export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLabel, cases }: LogbookPdfProps) {
   const topDx = topN(cases, c => c.diagnosis, 5);
   const topProc = topN(cases, c => c.procedure, 5);
   const typeDist = distribution(cases, c => c.procedureType, PROC_TYPE);
@@ -154,7 +155,7 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
             const { pageNumber, totalPages } = props as unknown as { pageNumber: number; totalPages: number };
             return (
               <>
-                <Text>{generatedLabel}</Text>
+                <Text>{FOOTER_ORG}</Text>
                 <Text>Page {pageNumber} of {totalPages}</Text>
               </>
             );
@@ -210,7 +211,7 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
             const { pageNumber, totalPages } = props as unknown as { pageNumber: number; totalPages: number };
             return (
               <>
-                <Text>{generatedLabel}</Text>
+                <Text>{FOOTER_ORG}</Text>
                 <Text>Page {pageNumber} of {totalPages}</Text>
               </>
             );

@@ -90,7 +90,6 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
     setDone('');
     try {
       const selected = sortChronological(filterByMonthRange(cases, from, to));
-      const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
       const { generateLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
       const blob = await generateLogbookBlob({
@@ -98,7 +97,6 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
         institution,
         yearLabel: YEAR_LABEL,
         rangeLabel: rangeLabel(from, to),
-        generatedLabel: `Generated ${today}`,
         cases: selected,
       });
       const result = await deliverPdf(blob, pdfFileName(fellowName, from, to));
