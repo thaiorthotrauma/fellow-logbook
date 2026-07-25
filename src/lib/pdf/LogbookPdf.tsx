@@ -49,7 +49,9 @@ const s = StyleSheet.create({
 
   rankRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 5 },
   rankNum: { width: 16, fontSize: 11, fontWeight: 700, color: TEAL },
-  rankLabel: { flex: 1, fontSize: 11, color: '#24302e', paddingRight: 6 },
+  // Capped to 2 lines so one very long diagnosis/procedure can't push the
+  // pie charts further down the page — it truncates with an ellipsis instead.
+  rankLabel: { flex: 1, fontSize: 11, color: '#24302e', paddingRight: 6, maxLines: 2, textOverflow: 'ellipsis' },
   rankCount: { fontSize: 11, fontWeight: 600 },
   emptyNote: { fontSize: 10.5, color: '#8a938f' },
 

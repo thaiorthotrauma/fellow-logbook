@@ -7,6 +7,10 @@ interface ExportPdfPanelProps {
   cases: CaseEntry[];
   fellowName: string;
   institution: string | null;
+  /** True until the fellow's profile (name, institution) has finished
+   *  loading — generation is blocked until then, otherwise a PDF started
+   *  right after switching tabs could bake in a blank name/institution. */
+  profileLoading: boolean;
 }
 
 const YEAR_LABEL = '2026–2027';
@@ -64,7 +68,7 @@ const DONE_NOTE: Record<string, string> = {
   downloaded: 'PDF downloaded.',
 };
 
-export default function ExportPdfPanel({ cases, fellowName, institution }: ExportPdfPanelProps) {
+export default function ExportPdfPanel({ cases, fellowName, institution, profileLoading }: ExportPdfPanelProps) {
   const bounds = useMemo(() => casesMonthBounds(cases), [cases]);
   const [from, setFrom] = useState(bounds?.min ?? '');
   const [to, setTo] = useState(bounds?.max ?? '');
@@ -78,7 +82,7 @@ export default function ExportPdfPanel({ cases, fellowName, institution }: Expor
     [cases, from, to],
   );
   const invalidRange = Boolean(from && to && from > to);
-  const canGenerate = !busy && !!from && !!to && !invalidRange && inRange > 0;
+  const canGenerate = !busy && !profileLoading && !!from && !!to && !invalidRange && inRange > 0;
 
   async function generate() {
     setBusy(true);
@@ -152,7 +156,7 @@ export default function ExportPdfPanel({ cases, fellowName, institution }: Expor
 
           <div className="export-actions">
             <button type="button" className="btn-primary" onClick={generate} disabled={!canGenerate}>
-              {busy ? 'Building PDF…' : 'Generate PDF'}
+              {busy ? 'Building PDF…' : profileLoading ? 'Loading profile…' : 'Generate PDF'}
             </button>
           </div>
         </>

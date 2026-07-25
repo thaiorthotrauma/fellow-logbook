@@ -185,6 +185,7 @@ function App() {
             cases={cases}
             fellowName={physician?.fullName ?? ''}
             institution={physician?.institution ?? null}
+            profileLoading={profileLoading}
           />
         )}
       </div>
