@@ -182,7 +182,20 @@ Deno.serve(async req => {
         .contains('image_paths', [id])
         .limit(1);
       if (ownErr) throw ownErr;
-      if (!owning || owning.length === 0) return json({ error: 'not found' }, 404);
+
+      // A fellow's own-case check above is never true for a staff caller —
+      // their auth.uid() is an anonymous id, not any case's user_id. Fall
+      // back to the staff authorization function (true only when this image
+      // belongs to a case in the caller's own institution) before refusing.
+      let authorized = Boolean(owning && owning.length > 0);
+      if (!authorized) {
+        const { data: staffAllowed, error: staffErr } = await user.rpc('staff_can_view_image', {
+          p_image_id: id,
+        });
+        if (staffErr) throw staffErr;
+        authorized = staffAllowed === true;
+      }
+      if (!authorized) return json({ error: 'not found' }, 404);
 
       const { bytes, contentType } = await driveGet(token, id);
       return json({ contentType, dataBase64: bytesToBase64(bytes) });

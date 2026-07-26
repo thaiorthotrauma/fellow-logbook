@@ -51,6 +51,38 @@ walkthrough is in [SETUP.md](./SETUP.md#how-the-login-flow-works).
 - **Failure states:** a generic error screen with a **Try again** button
   re-runs the whole bootstrap.
 
+### Staff sign-in (no email/OTP)
+
+A second identity path for institution staff, reached via `?view=staff` (the
+staff rich menu's "Fellow Cases" button — see `line-oa/README.md`) or,
+as a fallback, automatically whenever the normal fellow check above finds an
+unrecognized LINE id. Staff are pre-seeded (`supabase/seed_staff.sql`) with no
+email at all — trusted by LINE id alone, since there's no whitelist step to
+verify against.
+
+- Creates an **anonymous Supabase session** (`signInAnonymously()` — a real
+  session tied to no email/credential) and, via the `link-line-staff` Edge
+  Function, verifies the LINE id server-side and links this device to the
+  matching `staff` row.
+- **One row per device, not one per staff member** (`staff_devices`, not a
+  single `user_id` column): an anonymous session has no identity to share
+  across a phone and a tablet the way a fellow's email does, so phone and
+  tablet each get an unrelated session and both stay linked simultaneously —
+  neither kicks the other out.
+- `?view=staff` is an **explicit override**, not just a hint: it skips the
+  "trust an existing session" fast path and forces a fresh staff-link attempt,
+  so someone who happens to also be a fellow (this app's own test account, for
+  one) still reaches the staff view via their rich menu button instead of
+  their existing fellow session winning by default.
+- Not a recognized staff LINE id → degrades gracefully into the normal fellow
+  flow (or the email screen, for a genuinely unrecognized account) rather than
+  showing an error.
+
+### Demo mode (no identity at all)
+
+`?view=demo` (the staff rich menu's "Logbook Demo" button) skips login
+entirely — only the device gate above applies. See §4a.
+
 ## 3. Header
 
 Once authenticated, the sticky header shows, pulled live from the fellow's own
@@ -118,6 +150,26 @@ RLS-scoped rows and is not included in the exported PDF.
   request.
 - **Reset:** clears the form, AO selection, and selected images.
 
+## 4a. Demo mode
+
+Reached via `?view=demo` (see §2), shown to anyone the staff rich menu's
+"Logbook Demo" button was tapped by. Same three tabs as the normal fellow
+view, all inert:
+
+- **New Entry** shows a banner ("Demo — inputs are disabled and nothing is
+  saved") and the form is wrapped so nothing in it can be typed, selected, or
+  submitted (`pointer-events: none`, not a `disabled` prop threaded through
+  every field individually).
+- **Case Log** always shows the empty state — cases are never fetched at all
+  in demo mode, not fetched-then-hidden, so no network request touches real
+  data.
+- **PDF** shows its normal "no cases to export yet" state, since there's
+  nothing to export — the month pickers never render in that state, so
+  there's no dedicated "disable the picker" code path; it falls out of the
+  already-empty case list.
+- No LINE verification, no Supabase session, no account involved — the
+  device gate (in-app, mobile) still applies, identity does not.
+
 ## 5. Case Log
 
 - Lists the fellow's own saved cases, newest first, with a count.
@@ -176,6 +228,35 @@ fellow name/institution render.
   into a LINE chat themselves. Falls back to opening in the external browser,
   then a plain download. A LINE *bot* can't attach a file to chat, so there's no
   auto-push into the OA chatbox.
+
+## 5b. Staff institution view
+
+Reached only via a **staff** LINE identity (§2). No New Entry tab — staff
+never log cases. Two tabs instead: **Institution Cases** and **PDF**.
+
+- **Institution Cases** reuses the same card component as the fellow's own
+  Case Log — same expand-to-detail layout — but read-only (no Edit/Delete)
+  and each card additionally shows **which fellow** logged it, since the list
+  spans every fellow at the institution, not just one person's own cases.
+  - Sourced from `staff_institution_cases()`, a database function that is the
+    **only** way this data is ever read — HN masking (last 4 digits, same rule
+    as the Telegram notifications) is enforced there, not in the UI, so no
+    future screen can forget to apply it and leak a full HN.
+  - Scoped by the **fellow's own `institution` field**, not the case's
+    `place` (home/outside) — a staff member sees every case logged by every
+    fellow at their institution, including those fellows' outside-institution
+    cases, not "cases that physically happened at this institution."
+  - Case images use the same `drive-images` function fellows use; its
+    ownership check has a staff-specific fallback (`staff_can_view_image`) for
+    exactly this reason — the normal "case row belongs to the caller" check is
+    never true for a staff member's anonymous session.
+- **PDF** offers two groupings, chosen with a segmented control, both reusing
+  the same summary+content page engine as the fellow export:
+  - **By month range** — one pooled document across every fellow in range,
+    same shape as a fellow's own export; each case's content-page entry shows
+    a chip naming which fellow logged it.
+  - **By fellow** — each fellow gets their own summary + content page pair,
+    back to back in a single PDF, one fellow after another.
 
 ## 6. Data & persistence
 

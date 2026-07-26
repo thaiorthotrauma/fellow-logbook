@@ -633,6 +633,17 @@ button {
   color: #9aa5a2;
 }
 
+/* Only present on the staff view — one card can be any fellow's, unlike a
+   fellow's own log where it's always "you". */
+.case-card-fellow {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0d6e64;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 4px;
+}
+
 .case-card-diagnosis {
   font-size: 15px;
   font-weight: 600;
@@ -765,6 +776,30 @@ button {
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 14px;
+}
+
+/* Shown above the inert form in demo mode (reached via the staff rich
+   menu's "Logbook Demo" button) — amber rather than the edit-banner's teal,
+   so a demo session reads as visually distinct from a real one. */
+.demo-banner {
+  background: #fff6e6;
+  border: 1px solid #e3c584;
+  color: #6b4a05;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+/* Wraps the New Entry form in demo mode: fully inert, so nothing can be
+   typed, selected, or submitted, without needing to thread a `disabled`
+   prop through every field across NewEntryForm/AoClassification/
+   BulletTextarea/ImageUpload/Pill individually. */
+.demo-inert {
+  pointer-events: none;
+  opacity: 0.6;
+  user-select: none;
 }
 
 .case-card-delete {

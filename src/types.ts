@@ -36,6 +36,14 @@ export interface CaseEntry extends FormState {
   imagePaths: string[];
 }
 
+/** A case as staff see it: the same shape, plus which fellow logged it (staff
+ *  view spans every fellow in the institution, unlike a fellow's own list) —
+ *  and `hn` already arrives masked from staff_institution_cases(), never the
+ *  real value. */
+export interface StaffCaseEntry extends CaseEntry {
+  fellowName: string;
+}
+
 export const emptyForm = (): FormState => ({
   date: '',
   timing: null,

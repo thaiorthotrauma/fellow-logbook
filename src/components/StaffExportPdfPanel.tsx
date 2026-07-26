@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import {
   casesMonthBounds,
   filterByMonthRange,
+  groupByFellow,
   monthLabel,
   monthsBetween,
   nameFileSegment,
@@ -10,22 +11,24 @@ import {
   sortChronological,
 } from '../lib/pdf/stats';
 import { describeError } from '../lib/errors';
-import type { CaseEntry } from '../types';
+import type { StaffCaseEntry } from '../types';
 
-interface ExportPdfPanelProps {
-  cases: CaseEntry[];
-  fellowName: string;
-  institution: string | null;
-  /** True until the fellow's profile (name, institution) has finished
-   *  loading — generation is blocked until then, otherwise a PDF started
-   *  right after switching tabs could bake in a blank name/institution. */
+interface StaffExportPdfPanelProps {
+  cases: StaffCaseEntry[];
+  institution: string;
+  /** True until the staff profile has finished loading — mirrors
+   *  ExportPdfPanel's profileLoading guard, same reason: generation started
+   *  right after switching tabs could otherwise bake in a blank institution. */
   profileLoading: boolean;
 }
 
 const YEAR_LABEL = '2026–2027';
 
-function pdfFileName(fellowName: string, from: string, to: string): string {
-  return `TOTS-fellow-logbook_${nameFileSegment(fellowName)}_${monthFileSegment(from)}_to_${monthFileSegment(to)}.pdf`;
+type Grouping = 'month' | 'fellow';
+
+function pdfFileName(institution: string, grouping: Grouping, from: string, to: string): string {
+  const suffix = grouping === 'fellow' ? 'by-fellow' : monthFileSegment(to);
+  return `TOTS-staff-logbook_${nameFileSegment(institution)}_${monthFileSegment(from)}_to_${suffix}.pdf`;
 }
 
 // 'shared' has no note: the native share sheet is itself the feedback that
@@ -35,38 +38,48 @@ const DONE_NOTE: Record<string, string> = {
   downloaded: 'PDF downloaded.',
 };
 
-export default function ExportPdfPanel({ cases, fellowName, institution, profileLoading }: ExportPdfPanelProps) {
+export default function StaffExportPdfPanel({ cases, institution, profileLoading }: StaffExportPdfPanelProps) {
   const bounds = useMemo(() => casesMonthBounds(cases), [cases]);
   const [from, setFrom] = useState(bounds?.min ?? '');
   const [to, setTo] = useState(bounds?.max ?? '');
+  const [grouping, setGrouping] = useState<Grouping>('month');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
 
   const monthOptions = useMemo(() => (bounds ? monthsBetween(bounds.min, bounds.max) : []), [bounds]);
-  const inRange = useMemo(
-    () => (from && to && from <= to ? filterByMonthRange(cases, from, to).length : 0),
+  const selected = useMemo(
+    () => (from && to && from <= to ? sortChronological(filterByMonthRange(cases, from, to)) : []),
     [cases, from, to],
   );
   const invalidRange = Boolean(from && to && from > to);
-  const canGenerate = !busy && !profileLoading && !!from && !!to && !invalidRange && inRange > 0;
+  const canGenerate = !busy && !profileLoading && !!from && !!to && !invalidRange && selected.length > 0;
 
   async function generate() {
     setBusy(true);
     setError('');
     setDone('');
     try {
-      const selected = sortChronological(filterByMonthRange(cases, from, to));
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
-      const { generateLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
-      const blob = await generateLogbookBlob({
-        fellowName,
-        institution,
-        yearLabel: YEAR_LABEL,
-        rangeLabel: rangeLabel(from, to),
-        cases: selected,
-      });
-      const result = await deliverPdf(blob, pdfFileName(fellowName, from, to));
+      const { generateLogbookBlob, generateStaffLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
+
+      const blob =
+        grouping === 'month'
+          ? await generateLogbookBlob({
+              fellowName: institution,
+              institution: null,
+              yearLabel: YEAR_LABEL,
+              rangeLabel: rangeLabel(from, to),
+              cases: selected,
+            })
+          : await generateStaffLogbookBlob({
+              institution,
+              yearLabel: YEAR_LABEL,
+              rangeLabel: rangeLabel(from, to),
+              fellows: groupByFellow(selected),
+            });
+
+      const result = await deliverPdf(blob, pdfFileName(institution, grouping, from, to));
       setDone(DONE_NOTE[result] ?? '');
     } catch (err) {
       console.error(err);
@@ -79,16 +92,24 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
   return (
     <div className="card">
       <div className="card-header">
-        <span className="step-title">Export logbook (PDF)</span>
+        <span className="step-title">Export institution logbook (PDF)</span>
       </div>
 
       {bounds === null ? (
-        <div className="field-label">No cases to export yet. Add cases in New Entry first.</div>
+        <div className="field-label">No cases to export yet.</div>
       ) : (
         <>
           <div className="field-label" style={{ marginBottom: 14 }}>
-            Choose the month range to include. The PDF opens with a summary page (case count, top diagnoses &amp;
-            procedures, and charts), followed by each case in date order, oldest first.
+            Choose the month range and how to group the cases.
+          </div>
+
+          <div className="seg" role="group" aria-label="Group by" style={{ marginBottom: 14 }}>
+            <button type="button" className={`seg-btn ${grouping === 'month' ? 'active' : ''}`} onClick={() => { setGrouping('month'); setDone(''); }}>
+              By month range
+            </button>
+            <button type="button" className={`seg-btn ${grouping === 'fellow' ? 'active' : ''}`} onClick={() => { setGrouping('fellow'); setDone(''); }}>
+              By fellow
+            </button>
           </div>
 
           <div className="export-fields">
@@ -113,7 +134,7 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
           <div className={`export-note ${invalidRange ? 'error' : ''}`}>
             {invalidRange
               ? '"From" must be on or before "To".'
-              : `${inRange} ${inRange === 1 ? 'case' : 'cases'} in range`}
+              : `${selected.length} ${selected.length === 1 ? 'case' : 'cases'} in range`}
           </div>
 
           {error && <div className="export-note error">Could not export: {error}</div>}
@@ -129,3 +150,4 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
     </div>
   );
 }
+

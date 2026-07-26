@@ -98,6 +98,99 @@ can be regenerated the same way.
 
 ---
 
+## Staff rich menu (per-user, not the default)
+
+A second rich menu, shown **only** to verified staff — everyone else keeps
+seeing the default one above. Two tap areas side by side: **Fellow Cases**
+(left, amber) opens the staff institution view; **Logbook Demo** (right,
+teal) opens a disabled preview of the fellow experience with no real data.
+Same 2500×843 size as the default menu.
+
+- **Image:** [`richmenu-staff.jpg`](./richmenu-staff.jpg) — 2500×843px, ~94KB.
+- Reuses the same `$CHANNEL_TOKEN` and `$LIFF_URL` shell variables set above
+  — no new prerequisite.
+- Unlike the default menu, this one is **never** set for "all users" — it's
+  assigned to specific LINE ids one at a time (step 3 below), which is what
+  keeps it staff-only.
+
+### 1. Create the rich menu
+
+```sh
+curl -v -X POST https://api.line.me/v2/bot/richmenu \
+  -H "Authorization: Bearer $CHANNEL_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "size": { "width": 2500, "height": 843 },
+    "selected": true,
+    "name": "Fellow Logbook — staff menu",
+    "chatBarText": "Staff Menu",
+    "areas": [
+      {
+        "bounds": { "x": 0, "y": 0, "width": 1250, "height": 843 },
+        "action": { "type": "uri", "label": "Fellow Cases", "uri": "'"$LIFF_URL"'?view=staff" }
+      },
+      {
+        "bounds": { "x": 1250, "y": 0, "width": 1250, "height": 843 },
+        "action": { "type": "uri", "label": "Logbook Demo", "uri": "'"$LIFF_URL"'?view=demo" }
+      }
+    ]
+  }'
+```
+
+Save the returned id under a different variable from the default menu's, so
+you don't overwrite it:
+
+```sh
+export STAFF_RICH_MENU_ID="richmenu-xxxxxxxxxxxxxxxxxxxx"
+```
+
+### 2. Upload the image
+
+```sh
+curl -v -X POST "https://api-data.line.me/v2/bot/richmenu/$STAFF_RICH_MENU_ID/content" \
+  -H "Authorization: Bearer $CHANNEL_TOKEN" \
+  -H "Content-Type: image/jpeg" \
+  --data-binary @line-oa/richmenu-staff.jpg
+```
+
+### 3. Assign it to a specific staff member
+
+Repeat this once per staff LINE user id — this is what makes it staff-only;
+skipping this step for someone means they keep seeing the default menu.
+
+```sh
+curl -v -X POST "https://api.line.me/v2/bot/user/<their LINE user id>/richmenu/$STAFF_RICH_MENU_ID" \
+  -H "Authorization: Bearer $CHANNEL_TOKEN"
+```
+
+To remove someone's staff menu later (e.g. they're no longer staff) without
+touching anyone else's, unlink just that one id — this reverts them to
+whatever the default menu is, it does not delete the staff menu itself:
+
+```sh
+curl -v -X DELETE "https://api.line.me/v2/bot/user/<their LINE user id>/richmenu" \
+  -H "Authorization: Bearer $CHANNEL_TOKEN"
+```
+
+### 4. Verify
+
+```sh
+curl -s "https://api.line.me/v2/bot/user/<their LINE user id>/richmenu" \
+  -H "Authorization: Bearer $CHANNEL_TOKEN"
+```
+
+Should return `{"richMenuId":"..."}` matching `$STAFF_RICH_MENU_ID` for a
+staff id, or the default menu's id for anyone else.
+
+**Note:** this step-3 assignment is manual today — done once per person, right
+after adding them to the `staff` table (see `supabase/seed_staff.sql`). If the
+roster grows past a handful of people, this is a natural candidate for a
+future Telegram `/addstaff` command to automate (mirroring the existing
+`/add` roster command), the same way step 3 could eventually be triggered
+automatically instead of by hand.
+
+---
+
 ## Cover photo
 
 [`cover-photo.png`](./cover-photo.png) — 1080×787px, ~430KB (well under

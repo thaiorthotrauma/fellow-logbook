@@ -1,6 +1,7 @@
 import { createElement, type ReactElement } from 'react';
 import { pdf, type DocumentProps } from '@react-pdf/renderer';
 import LogbookPdf, { type LogbookPdfProps } from './LogbookPdf';
+import StaffLogbookPdf, { type StaffLogbookPdfProps } from './StaffLogbookPdf';
 import { registerPdfFonts } from './fonts';
 import { liff } from '../liff';
 
@@ -10,6 +11,13 @@ export async function generateLogbookBlob(props: LogbookPdfProps): Promise<Blob>
   // LogbookPdf returns a <Document>; pdf() types the root as a Document element,
   // so present the wrapper element as one.
   const element = createElement(LogbookPdf, props) as unknown as ReactElement<DocumentProps>;
+  return await pdf(element).toBlob();
+}
+
+/** Same idea as generateLogbookBlob, for the staff "by fellow" export. */
+export async function generateStaffLogbookBlob(props: StaffLogbookPdfProps): Promise<Blob> {
+  registerPdfFonts();
+  const element = createElement(StaffLogbookPdf, props) as unknown as ReactElement<DocumentProps>;
   return await pdf(element).toBlob();
 }
 

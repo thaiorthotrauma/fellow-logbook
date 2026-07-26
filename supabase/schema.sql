@@ -155,3 +155,135 @@ create policy "physicians manage their own cases"
   with check (auth.uid() = user_id);
 
 create index if not exists cases_user_id_idx on public.cases (user_id);
+
+-- ── Staff (institution-scoped, read-only reviewers) ────────────────────────
+-- Staff never log cases and never go through email/OTP — trusted by LINE ID
+-- alone, seeded directly (see seed_staff.sql). No email column at all.
+create table if not exists public.staff (
+  id uuid primary key default gen_random_uuid(),
+  full_name text not null,
+  institution text not null,
+  line_user_id text not null unique,
+  created_at timestamptz not null default now()
+);
+
+-- One row per device a staff member has signed in from — not one row per
+-- staff member. Staff authenticate via anonymous sign-in (no email to anchor
+-- an identity across devices the way physicians' email does), so phone and
+-- tablet each get an unrelated auth.uid(). A single user_id column would let
+-- only one device hold the link at a time, silently kicking out the other on
+-- every sign-in; this table lets any number of devices stay linked at once.
+create table if not exists public.staff_devices (
+  id uuid primary key default gen_random_uuid(),
+  staff_id uuid not null references public.staff(id) on delete cascade,
+  user_id uuid not null unique references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+alter table public.staff enable row level security;
+alter table public.staff_devices enable row level security;
+-- No policies granted on either table — every access goes through the
+-- service role (Edge Functions) or the security-definer functions below,
+-- never a direct client select. In particular, this means a raw
+-- `supabase.from('staff_devices')` call from the browser returns nothing,
+-- by design: there's no dedicated policy to accidentally get wrong.
+
+-- Returns the calling staff member's own name/institution, or no rows if the
+-- caller isn't a linked staff device. Lets the client show "who am I" without
+-- ever granting a raw select on the staff tables.
+create or replace function public.my_staff_profile()
+returns table (full_name text, institution text)
+language sql
+security definer
+set search_path = public
+as $$
+  select s.full_name, s.institution
+  from public.staff_devices sd
+  join public.staff s on s.id = sd.staff_id
+  where sd.user_id = auth.uid();
+$$;
+
+revoke all on function public.my_staff_profile() from public;
+grant execute on function public.my_staff_profile() to authenticated;
+
+-- The only way staff case data is ever read. HN masking is enforced HERE,
+-- not in application code, so no future screen can forget to apply it and
+-- leak a full HN — the raw value never leaves the database for a staff
+-- caller. A fellow calling this (it's grantable to any authenticated user)
+-- simply isn't in staff_devices, so it returns zero rows — no error, no leak.
+create or replace function public.staff_institution_cases()
+returns table (
+  id uuid,
+  date date,
+  timing text,
+  place text,
+  fellow_name text,
+  staff text,
+  hn text,
+  diagnosis text,
+  ao_code text,
+  ao_region_label text,
+  other_classification text,
+  approach text,
+  "position" text,
+  procedure text,
+  procedure_type text,
+  role text,
+  op_time text,
+  memo text,
+  image_paths text[],
+  created_at timestamptz
+)
+language sql
+security definer
+set search_path = public
+as $$
+  select
+    c.id, c.date, c.timing, c.place, p.full_name as fellow_name, c.staff,
+    case
+      when length(c.hn) <= 4 then coalesce(nullif(c.hn, ''), '—')
+      else '•••' || right(c.hn, 4)
+    end as hn,
+    c.diagnosis, c.ao_code, c.ao_region_label, c.other_classification,
+    c.approach, c."position", c.procedure, c.procedure_type, c.role,
+    c.op_time, c.memo, c.image_paths, c.created_at
+  from public.cases c
+  join public.physicians p on p.user_id = c.user_id
+  where p.institution = (
+    select s.institution
+    from public.staff_devices sd
+    join public.staff s on s.id = sd.staff_id
+    where sd.user_id = auth.uid()
+  )
+  order by c.date desc;
+$$;
+
+revoke all on function public.staff_institution_cases() from public;
+grant execute on function public.staff_institution_cases() to authenticated;
+
+-- Authorizes a staff member to view one case image: true if that image
+-- belongs to a case whose owning physician is in the caller's institution.
+-- Returns a boolean only (never row data), so drive-images can use it as a
+-- second ownership check without granting staff any direct table access.
+create or replace function public.staff_can_view_image(p_image_id text)
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.cases c
+    join public.physicians p on p.user_id = c.user_id
+    where c.image_paths @> array[p_image_id]
+      and p.institution = (
+        select s.institution
+        from public.staff_devices sd
+        join public.staff s on s.id = sd.staff_id
+        where sd.user_id = auth.uid()
+      )
+  );
+$$;
+
+revoke all on function public.staff_can_view_image(text) from public;
+grant execute on function public.staff_can_view_image(text) to authenticated;

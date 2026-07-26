@@ -1,7 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { casesMonthBounds, distribution, filterByMonthRange, sortChronological, topN } from './stats';
+import {
+  casesMonthBounds,
+  distribution,
+  filterByMonthRange,
+  groupByFellow,
+  monthFileSegment,
+  monthLabel,
+  monthsBetween,
+  nameFileSegment,
+  rangeLabel,
+  sortChronological,
+  topN,
+} from './stats';
 import { PLACE, PROC_TYPE } from '../../data';
-import { emptyForm, type CaseEntry } from '../../types';
+import { emptyForm, type CaseEntry, type StaffCaseEntry } from '../../types';
 
 function makeCase(over: Partial<CaseEntry>): CaseEntry {
   return {
@@ -91,5 +103,78 @@ describe('distribution', () => {
   it('handles a single category', () => {
     const cases = [makeCase({ place: 'own' }), makeCase({ place: 'own' })];
     expect(distribution(cases, c => c.place, PLACE)).toEqual([{ label: 'Home institution', value: 2 }]);
+  });
+});
+
+describe('monthLabel / rangeLabel', () => {
+  it('formats a month with the full month name', () => {
+    expect(monthLabel('2026-07')).toBe('July 2026');
+  });
+
+  it('a single-month range shows once, not as a range', () => {
+    expect(rangeLabel('2026-07', '2026-07')).toBe('July 2026');
+  });
+
+  it('a multi-month range shows both ends', () => {
+    expect(rangeLabel('2026-07', '2026-09')).toBe('July 2026 – September 2026');
+  });
+});
+
+describe('monthFileSegment / nameFileSegment', () => {
+  it('reorders YYYY-MM to MM-YYYY', () => {
+    expect(monthFileSegment('2026-07')).toBe('07-2026');
+  });
+
+  it('splits a two-part name on the first space, joining the rest', () => {
+    expect(nameFileSegment('ปองสิทธิ์ โพธิคุณ')).toBe('ปองสิทธิ์-โพธิคุณ');
+  });
+
+  it('a name with no space falls back to itself', () => {
+    expect(nameFileSegment('Institution')).toBe('Institution');
+  });
+});
+
+describe('monthsBetween', () => {
+  it('lists every month inclusive, crossing a year boundary', () => {
+    expect(monthsBetween('2025-11', '2026-02')).toEqual(['2025-11', '2025-12', '2026-01', '2026-02']);
+  });
+
+  it('a single-month range returns just that month', () => {
+    expect(monthsBetween('2026-07', '2026-07')).toEqual(['2026-07']);
+  });
+});
+
+function makeStaffCase(over: Partial<StaffCaseEntry>): StaffCaseEntry {
+  return {
+    ...emptyForm(),
+    id: Math.random().toString(),
+    aoCode: '',
+    aoRegionLabel: '',
+    imagePaths: [],
+    fellowName: 'Someone',
+    ...over,
+  };
+}
+
+describe('groupByFellow', () => {
+  it('groups cases under their fellow', () => {
+    const cases = [
+      makeStaffCase({ id: '1', fellowName: 'A' }),
+      makeStaffCase({ id: '2', fellowName: 'B' }),
+      makeStaffCase({ id: '3', fellowName: 'A' }),
+    ];
+    const groups = groupByFellow(cases);
+    expect(groups.map(g => g.fellowName)).toEqual(['A', 'B']);
+    expect(groups[0].cases.map(c => c.id)).toEqual(['1', '3']);
+    expect(groups[1].cases.map(c => c.id)).toEqual(['2']);
+  });
+
+  it('orders fellows by first appearance, not alphabetically', () => {
+    const cases = [makeStaffCase({ fellowName: 'Zed' }), makeStaffCase({ fellowName: 'Amy' })];
+    expect(groupByFellow(cases).map(g => g.fellowName)).toEqual(['Zed', 'Amy']);
+  });
+
+  it('empty input → empty output', () => {
+    expect(groupByFellow([])).toEqual([]);
   });
 });

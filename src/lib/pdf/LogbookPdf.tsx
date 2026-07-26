@@ -1,7 +1,7 @@
-import { Document, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
-import { PDF_FONT } from './fonts';
+import { Document, Page, Text, View } from '@react-pdf/renderer';
 import PieChart from './PieChart';
 import { distribution, topN, type RankItem } from './stats';
+import { s, formatPdfDate, pdfFooter } from './pdfShared';
 import {
   OPTIME_MAP,
   PLACE,
@@ -20,66 +20,11 @@ export interface LogbookPdfProps {
   institution: string | null;
   yearLabel: string;
   rangeLabel: string;
-  /** Already filtered to the range and sorted oldest → newest. */
-  cases: CaseEntry[];
-}
-
-const FOOTER_ORG = 'RCOST Orthopaedic Trauma Fellowship Program';
-
-const TEAL = '#0d6e64';
-const INK = '#16231f';
-const MUTED = '#6b7674';
-const LINE = '#e5e9e7';
-
-const s = StyleSheet.create({
-  page: { fontFamily: PDF_FONT, fontSize: 11, color: INK, paddingTop: 34, paddingBottom: 42, paddingHorizontal: 34 },
-
-  // Front-page header band — intentionally left at its original sizes.
-  titleBand: { backgroundColor: TEAL, borderRadius: 6, padding: 14, marginBottom: 16 },
-  titleMain: { color: '#fff', fontSize: 15, fontWeight: 700 },
-  titleSub: { color: 'rgba(255,255,255,0.85)', fontSize: 9, marginTop: 2 },
-
-  fellowName: { fontSize: 18, fontWeight: 700, marginBottom: 2 },
-  metaLine: { fontSize: 11.5, color: MUTED, marginBottom: 1.5 },
-  rangeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8, marginBottom: 16 },
-  bigCount: { fontSize: 24, fontWeight: 700, color: TEAL },
-
-  sectionRow: { flexDirection: 'row', gap: 18, marginBottom: 18 },
-  col: { flex: 1 },
-  sectionTitle: { fontSize: 12.5, fontWeight: 700, color: INK, marginBottom: 7, paddingBottom: 3, borderBottomWidth: 1, borderBottomColor: LINE },
-
-  rankRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 5 },
-  rankNum: { width: 16, fontSize: 11, fontWeight: 700, color: TEAL },
-  // Capped to 2 lines so one very long diagnosis/procedure can't push the
-  // pie charts further down the page — it truncates with an ellipsis instead.
-  rankLabel: { flex: 1, fontSize: 11, color: '#24302e', paddingRight: 6, maxLines: 2, textOverflow: 'ellipsis' },
-  rankCount: { fontSize: 11, fontWeight: 600 },
-  emptyNote: { fontSize: 10.5, color: '#8a938f' },
-
-  chartsWrap: { marginTop: 4 },
-  chartsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
-
-  runHeader: { position: 'absolute', top: 14, left: 34, right: 34, flexDirection: 'row', justifyContent: 'flex-end', color: MUTED, fontSize: 9 },
-  footer: { position: 'absolute', bottom: 18, left: 34, right: 34, flexDirection: 'row', justifyContent: 'space-between', color: MUTED, fontSize: 9, borderTopWidth: 1, borderTopColor: LINE, paddingTop: 5 },
-
-  caseBlock: { borderBottomWidth: 1, borderBottomColor: LINE, paddingVertical: 9 },
-  caseHead: { flexDirection: 'row', alignItems: 'center', marginBottom: 5, gap: 6 },
-  caseNum: { fontSize: 11, fontWeight: 700, color: TEAL },
-  caseDate: { fontSize: 11.5, fontWeight: 700 },
-  chip: { fontSize: 9, color: '#5f6b6a', backgroundColor: '#f0f2f1', paddingVertical: 1.5, paddingHorizontal: 5, borderRadius: 3 },
-  chipPlace: { fontSize: 9, color: TEAL, backgroundColor: '#eaf4f2', paddingVertical: 1.5, paddingHorizontal: 5, borderRadius: 3 },
-  chipOutside: { fontSize: 9, color: '#b5651d', backgroundColor: '#fdf1e7', paddingVertical: 1.5, paddingHorizontal: 5, borderRadius: 3 },
-
-  fieldRow: { flexDirection: 'row', marginBottom: 2.5 },
-  fieldKey: { width: 74, fontSize: 10, color: MUTED },
-  fieldVal: { flex: 1, fontSize: 10.5, color: '#24302e' },
-  metaRow: { fontSize: 10, color: MUTED, marginTop: 3 },
-});
-
-function formatDate(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number);
-  if (!y || !m || !d) return iso || '—';
-  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' });
+  /** Already filtered to the range and sorted oldest → newest. A case that
+   *  carries a `fellowName` (i.e. a StaffCaseEntry, used for the institution-
+   *  wide month-range export) shows it as a chip in the content page — a
+   *  single fellow's own export never needs this, since every case is theirs. */
+  cases: (CaseEntry & { fellowName?: string })[];
 }
 
 function RankTable({ title, items }: { title: string; items: RankItem[] }) {
@@ -101,7 +46,19 @@ function RankTable({ title, items }: { title: string; items: RankItem[] }) {
   );
 }
 
-export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLabel, cases }: LogbookPdfProps) {
+export interface SummaryPageProps {
+  headingName: string;
+  institution: string | null;
+  yearLabel: string;
+  rangeLabel: string;
+  cases: CaseEntry[];
+}
+
+/** Page 1 of a logbook: case count, top diagnoses/procedures, distribution
+ *  charts. `headingName` is a fellow's name for a single-fellow export, or
+ *  the institution for the staff by-month-range export — the page itself
+ *  doesn't care which, it just needs a heading and a case set to summarize. */
+export function SummaryPage({ headingName, institution, yearLabel, rangeLabel, cases }: SummaryPageProps) {
   const topDx = topN(cases, c => c.diagnosis, 5);
   const topProc = topN(cases, c => c.procedure, 5);
   const typeDist = distribution(cases, c => c.procedureType, PROC_TYPE);
@@ -109,116 +66,108 @@ export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLa
   const placeDist = distribution(cases, c => c.place, PLACE);
 
   return (
-    <Document title={`TOTS Logbook — ${fellowName}`} author={fellowName}>
-      {/* ── Page 1 · Summary ─────────────────────────────────────────────── */}
-      <Page size="A4" style={s.page}>
-        <View style={s.titleBand}>
-          <Text style={s.titleMain}>TOTS Fellow Logbook</Text>
-          <Text style={s.titleSub}>Operative case summary</Text>
+    <Page size="A4" style={s.page}>
+      <View style={s.titleBand}>
+        <Text style={s.titleMain}>TOTS Fellow Logbook</Text>
+        <Text style={s.titleSub}>Operative case summary</Text>
+      </View>
+
+      <Text style={s.fellowName}>{headingName || '—'}</Text>
+      {institution ? <Text style={s.metaLine}>Institution : {institution}</Text> : null}
+      <Text style={s.metaLine}>Fellowship year {yearLabel}</Text>
+
+      <View style={s.rangeRow}>
+        <View>
+          <Text style={s.metaLine}>Range</Text>
+          <Text style={{ fontSize: 14, fontWeight: 600 }}>{rangeLabel}</Text>
         </View>
-
-        <Text style={s.fellowName}>{fellowName || '—'}</Text>
-        {institution ? <Text style={s.metaLine}>Institution : {institution}</Text> : null}
-        <Text style={s.metaLine}>Fellowship year {yearLabel}</Text>
-
-        <View style={s.rangeRow}>
-          <View>
-            <Text style={s.metaLine}>Range</Text>
-            <Text style={{ fontSize: 14, fontWeight: 600 }}>{rangeLabel}</Text>
-          </View>
-          <View style={{ alignItems: 'flex-end' }}>
-            <Text style={s.bigCount}>{cases.length}</Text>
-            <Text style={s.metaLine}>{cases.length === 1 ? 'case' : 'cases'}</Text>
-          </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={s.bigCount}>{cases.length}</Text>
+          <Text style={s.metaLine}>{cases.length === 1 ? 'case' : 'cases'}</Text>
         </View>
+      </View>
 
-        <View style={s.sectionRow}>
-          <RankTable title="Top 5 Diagnoses" items={topDx} />
-          <RankTable title="Top 5 Procedures" items={topProc} />
+      <View style={s.sectionRow}>
+        <RankTable title="Top 5 Diagnoses" items={topDx} />
+        <RankTable title="Top 5 Procedures" items={topProc} />
+      </View>
+
+      <View style={s.chartsWrap}>
+        <Text style={s.sectionTitle}>Case distribution</Text>
+        <View style={s.chartsRow}>
+          <PieChart title="Type of procedure" slices={typeDist} />
+          <PieChart title="Role" slices={roleDist} />
+          <PieChart title="Place" slices={placeDist} />
         </View>
+      </View>
 
-        <View style={s.chartsWrap}>
-          <Text style={s.sectionTitle}>Case distribution</Text>
-          <View style={s.chartsRow}>
-            <PieChart title="Type of procedure" slices={typeDist} />
-            <PieChart title="Role" slices={roleDist} />
-            <PieChart title="Place" slices={placeDist} />
-          </View>
-        </View>
+      <View style={s.footer} fixed render={pdfFooter} />
+    </Page>
+  );
+}
 
-        <View
-          style={s.footer}
-          fixed
-          render={props => {
-            // react-pdf passes totalPages to a View's render at runtime, but its
-            // View type omits it (only Text's type lists it), so read it via cast.
-            const { pageNumber, totalPages } = props as unknown as { pageNumber: number; totalPages: number };
-            return (
-              <>
-                <Text>{FOOTER_ORG}</Text>
-                <Text>Page {pageNumber} of {totalPages}</Text>
-              </>
-            );
-          }}
-        />
-      </Page>
+export interface ContentPageProps {
+  /** Shown top-right on every page of this section. */
+  runHeaderName: string;
+  cases: (CaseEntry & { fellowName?: string })[];
+}
 
-      {/* ── Content · one block per case, oldest → newest ────────────────── */}
-      <Page size="A4" style={s.page}>
-        <View style={s.runHeader} fixed>
-          <Text>{institution ? `${fellowName}, ${institution}` : fellowName}</Text>
-        </View>
+/** One block per case, oldest → newest. `cases` may carry `fellowName` (the
+ *  institution-wide export), in which case it's shown as a chip — a single
+ *  fellow's own export never sets it, since every case is already theirs. */
+export function ContentPage({ runHeaderName, cases }: ContentPageProps) {
+  return (
+    <Page size="A4" style={s.page}>
+      <View style={s.runHeader} fixed>
+        <Text>{runHeaderName}</Text>
+      </View>
 
-        <Text style={{ fontSize: 13, fontWeight: 700, marginBottom: 7, marginTop: 6 }}>
-          Recorded Cases (total of {cases.length})
-        </Text>
+      <Text style={{ fontSize: 13, fontWeight: 700, marginBottom: 7, marginTop: 6 }}>
+        Recorded Cases (total of {cases.length})
+      </Text>
 
-        {cases.map((c, i) => {
-          const outside = c.place === 'outside';
-          return (
-            <View key={c.id} style={s.caseBlock} wrap={false}>
-              <View style={s.caseHead}>
-                <Text style={s.caseNum}>#{i + 1}</Text>
-                <Text style={s.caseDate}>{formatDate(c.date)}</Text>
-                <Text style={outside ? s.chipOutside : s.chipPlace}>{PLACE_MAP[c.place ?? ''] ?? '—'}</Text>
-                {c.timing ? <Text style={s.chip}>{TIMING_MAP[c.timing] ?? c.timing}</Text> : null}
-              </View>
-
-              <View style={s.fieldRow}><Text style={s.fieldKey}>Diagnosis</Text><Text style={s.fieldVal}>{formatBulletedField(c.diagnosis) || '—'}</Text></View>
-              {(() => {
-                const classification = formatClassification(c.aoCode, c.otherClassification);
-                return classification ? (
-                  <View style={s.fieldRow}><Text style={s.fieldKey}>Classification</Text><Text style={s.fieldVal}>{classification}</Text></View>
-                ) : null;
-              })()}
-              {c.approach ? (
-                <View style={s.fieldRow}><Text style={s.fieldKey}>Approach</Text><Text style={s.fieldVal}>{formatBulletedField(c.approach)}</Text></View>
-              ) : null}
-              <View style={s.fieldRow}><Text style={s.fieldKey}>Procedure</Text><Text style={s.fieldVal}>{formatBulletedField(c.procedure) || '—'}</Text></View>
-
-              <Text style={s.metaRow}>
-                {(PROC_MAP[c.procedureType ?? ''] ?? '—')} · {(ROLE_MAP[c.role ?? ''] ?? '—')} · {(OPTIME_MAP[c.opTime ?? ''] ?? '—')}
-              </Text>
+      {cases.map((c, i) => {
+        const outside = c.place === 'outside';
+        return (
+          <View key={c.id} style={s.caseBlock} wrap={false}>
+            <View style={s.caseHead}>
+              <Text style={s.caseNum}>#{i + 1}</Text>
+              <Text style={s.caseDate}>{formatPdfDate(c.date)}</Text>
+              <Text style={outside ? s.chipOutside : s.chipPlace}>{PLACE_MAP[c.place ?? ''] ?? '—'}</Text>
+              {c.timing ? <Text style={s.chip}>{TIMING_MAP[c.timing] ?? c.timing}</Text> : null}
+              {c.fellowName ? <Text style={s.chipFellow}>{c.fellowName}</Text> : null}
             </View>
-          );
-        })}
 
-        <View
-          style={s.footer}
-          fixed
-          render={props => {
-            // react-pdf passes totalPages to a View's render at runtime, but its
-            // View type omits it (only Text's type lists it), so read it via cast.
-            const { pageNumber, totalPages } = props as unknown as { pageNumber: number; totalPages: number };
-            return (
-              <>
-                <Text>{FOOTER_ORG}</Text>
-                <Text>Page {pageNumber} of {totalPages}</Text>
-              </>
-            );
-          }}
-        />
-      </Page>
+            <View style={s.fieldRow}><Text style={s.fieldKey}>Diagnosis</Text><Text style={s.fieldVal}>{formatBulletedField(c.diagnosis) || '—'}</Text></View>
+            {(() => {
+              const classification = formatClassification(c.aoCode, c.otherClassification);
+              return classification ? (
+                <View style={s.fieldRow}><Text style={s.fieldKey}>Classification</Text><Text style={s.fieldVal}>{classification}</Text></View>
+              ) : null;
+            })()}
+            {c.approach ? (
+              <View style={s.fieldRow}><Text style={s.fieldKey}>Approach</Text><Text style={s.fieldVal}>{formatBulletedField(c.approach)}</Text></View>
+            ) : null}
+            <View style={s.fieldRow}><Text style={s.fieldKey}>Procedure</Text><Text style={s.fieldVal}>{formatBulletedField(c.procedure) || '—'}</Text></View>
+
+            <Text style={s.metaRow}>
+              {(PROC_MAP[c.procedureType ?? ''] ?? '—')} · {(ROLE_MAP[c.role ?? ''] ?? '—')} · {(OPTIME_MAP[c.opTime ?? ''] ?? '—')}
+            </Text>
+          </View>
+        );
+      })}
+
+      <View style={s.footer} fixed render={pdfFooter} />
+    </Page>
+  );
+}
+
+export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLabel, cases }: LogbookPdfProps) {
+  const runHeaderName = institution ? `${fellowName}, ${institution}` : fellowName;
+  return (
+    <Document title={`TOTS Logbook — ${fellowName}`} author={fellowName}>
+      <SummaryPage headingName={fellowName} institution={institution} yearLabel={yearLabel} rangeLabel={rangeLabel} cases={cases} />
+      <ContentPage runHeaderName={runHeaderName} cases={cases} />
     </Document>
   );
 }

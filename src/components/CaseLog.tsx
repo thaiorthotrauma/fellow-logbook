@@ -1,15 +1,26 @@
 import { useMemo, useState } from 'react';
 import { OPTIME_MAP, PLACE_MAP, PROC_MAP, ROLE_MAP, TIMING_MAP } from '../data';
 import { formatBulletedField, formatClassification, stripBullets } from '../lib/textFormat';
-import type { CaseEntry } from '../types';
+import type { CaseEntry, StaffCaseEntry } from '../types';
 import CaseImages from './CaseImages';
 
+type LogEntry = CaseEntry | StaffCaseEntry;
+
+function isStaffEntry(c: LogEntry): c is StaffCaseEntry {
+  return 'fellowName' in c;
+}
+
 interface CaseLogProps {
-  cases: CaseEntry[];
+  cases: LogEntry[];
   expandedId: string | null;
   onToggle: (id: string) => void;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
+  /** Omitted for the read-only staff view, which shows no edit/delete actions. */
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
+  /** Shown when `cases` is empty. Defaults to the fellow-facing copy, which
+   *  references New Entry — not relevant for the staff view, so it supplies
+   *  its own. */
+  emptyMessage?: string;
 }
 
 type PlaceFilter = 'all' | 'own' | 'outside';
@@ -45,7 +56,14 @@ function BulletedText({ text }: { text: string }) {
   );
 }
 
-export default function CaseLog({ cases, expandedId, onToggle, onEdit, onDelete }: CaseLogProps) {
+export default function CaseLog({
+  cases,
+  expandedId,
+  onToggle,
+  onEdit,
+  onDelete,
+  emptyMessage = 'No cases logged yet. Add your first case in New Entry.',
+}: CaseLogProps) {
   const [query, setQuery] = useState('');
   const [place, setPlace] = useState<PlaceFilter>('all');
   const [sort, setSort] = useState<SortOrder>('newest');
@@ -57,7 +75,8 @@ export default function CaseLog({ cases, expandedId, onToggle, onEdit, onDelete 
       .filter(({ c }) => {
         if (place !== 'all' && c.place !== place) return false;
         if (!q) return true;
-        return [c.diagnosis, c.otherClassification, c.approach, c.procedure, c.aoCode, c.aoRegionLabel]
+        const fellowName = isStaffEntry(c) ? c.fellowName : '';
+        return [c.diagnosis, c.otherClassification, c.approach, c.procedure, c.aoCode, c.aoRegionLabel, fellowName]
           .filter(Boolean)
           .join(' ')
           .toLowerCase()
@@ -114,7 +133,7 @@ export default function CaseLog({ cases, expandedId, onToggle, onEdit, onDelete 
       <div className="log-count">{countLabel}</div>
 
       {cases.length === 0 ? (
-        <div className="empty-log">No cases logged yet. Add your first case in New Entry.</div>
+        <div className="empty-log">{emptyMessage}</div>
       ) : visible.length === 0 ? (
         <div className="empty-log">No cases match your search or filters.</div>
       ) : (
@@ -137,6 +156,7 @@ export default function CaseLog({ cases, expandedId, onToggle, onEdit, onDelete 
                     <span className="case-card-timing">{TIMING_MAP[c.timing ?? ''] ?? '—'}</span>
                     <span className="case-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
                   </div>
+                  {isStaffEntry(c) && <div className="case-card-fellow">{c.fellowName}</div>}
                   <div className="case-card-diagnosis case-card-diagnosis-truncated">{stripBullets(c.diagnosis) || '—'}</div>
                   <div className="case-card-meta">
                     <span>{ROLE_MAP[c.role ?? ''] ?? '—'}</span>
@@ -178,22 +198,24 @@ export default function CaseLog({ cases, expandedId, onToggle, onEdit, onDelete 
                       )}
                     </div>
                     {c.imagePaths.length > 0 && <CaseImages paths={c.imagePaths} />}
-                    <div className="case-card-actions">
-                      <button
-                        type="button"
-                        className="case-card-edit"
-                        onClick={e => { e.stopPropagation(); onEdit(c.id); }}
-                      >
-                        Edit case
-                      </button>
-                      <button
-                        type="button"
-                        className="case-card-delete"
-                        onClick={e => { e.stopPropagation(); onDelete(c.id); }}
-                      >
-                        Delete case
-                      </button>
-                    </div>
+                    {onEdit && onDelete && (
+                      <div className="case-card-actions">
+                        <button
+                          type="button"
+                          className="case-card-edit"
+                          onClick={e => { e.stopPropagation(); onEdit(c.id); }}
+                        >
+                          Edit case
+                        </button>
+                        <button
+                          type="button"
+                          className="case-card-delete"
+                          onClick={e => { e.stopPropagation(); onDelete(c.id); }}
+                        >
+                          Delete case
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

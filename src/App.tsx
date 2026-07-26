@@ -14,20 +14,30 @@ import {
   MAX_IMAGES_TOTAL_BYTES,
 } from './lib/casesApi';
 import { fetchCurrentPhysician, type Physician } from './lib/physicianApi';
+import { fetchStaffCases, fetchStaffProfile, type StaffProfile } from './lib/staffApi';
+import { getAppView } from './lib/appView';
 import { parseAoCode } from './lib/aoCode';
 import { describeError } from './lib/errors';
-import { emptyAo, emptyForm, formFromEntry, type AoState, type CaseEntry, type FormState } from './types';
+import { emptyAo, emptyForm, formFromEntry, type AoState, type CaseEntry, type FormState, type StaffCaseEntry } from './types';
 import NewEntryForm from './components/NewEntryForm';
 import CaseLog from './components/CaseLog';
 import ExportPdfPanel from './components/ExportPdfPanel';
+import StaffExportPdfPanel from './components/StaffExportPdfPanel';
 
 type Tab = 'form' | 'log' | 'pdf';
 
+// Read once — the URL doesn't change within a session (no router), and this
+// is what tells the app apart from a normal fellow open: 'staff' is the rich
+// menu's "Fellow Cases" button, 'demo' is "Logbook Demo". See lib/appView.ts.
+const view = getAppView();
+
 function App() {
-  const [tab, setTab] = useState<Tab>('form');
+  const [tab, setTab] = useState<Tab>(view === 'staff' ? 'log' : 'form');
   const [cases, setCases] = useState<CaseEntry[]>([]);
   const [physician, setPhysician] = useState<Physician | null>(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [staffCases, setStaffCases] = useState<StaffCaseEntry[]>([]);
+  const [staffProfile, setStaffProfile] = useState<StaffProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(view !== 'demo');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; sticky: boolean } | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -42,19 +52,62 @@ function App() {
   /** Its image set as loaded, so removals can be detected on save. */
   const [savedImages, setSavedImages] = useState<string[]>([]);
 
-  useEffect(() => {
-    fetchCases()
-      .then(setCases)
-      .catch(err => {
-        console.error(err);
-        setToast({ message: 'Could not load your cases. Check your connection and reload.', sticky: false });
-      });
+  const isStaff = staffProfile !== null;
+  const isDemo = view === 'demo';
 
-    fetchCurrentPhysician()
-      .then(setPhysician)
-      .catch(err => console.error(err))
-      .finally(() => setProfileLoading(false));
-  }, []);
+  useEffect(() => {
+    // Demo mode touches no account and no real data at all — "voluntary
+    // empty log" means never fetched, not just displayed as empty.
+    if (isDemo) return;
+
+    let cancelled = false;
+
+    // Tried in parallel rather than "fellow, then staff if not" — AuthGate
+    // has already resolved which one this session actually is (the two use
+    // unrelated auth.uid()s), so at most one of these ever finds a row; this
+    // just reads whichever it is without re-deriving that decision here.
+    Promise.all([
+      fetchCurrentPhysician().catch(err => {
+        console.error(err);
+        return null;
+      }),
+      fetchStaffProfile().catch(err => {
+        console.error(err);
+        return null;
+      }),
+    ])
+      .then(([p, s]) => {
+        if (cancelled) return;
+        setPhysician(p);
+        setStaffProfile(s);
+
+        if (p) {
+          fetchCases()
+            .then(c => !cancelled && setCases(c))
+            .catch(err => {
+              console.error(err);
+              if (!cancelled) {
+                setToast({ message: 'Could not load your cases. Check your connection and reload.', sticky: false });
+              }
+            });
+        } else if (s) {
+          setTab(cur => (cur === 'form' ? 'log' : cur)); // no New Entry tab for staff
+          fetchStaffCases()
+            .then(c => !cancelled && setStaffCases(c))
+            .catch(err => {
+              console.error(err);
+              if (!cancelled) {
+                setToast({ message: 'Could not load cases. Check your connection and reload.', sticky: false });
+              }
+            });
+        }
+      })
+      .finally(() => !cancelled && setProfileLoading(false));
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isDemo]);
 
   useEffect(() => {
     if (!toast || toast.sticky) return;
@@ -220,12 +273,23 @@ function App() {
     <div className="app">
       <div className="header">
         <div>
-          {profileLoading ? (
+          {isDemo ? (
+            <>
+              <div className="header-title">Logbook Demo</div>
+              <div className="header-subtitle">A preview of the fellow experience — nothing here is saved</div>
+            </>
+          ) : profileLoading ? (
             <div className="header-skeleton" aria-hidden="true">
               <div className="skeleton skeleton-title" />
               <div className="skeleton skeleton-inst" />
               <div className="skeleton skeleton-sub" />
             </div>
+          ) : isStaff ? (
+            <>
+              <div className="header-title">{staffProfile!.fullName}</div>
+              <div className="header-institution">Institution : {staffProfile!.institution}</div>
+              <div className="header-subtitle">Staff view — read only</div>
+            </>
           ) : (
             <>
               <div className="header-title">{physician?.fullName ?? ' '}</div>
@@ -237,11 +301,13 @@ function App() {
           )}
         </div>
         <div className="tabs">
-          <button type="button" className={`tab ${tab === 'form' ? 'active' : ''}`} onClick={() => setTab('form')}>
-            {editingId ? 'Edit Case' : 'New Entry'}
-          </button>
+          {!isStaff && (
+            <button type="button" className={`tab ${tab === 'form' ? 'active' : ''}`} onClick={() => setTab('form')}>
+              {editingId ? 'Edit Case' : 'New Entry'}
+            </button>
+          )}
           <button type="button" className={`tab ${tab === 'log' ? 'active' : ''}`} onClick={() => setTab('log')}>
-            Case Log ({cases.length})
+            {isStaff ? `Institution Cases (${staffCases.length})` : `Case Log (${cases.length})`}
           </button>
           <button type="button" className={`tab ${tab === 'pdf' ? 'active' : ''}`} onClick={() => setTab('pdf')}>
             PDF
@@ -250,27 +316,40 @@ function App() {
       </div>
 
       <div className="content">
-        {tab === 'form' && (
-          <NewEntryForm
-            form={form}
-            ao={ao}
-            errors={errors}
-            images={images}
-            updateForm={updateForm}
-            setAo={setAo}
-            onAddImages={files => setImages(prev => [...prev, ...files])}
-            onRemoveImage={index => setImages(prev => prev.filter((_, i) => i !== index))}
-            onReset={editingId ? cancelEdit : resetForm}
-            onSubmit={handleSubmit}
-            saving={saving}
-            editing={editingId !== null}
-            existingImages={editingId ? keptImages : undefined}
-            onRemoveExistingImage={
-              editingId ? index => setKeptImages(prev => prev.filter((_, i) => i !== index)) : undefined
-            }
+        {tab === 'form' && !isStaff && (
+          <>
+            {isDemo && <div className="demo-banner">Demo — inputs are disabled and nothing is saved.</div>}
+            <div className={isDemo ? 'demo-inert' : undefined}>
+              <NewEntryForm
+                form={form}
+                ao={ao}
+                errors={errors}
+                images={images}
+                updateForm={updateForm}
+                setAo={setAo}
+                onAddImages={files => setImages(prev => [...prev, ...files])}
+                onRemoveImage={index => setImages(prev => prev.filter((_, i) => i !== index))}
+                onReset={editingId ? cancelEdit : resetForm}
+                onSubmit={handleSubmit}
+                saving={saving}
+                editing={editingId !== null}
+                existingImages={editingId ? keptImages : undefined}
+                onRemoveExistingImage={
+                  editingId ? index => setKeptImages(prev => prev.filter((_, i) => i !== index)) : undefined
+                }
+              />
+            </div>
+          </>
+        )}
+        {tab === 'log' && isStaff && (
+          <CaseLog
+            cases={staffCases}
+            expandedId={expandedId}
+            onToggle={id => setExpandedId(cur => (cur === id ? null : id))}
+            emptyMessage="No cases logged yet by any fellow at this institution."
           />
         )}
-        {tab === 'log' && (
+        {tab === 'log' && !isStaff && (
           <CaseLog
             cases={cases}
             expandedId={expandedId}
@@ -279,7 +358,14 @@ function App() {
             onDelete={deleteCase}
           />
         )}
-        {tab === 'pdf' && (
+        {tab === 'pdf' && isStaff && (
+          <StaffExportPdfPanel
+            cases={staffCases}
+            institution={staffProfile!.institution}
+            profileLoading={profileLoading}
+          />
+        )}
+        {tab === 'pdf' && !isStaff && (
           <ExportPdfPanel
             cases={cases}
             fellowName={physician?.fullName ?? ''}
