@@ -8,7 +8,7 @@
 //
 //   npx supabase functions deploy telegram-webhook --no-verify-jwt
 //
-// Two independent gates before anything is written, since the physicians
+// Two independent gates before anything is written, since the fellow
 // table is the access whitelist for an app holding patient data:
 //   1. X-Telegram-Bot-Api-Secret-Token header == TELEGRAM_WEBHOOK_SECRET
 //      Proves the request really came from Telegram (registered via
@@ -45,9 +45,9 @@ import {
   removeUsageMessage,
   removedMessage,
   unknownCommandMessage,
-  type ExistingPhysician,
+  type ExistingFellow,
   type RosterRow,
-} from '../_shared/physicianCommands.ts';
+} from '../_shared/fellowCommands.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SB_SECRET_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -104,25 +104,25 @@ Deno.serve(async req => {
       }
 
       const { data: existing, error: existingError } = await admin
-        .from('physicians')
+        .from('fellow')
         .select('full_name, institution, verified')
         .ilike('email', escapeLikePattern(parsed.value.email))
         .maybeSingle();
       if (existingError) throw existingError;
 
       if (existing) {
-        await reply(alreadyExistsMessage(parsed.value.email, existing as ExistingPhysician));
+        await reply(alreadyExistsMessage(parsed.value.email, existing as ExistingFellow));
         return new Response('ok');
       }
 
-      const { error: insertError } = await admin.from('physicians').insert({
+      const { error: insertError } = await admin.from('fellow').insert({
         full_name: parsed.value.fullName,
         email: parsed.value.email,
         institution: parsed.value.institution,
       });
       if (insertError) throw insertError;
 
-      const { count } = await admin.from('physicians').select('id', { count: 'exact', head: true });
+      const { count } = await admin.from('fellow').select('id', { count: 'exact', head: true });
       await reply(addedMessage(parsed.value, count ?? 0));
       return new Response('ok');
     }
@@ -135,7 +135,7 @@ Deno.serve(async req => {
       }
 
       const { data: row, error: rowError } = await admin
-        .from('physicians')
+        .from('fellow')
         .select('id, full_name, verified, user_id, line_user_id')
         .ilike('email', escapeLikePattern(email))
         .maybeSingle();
@@ -154,7 +154,7 @@ Deno.serve(async req => {
         return new Response('ok');
       }
 
-      const { error: deleteError } = await admin.from('physicians').delete().eq('id', row.id);
+      const { error: deleteError } = await admin.from('fellow').delete().eq('id', row.id);
       if (deleteError) throw deleteError;
 
       await reply(removedMessage(email));
@@ -163,7 +163,7 @@ Deno.serve(async req => {
 
     if (command.name === 'list') {
       const { data: rows, error: listError } = await admin
-        .from('physicians')
+        .from('fellow')
         .select('full_name, verified')
         .order('full_name');
       if (listError) throw listError;

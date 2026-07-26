@@ -1,6 +1,6 @@
 # Backend & LINE Login Setup
 
-This app authenticates fellows through LINE (via LIFF) and a physician
+This app authenticates fellows through LINE (via LIFF) and a fellow
 whitelist stored in Supabase. Since this Supabase project is on a different
 account than the one connected to this session, the steps below need to be
 run manually by you.
@@ -11,18 +11,18 @@ Open your Supabase project → **SQL Editor** → New query, paste in the
 contents of [`supabase/schema.sql`](./supabase/schema.sql), and run it.
 
 This creates:
-- `public.physicians` — the whitelist (`full_name`, `email`, `institution`,
+- `public.fellow` — the whitelist (`full_name`, `email`, `institution`,
   `line_user_id`, `verified`). Seeded with the admin row
   (`pong.poti@gmail.com`).
-- `public.cases` — the actual logbook entries, RLS-scoped so each physician
+- `public.cases` — the actual logbook entries, RLS-scoped so each fellow
   only sees their own.
 - `is_email_allowed(email)` — a public RPC used to check the whitelist
   without exposing it.
-- `claim_physician_row()` — links a freshly-authenticated Supabase user to
+- `claim_fellow_row()` — links a freshly-authenticated Supabase user to
   their whitelist row by email.
 
 Then load the fellow roster: paste in and run
-[`supabase/seed_physicians.sql`](./supabase/seed_physicians.sql). Safe to
+[`supabase/seed_fellow.sql`](./supabase/seed_fellow.sql). Safe to
 re-run any time the roster changes — it upserts by email.
 
 Case images (the New Entry "Images" field, Question 11) are **not** stored in
@@ -160,7 +160,7 @@ VITE_LIFF_ID=<confirm/replace with the full LIFF ID>
 2. If a Supabase session is already cached in the browser, skip straight
    in (fast path for returning users on the same device).
 3. Otherwise, calls the `check-line-user` Edge Function with the ID token.
-   It verifies the token with LINE, looks up `physicians` by
+   It verifies the token with LINE, looks up `fellow` by
    `line_user_id`; if that LINE identity is already verified, it generates a
    redeemable token server-side (via Supabase's admin API — internally
    labeled `type: 'magiclink'`, but no email is sent) and the client
@@ -172,7 +172,7 @@ VITE_LIFF_ID=<confirm/replace with the full LIFF ID>
    (via the Confirm signup template, since this creates their Auth account).
 5. User enters the code in the 6-box OTP input (`OtpStep`/`OtpInput`) →
    `supabase.auth.verifyOtp` establishes a real session →
-   `claim_physician_row()` links `auth.uid()` to the whitelist row →
+   `claim_fellow_row()` links `auth.uid()` to the whitelist row →
    `link-line-user` Edge Function re-verifies the LIFF ID token server-side
    and stores `line_user_id` + `verified = true`.
 6. From then on, that LINE account skips straight to step 3's fast path.

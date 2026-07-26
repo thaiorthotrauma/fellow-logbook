@@ -46,7 +46,7 @@ walkthrough is in [SETUP.md](./SETUP.md#how-the-login-flow-works).
   3. On the list → a 6-digit code is emailed.
   4. Code entered in a 6-box input (auto-advance, paste-to-fill, auto-submits on
      the 6th digit).
-  5. On success, their LINE identity is permanently linked to their physician
+  5. On success, their LINE identity is permanently linked to their fellow
      record; future opens use the returning-user path above.
 - **Failure states:** a generic error screen with a **Try again** button
   re-runs the whole bootstrap.
@@ -285,7 +285,7 @@ is a server-side secret, so the browser never talks to Telegram itself.
   the database rather than trusting the request body, so a notification always
   reflects a real stored row owned by the caller and the request can't push
   arbitrary text into the admin chat. The fellow's name and institution likewise
-  come from the `physicians` table, not the client.
+  come from the `fellow` table, not the client.
   - An edit reports **only the fields that changed**, as struck-through old →
     new (Telegram has no coloured text). Short values sit inline; long or
     multi-line ones stack. Images report as a count, not Drive file IDs. A save
@@ -306,7 +306,7 @@ is a server-side secret, so the browser never talks to Telegram itself.
   the browser. It has no Supabase session, so authenticity comes from the
   `X-Line-Signature` HMAC instead and it must be deployed with
   `--no-verify-jwt`. It reports the sender's LINE user ID in full as tappable
-  `code`, plus the message quoted. Senders with no `physicians` row are labelled
+  `code`, plus the message quoted. Senders with no `fellow` row are labelled
   as unregistered — the common case, since anyone who finds the official account
   can message it, and that's exactly who the raw ID is needed for.
 - **PHI:** Telegram is outside the app's Supabase + private-Drive perimeter, bot
@@ -320,7 +320,7 @@ is a server-side secret, so the browser never talks to Telegram itself.
 ## 6b. Telegram roster commands (admin)
 
 The same bot also accepts commands, via a second webhook function,
-`telegram-webhook`, so the fellow whitelist (`physicians`) can be managed from
+`telegram-webhook`, so the fellow whitelist (`fellow`) can be managed from
 a phone instead of the SQL editor. Two independent gates run before anything is
 read or written, since that table is the access whitelist for an app holding
 patient data:
@@ -339,7 +339,7 @@ tool) — logged server-side instead.
 - **`/add name | email | institution`** — fields split on `|` rather than
   whitespace, since Thai names contain spaces and emails don't; institution is
   optional. Inserts an unverified, unlinked row — exactly the state
-  `seed_physicians.sql` produces. Adding someone does **not** create a login or
+  `seed_fellow.sql` produces. Adding someone does **not** create a login or
   notify them; they still sign in the normal way (email → one-time code →
   optional LINE link), which is what flips them to verified. The reply echoes
   back exactly what was stored, since **the email is the login identity** — a
@@ -359,7 +359,7 @@ tool) — logged server-side instead.
 - **`/list`** — name and verified status only, **emails omitted**, so the
   roster's address list doesn't end up sitting in Telegram chat history.
 - The command parser and reply text are pure functions
-  (`_shared/physicianCommands.ts`) with no Deno/Supabase dependency, so they're
+  (`_shared/fellowCommands.ts`) with no Deno/Supabase dependency, so they're
   unit-tested from the app's own vitest suite rather than only by hand.
 
 ## 7. Display & rendering

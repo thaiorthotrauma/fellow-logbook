@@ -14,7 +14,7 @@ import {
   removedMessage,
   removeUsageMessage,
   unknownCommandMessage,
-} from '../../supabase/functions/_shared/physicianCommands';
+} from '../../supabase/functions/_shared/fellowCommands';
 
 describe('parseCommand', () => {
   it('splits the command name from its arguments', () => {
@@ -105,13 +105,13 @@ describe('message rendering', () => {
   it('addedMessage never claims verified and always states the running count', () => {
     const msg = addedMessage({ fullName: 'A B', email: 'a@b.com', institution: 'Home' }, 24);
     expect(msg).toContain('Not yet verified');
-    expect(msg).toContain('Roster now has 24 physicians.');
+    expect(msg).toContain('Roster now has 24 fellows.');
   });
 
   it('addedMessage omits the institution line when none was given', () => {
     const msg = addedMessage({ fullName: 'A B', email: 'a@b.com', institution: null }, 1);
     expect(msg).not.toContain('Institution');
-    expect(msg).toContain('Roster now has 1 physician.');
+    expect(msg).toContain('Roster now has 1 fellow.');
   });
 
   it('alreadyExistsMessage shows who owns the email without changing anything', () => {
@@ -143,7 +143,7 @@ describe('message rendering', () => {
   });
 
   it('empty roster has a distinct message rather than "Roster (0)"', () => {
-    expect(listMessage([])).toBe('No physicians on the roster yet.');
+    expect(listMessage([])).toBe('No fellows on the roster yet.');
   });
 
   it('escapes HTML in every user-controlled value', () => {

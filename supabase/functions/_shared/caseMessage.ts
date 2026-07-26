@@ -257,7 +257,7 @@ export function deletedCaseMessage(
 }
 
 /** Situation 4 — an inbound LINE message. `fellowName` is null for a LINE
- *  account with no physician record, which is the common case in practice:
+ *  account with no fellow record, which is the common case in practice:
  *  anyone who finds the official account can message it, and that's precisely
  *  who the raw user id is needed for. */
 export function chatMessage(
@@ -268,7 +268,7 @@ export function chatMessage(
 ): string {
   const head = fellowName
     ? `💬 <b>Message from fellow</b>\n${who(fellowName, institution)}`
-    : `💬 <b>Message from unregistered user</b>\nNo physician record for this LINE account`;
+    : `💬 <b>Message from unregistered user</b>\nNo fellow record for this LINE account`;
 
   return (
     `${head}\n` +

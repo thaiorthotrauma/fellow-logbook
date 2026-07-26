@@ -196,7 +196,7 @@ describe('chatMessage', () => {
   it('marks an unregistered sender', () => {
     const msg = chatMessage('Ubb31c7f4', 'สวัสดีครับ', null, null);
     expect(msg).toContain('💬 <b>Message from unregistered user</b>');
-    expect(msg).toContain('No physician record');
+    expect(msg).toContain('No fellow record');
   });
 });
 

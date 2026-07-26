@@ -1,6 +1,6 @@
 // Called once, right after a first-time user completes email + OTP
 // verification (supabase.auth.verifyOtp succeeded, so the client now holds a
-// real session). Links the verified LINE identity to that physician's row.
+// real session). Links the verified LINE identity to that fellow's row.
 //
 // Requires the caller's Supabase access token in the Authorization header
 // (supabase.functions.invoke sends this automatically) and:
@@ -55,29 +55,29 @@ Deno.serve(async req => {
 
     // Refuse to steal a LINE identity that's already linked to someone else.
     const { data: existing, error: existingError } = await admin
-      .from('physicians')
+      .from('fellow')
       .select('user_id')
       .eq('line_user_id', lineUserId)
       .maybeSingle();
     if (existingError) throw existingError;
     if (existing && existing.user_id && existing.user_id !== user.id) {
-      return json({ error: 'this LINE account is already linked to a different physician' }, 409);
+      return json({ error: 'this LINE account is already linked to a different fellow' }, 409);
     }
 
-    // Match on user_id, not email. claim_physician_row() runs immediately
+    // Match on user_id, not email. claim_fellow_row() runs immediately
     // before this (case-insensitively linking user_id to the whitelist row),
     // so user_id is the reliable key here. Matching on email would need to be
     // case-insensitive — the roster has mixed-case addresses while Supabase
     // lowercases auth emails — and doing that with ilike risks treating `%`
     // or `_` in an address as wildcards.
     const { data: updated, error: updateError } = await admin
-      .from('physicians')
+      .from('fellow')
       .update({ line_user_id: lineUserId, verified: true })
       .eq('user_id', user.id)
       .select('id');
     if (updateError) throw updateError;
     if (!updated || updated.length === 0) {
-      return json({ error: 'no physician row linked to this account' }, 409);
+      return json({ error: 'no fellow row linked to this account' }, 409);
     }
 
     return json({ status: 'ok' });

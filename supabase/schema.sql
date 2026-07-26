@@ -3,8 +3,13 @@
 -- Safe to re-run: tables/functions/indexes are idempotent and policies are
 -- dropped and recreated on each run.
 
--- ── Whitelist / physician identity ──────────────────────────────────────────
-create table if not exists public.physicians (
+-- ── Whitelist / fellow identity ─────────────────────────────────────────────
+-- Renames the table in place (preserving all existing rows) the first time
+-- this runs against a database from before the rename; a no-op on every
+-- run after that, since `physicians` no longer exists.
+alter table if exists public.physicians rename to fellow;
+
+create table if not exists public.fellow (
   id uuid primary key default gen_random_uuid(),
   full_name text not null,
   email text not null unique,
@@ -16,23 +21,28 @@ create table if not exists public.physicians (
 
 -- Added after the initial table creation — explicit ALTER so re-running this
 -- script against a table created before this column existed still works.
-alter table public.physicians add column if not exists institution text;
+alter table public.fellow add column if not exists institution text;
 
 -- Case-insensitive uniqueness on email: all lookups compare with lower(), and
 -- the roster has mixed-case addresses, so guard against two rows that differ
 -- only by case.
-create unique index if not exists physicians_email_lower_idx
-  on public.physicians (lower(email));
+alter index if exists physicians_email_lower_idx rename to fellow_email_lower_idx;
+create unique index if not exists fellow_email_lower_idx
+  on public.fellow (lower(email));
 
-alter table public.physicians enable row level security;
+alter table public.fellow enable row level security;
 
--- A physician may read only their own row, once linked (user_id = auth.uid()).
-drop policy if exists "physicians can read own row" on public.physicians;
-create policy "physicians can read own row"
-  on public.physicians for select
+-- A fellow may read only their own row, once linked (user_id = auth.uid()).
+-- Dropped by both the old and new policy name — the old-named one only
+-- exists on a database that hasn't run this rename before; harmless
+-- no-op after that.
+drop policy if exists "physicians can read own row" on public.fellow;
+drop policy if exists "fellow can read own row" on public.fellow;
+create policy "fellow can read own row"
+  on public.fellow for select
   using (auth.uid() is not null and user_id = auth.uid());
 
--- No direct insert/update/delete from clients. All writes to physicians
+-- No direct insert/update/delete from clients. All writes to fellow
 -- happen through the SECURITY DEFINER functions below or the service role
 -- (used by the Edge Functions), so RLS intentionally grants no write policy.
 
@@ -45,7 +55,7 @@ security definer
 set search_path = public
 as $$
   select exists (
-    select 1 from public.physicians
+    select 1 from public.fellow
     where lower(email) = lower(p_email)
   );
 $$;
@@ -57,7 +67,11 @@ grant execute on function public.is_email_allowed(text) to anon, authenticated;
 -- their whitelist row by email. Does NOT touch line_user_id — that linkage
 -- is only ever set server-side by the link-line-user Edge Function after it
 -- has independently verified the LIFF ID token with LINE.
-create or replace function public.claim_physician_row()
+--
+-- Renamed from claim_physician_row() — the old name is dropped explicitly
+-- since `create or replace` can't rename a function, only replace its body.
+drop function if exists public.claim_physician_row();
+create or replace function public.claim_fellow_row()
 returns void
 language plpgsql
 security definer
@@ -70,19 +84,19 @@ begin
     raise exception 'no authenticated user';
   end if;
 
-  update public.physicians
+  update public.fellow
   set user_id = auth.uid()
   where lower(email) = lower(v_email)
     and (user_id is null or user_id = auth.uid());
 end;
 $$;
 
-revoke all on function public.claim_physician_row() from public;
-grant execute on function public.claim_physician_row() to authenticated;
+revoke all on function public.claim_fellow_row() from public;
+grant execute on function public.claim_fellow_row() to authenticated;
 
--- Seed the initial admin row. Run supabase/seed_physicians.sql afterward (or
+-- Seed the initial admin row. Run supabase/seed_fellow.sql afterward (or
 -- any time the roster changes) to load/update the full fellow whitelist.
-insert into public.physicians (full_name, email, institution)
+insert into public.fellow (full_name, email, institution)
 values ('ปองสิทธิ์ โพธิคุณ', 'pong.poti@gmail.com', 'สมุทรสาคร')
 on conflict (email) do nothing;
 
@@ -149,7 +163,8 @@ alter table public.cases add constraint cases_place_check
 alter table public.cases enable row level security;
 
 drop policy if exists "physicians manage their own cases" on public.cases;
-create policy "physicians manage their own cases"
+drop policy if exists "fellow manage their own cases" on public.cases;
+create policy "fellow manage their own cases"
   on public.cases for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
@@ -169,7 +184,7 @@ create table if not exists public.staff (
 
 -- One row per device a staff member has signed in from — not one row per
 -- staff member. Staff authenticate via anonymous sign-in (no email to anchor
--- an identity across devices the way physicians' email does), so phone and
+-- an identity across devices the way a fellow's email does), so phone and
 -- tablet each get an unrelated auth.uid(). A single user_id column would let
 -- only one device hold the link at a time, silently kicking out the other on
 -- every sign-in; this table lets any number of devices stay linked at once.
@@ -248,8 +263,8 @@ as $$
     c.approach, c."position", c.procedure, c.procedure_type, c.role,
     c.op_time, c.memo, c.image_paths, c.created_at
   from public.cases c
-  join public.physicians p on p.user_id = c.user_id
-  where p.institution = (
+  join public.fellow f on f.user_id = c.user_id
+  where f.institution = (
     select s.institution
     from public.staff_devices sd
     join public.staff s on s.id = sd.staff_id
@@ -262,7 +277,7 @@ revoke all on function public.staff_institution_cases() from public;
 grant execute on function public.staff_institution_cases() to authenticated;
 
 -- Authorizes a staff member to view one case image: true if that image
--- belongs to a case whose owning physician is in the caller's institution.
+-- belongs to a case whose owning fellow is in the caller's institution.
 -- Returns a boolean only (never row data), so drive-images can use it as a
 -- second ownership check without granting staff any direct table access.
 create or replace function public.staff_can_view_image(p_image_id text)
@@ -274,9 +289,9 @@ as $$
   select exists (
     select 1
     from public.cases c
-    join public.physicians p on p.user_id = c.user_id
+    join public.fellow f on f.user_id = c.user_id
     where c.image_paths @> array[p_image_id]
-      and p.institution = (
+      and f.institution = (
         select s.institution
         from public.staff_devices sd
         join public.staff s on s.id = sd.staff_id

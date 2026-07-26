@@ -10,7 +10,7 @@ export interface StaffProfile {
 /** Loads the signed-in staff member's own name/institution via
  *  my_staff_profile() — the only way this data is ever read, so there's no
  *  raw select to get wrong. Null for a non-staff caller (zero rows, not an
- *  error), same shape as fetchCurrentPhysician(). */
+ *  error), same shape as fetchCurrentFellow(). */
 export async function fetchStaffProfile(): Promise<StaffProfile | null> {
   const { data, error } = await supabase.rpc('my_staff_profile');
   if (error) throw error;

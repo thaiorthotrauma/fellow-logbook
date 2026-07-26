@@ -190,11 +190,11 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     if (verifyError) throw verifyError; // wrong/expired code — OtpStep shows it and lets them retry
 
     // From here the user is verified and holds a session, so never bounce them
-    // back to re-enter a now-consumed code. Linking their physician row and
+    // back to re-enter a now-consumed code. Linking their fellow row and
     // LINE identity is best-effort: if it fails (e.g. transient), let them in
     // anyway — it self-heals on the next re-authentication.
     try {
-      const { error: claimError } = await supabase.rpc('claim_physician_row');
+      const { error: claimError } = await supabase.rpc('claim_fellow_row');
       if (claimError) throw claimError;
 
       const idToken = getLineIdToken();

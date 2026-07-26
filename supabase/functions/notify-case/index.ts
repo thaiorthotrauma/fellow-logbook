@@ -80,13 +80,13 @@ Deno.serve(async req => {
     if (rowError) throw rowError;
     if (!row) return json({ error: 'not found' }, 404);
 
-    // Identity comes from the physicians table, not the request body.
-    const { data: physician } = await user
-      .from('physicians')
+    // Identity comes from the fellow table, not the request body.
+    const { data: fellow } = await user
+      .from('fellow')
       .select('full_name, institution')
       .maybeSingle();
-    const fellowName = physician?.full_name ?? '';
-    const institution = physician?.institution ?? null;
+    const fellowName = fellow?.full_name ?? '';
+    const institution = fellow?.institution ?? null;
 
     let message: string | null;
     if (kind === 'created') {

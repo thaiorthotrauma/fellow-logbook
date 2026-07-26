@@ -79,22 +79,22 @@ export function invalidEmailMessage(email: string): string {
 
 export function addedMessage(input: AddInput, totalCount: number): string {
   return (
-    `✅ <b>Physician added</b>\n` +
+    `✅ <b>Fellow added</b>\n` +
     `<b>Name</b> ${esc(input.fullName)}\n` +
     `<b>Email</b> <code>${esc(input.email)}</code>\n` +
     (input.institution ? `<b>Institution</b> ${esc(input.institution)}\n\n` : `\n`) +
     `Not yet verified — they become active the first time they sign in themselves.\n` +
-    `Roster now has ${totalCount} physician${totalCount === 1 ? '' : 's'}.`
+    `Roster now has ${totalCount} fellow${totalCount === 1 ? '' : 's'}.`
   );
 }
 
-export interface ExistingPhysician {
+export interface ExistingFellow {
   full_name: string;
   institution: string | null;
   verified: boolean;
 }
 
-export function alreadyExistsMessage(email: string, existing: ExistingPhysician): string {
+export function alreadyExistsMessage(email: string, existing: ExistingFellow): string {
   return (
     `⚠️ <b>Already on the roster</b>\n` +
     `<code>${esc(email)}</code> is registered to <b>${esc(existing.full_name)}</b>` +
@@ -111,7 +111,7 @@ export function removeUsageMessage(): string {
 }
 
 export function notFoundMessage(email: string): string {
-  return `No physician found with <code>${esc(email)}</code>.`;
+  return `No fellow found with <code>${esc(email)}</code>.`;
 }
 
 /** Deliberately vague about *why* — "already verified" vs "already linked"
@@ -120,7 +120,7 @@ export function notFoundMessage(email: string): string {
 export function cannotRemoveMessage(fullName: string): string {
   return (
     `⛔ <b>Can't remove ${esc(fullName)}</b>\n` +
-    `This physician has already signed in at least once, so removing them here ` +
+    `This fellow has already signed in at least once, so removing them here ` +
     `would affect a real account. Use the SQL editor for this one.`
   );
 }
@@ -135,7 +135,7 @@ export interface RosterRow {
 }
 
 export function listMessage(rows: RosterRow[]): string {
-  if (rows.length === 0) return 'No physicians on the roster yet.';
+  if (rows.length === 0) return 'No fellows on the roster yet.';
   const lines = rows.map(r => `${r.verified ? '✅' : '⏳'} ${esc(r.full_name)}`);
   return `<b>Roster (${rows.length})</b>\n${lines.join('\n')}`;
 }

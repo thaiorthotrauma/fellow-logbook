@@ -5,7 +5,7 @@
 //
 // Unlike link-line-user, there is no email/OTP step before this — staff are
 // trusted by LINE ID alone (a deliberate choice, seeded directly). And unlike
-// physicians (one user_id per person, since email anchors identity across
+// fellows (one user_id per person, since email anchors identity across
 // devices), this upserts into staff_devices — one row per device — because an
 // anonymous session has no identity to share across a phone and a tablet.
 //

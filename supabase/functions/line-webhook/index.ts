@@ -81,19 +81,19 @@ Deno.serve(async req => {
 
       // Service role is required here: there is no session to scope RLS with.
       // Only this row's name/institution is read, to label the notification.
-      const { data: physician, error } = await admin
-        .from('physicians')
+      const { data: fellow, error } = await admin
+        .from('fellow')
         .select('full_name, institution')
         .eq('line_user_id', lineUserId)
         .maybeSingle();
-      if (error) console.error('Physician lookup failed:', error);
+      if (error) console.error('Fellow lookup failed:', error);
 
       const result = await sendTelegram(
         chatMessage(
           lineUserId,
           text,
-          physician?.full_name ?? null,
-          physician?.institution ?? null,
+          fellow?.full_name ?? null,
+          fellow?.institution ?? null,
         ),
       );
       if (!result.sent) console.error('Telegram notify failed:', result.error);

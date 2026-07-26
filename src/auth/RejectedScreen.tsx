@@ -5,7 +5,7 @@ export default function RejectedScreen() {
         <div className="auth-badge auth-badge-error">✕</div>
         <div className="auth-title">Email Not Found</div>
         <div className="auth-body">
-          This email isn't on the approved fellow/physician list for this logbook. If you believe this is a
+          This email isn't on the approved fellow list for this logbook. If you believe this is a
           mistake, contact the program administrator to be added.
         </div>
       </div>

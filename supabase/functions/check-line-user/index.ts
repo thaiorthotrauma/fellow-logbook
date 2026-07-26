@@ -42,32 +42,32 @@ Deno.serve(async req => {
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    const { data: physician, error } = await admin
-      .from('physicians')
+    const { data: fellow, error } = await admin
+      .from('fellow')
       .select('email, verified')
       .eq('line_user_id', lineUserId)
       .eq('verified', true)
       .maybeSingle();
 
     if (error) throw error;
-    if (!physician) return json({ status: 'unlinked' });
+    if (!fellow) return json({ status: 'unlinked' });
 
     // Supabase's admin API only exposes this capability under the parameter
     // name `type: 'magiclink'` — that's their label, not a description of
     // what happens here. generateLink does NOT send any email; it purely
     // produces a token our client redeems server-side (see AuthGate.tsx) to
-    // restore a session for a physician we've already verified owns this
+    // restore a session for a fellow we've already verified owns this
     // LINE identity.
     const { data: redeemable, error: redeemableError } = await admin.auth.admin.generateLink({
       type: 'magiclink',
-      email: physician.email,
+      email: fellow.email,
     });
     if (redeemableError) throw redeemableError;
 
     const redeemToken = redeemable.properties?.hashed_token;
     if (!redeemToken) throw new Error('generateLink did not return a redeemable token');
 
-    return json({ status: 'verified', email: physician.email, redeem_token: redeemToken });
+    return json({ status: 'verified', email: fellow.email, redeem_token: redeemToken });
   } catch (err) {
     console.error(err);
     return json({ error: err instanceof Error ? err.message : 'unexpected error' }, 400);

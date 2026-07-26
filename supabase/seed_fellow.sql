@@ -2,9 +2,9 @@
 -- on email and updates name/institution if they've changed, inserts if new.
 
 -- One-time addition if you ran schema.sql before this column existed.
-alter table public.physicians add column if not exists institution text;
+alter table public.fellow add column if not exists institution text;
 
-insert into public.physicians (full_name, email, institution) values
+insert into public.fellow (full_name, email, institution) values
   ('เวชศักดิ์ บุนนาค', 'Ping.bunnak@gmail.com', 'ภูมิพลอดุลยเดช'),
   ('คุณากร บุญปัน', 'khunakorn@nmu.ac.th', 'วชิรพยาบาล'),
   ('ชวนินทร์ เลิศพงศ์ไพบูลย์', 'chawanin@gmail.com', 'รามาธิบดี'),

@@ -13,7 +13,7 @@ import {
   uploadCaseImages,
   MAX_IMAGES_TOTAL_BYTES,
 } from './lib/casesApi';
-import { fetchCurrentPhysician, type Physician } from './lib/physicianApi';
+import { fetchCurrentFellow, type Fellow } from './lib/fellowApi';
 import { fetchStaffCases, fetchStaffProfile, type StaffProfile } from './lib/staffApi';
 import { getAppView } from './lib/appView';
 import { parseAoCode } from './lib/aoCode';
@@ -34,7 +34,7 @@ const view = getAppView();
 function App() {
   const [tab, setTab] = useState<Tab>(view === 'staff' ? 'log' : 'form');
   const [cases, setCases] = useState<CaseEntry[]>([]);
-  const [physician, setPhysician] = useState<Physician | null>(null);
+  const [fellow, setFellow] = useState<Fellow | null>(null);
   const [staffCases, setStaffCases] = useState<StaffCaseEntry[]>([]);
   const [staffProfile, setStaffProfile] = useState<StaffProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(view !== 'demo');
@@ -67,7 +67,7 @@ function App() {
     // unrelated auth.uid()s), so at most one of these ever finds a row; this
     // just reads whichever it is without re-deriving that decision here.
     Promise.all([
-      fetchCurrentPhysician().catch(err => {
+      fetchCurrentFellow().catch(err => {
         console.error(err);
         return null;
       }),
@@ -78,7 +78,7 @@ function App() {
     ])
       .then(([p, s]) => {
         if (cancelled) return;
-        setPhysician(p);
+        setFellow(p);
         setStaffProfile(s);
 
         if (p) {
@@ -292,9 +292,9 @@ function App() {
             </>
           ) : (
             <>
-              <div className="header-title">{physician?.fullName ?? ' '}</div>
-              {physician?.institution && (
-                <div className="header-institution">Institution : {physician.institution}</div>
+              <div className="header-title">{fellow?.fullName ?? ' '}</div>
+              {fellow?.institution && (
+                <div className="header-institution">Institution : {fellow.institution}</div>
               )}
               <div className="header-subtitle">Operative case record : year 2026 - 2027</div>
             </>
@@ -368,8 +368,8 @@ function App() {
         {tab === 'pdf' && !isStaff && (
           <ExportPdfPanel
             cases={cases}
-            fellowName={physician?.fullName ?? ''}
-            institution={physician?.institution ?? null}
+            fellowName={fellow?.fullName ?? ''}
+            institution={fellow?.institution ?? null}
             profileLoading={profileLoading}
           />
         )}
