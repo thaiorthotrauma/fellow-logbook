@@ -39,6 +39,13 @@ describe('parseCommand', () => {
     expect(parseCommand('/list')).toEqual({ name: 'list', args: '' });
   });
 
+  it('recognizes /addstaff', () => {
+    expect(parseCommand('/addstaff A B | Home | Uabc123')).toEqual({
+      name: 'addstaff',
+      args: 'A B | Home | Uabc123',
+    });
+  });
+
   it('unrecognized command name is tagged unknown, not dropped', () => {
     expect(parseCommand('/help')).toEqual({ name: 'unknown', text: 'help' });
   });

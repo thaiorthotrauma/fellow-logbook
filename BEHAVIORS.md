@@ -358,9 +358,19 @@ tool) — logged server-side instead.
   fixing an active account goes through the SQL editor.
 - **`/list`** — name and verified status only, **emails omitted**, so the
   roster's address list doesn't end up sitting in Telegram chat history.
+- **`/addstaff name | institution | LINE user id`** — adds a row to the
+  **`staff`** table (not `fellow`). All three fields are required, unlike
+  `/add`: staff have no email/OTP step to link a LINE id later (§2), so the
+  admin has to supply it up front — in practice, copied from the "message
+  from unregistered user" notification `line-webhook` posts the first time
+  that person messages the official account (§6). The row is **active
+  immediately** on insert; there's no verification step to wait for. A LINE
+  id already on the staff roster is refused, not overwritten — the reply
+  shows who already holds it.
 - The command parser and reply text are pure functions
-  (`_shared/fellowCommands.ts`) with no Deno/Supabase dependency, so they're
-  unit-tested from the app's own vitest suite rather than only by hand.
+  (`_shared/fellowCommands.ts` and `_shared/staffCommands.ts`) with no
+  Deno/Supabase dependency, so they're unit-tested from the app's own vitest
+  suite rather than only by hand.
 
 ## 7. Display & rendering
 

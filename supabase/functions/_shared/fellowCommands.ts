@@ -1,4 +1,5 @@
-// Parses and renders the /add, /remove, /list admin commands sent to the bot.
+// Parses and renders the /add, /remove, /list, /addstaff admin commands sent
+// to the bot.
 //
 // Kept free of any Deno/Supabase dependency (pure string in, string out) so it
 // can be unit-tested from the app's own vitest suite, the same pattern as
@@ -11,6 +12,7 @@ export type Command =
   | { name: 'add'; args: string }
   | { name: 'remove'; args: string }
   | { name: 'list'; args: string }
+  | { name: 'addstaff'; args: string }
   | { name: 'unknown'; text: string };
 
 /** Recognizes "/add ...", "/add@BotName ..." (Telegram appends the bot's
@@ -21,7 +23,9 @@ export function parseCommand(text: string): Command | null {
   if (!match) return null;
   const name = match[1].toLowerCase();
   const args = (match[2] ?? '').trim();
-  if (name === 'add' || name === 'remove' || name === 'list') return { name, args };
+  if (name === 'add' || name === 'remove' || name === 'list' || name === 'addstaff') {
+    return { name, args };
+  }
   return { name: 'unknown', text: match[1] };
 }
 
@@ -141,5 +145,8 @@ export function listMessage(rows: RosterRow[]): string {
 }
 
 export function unknownCommandMessage(name: string): string {
-  return `Unknown command <code>/${esc(name)}</code>. Try <code>/add</code>, <code>/remove</code>, or <code>/list</code>.`;
+  return (
+    `Unknown command <code>/${esc(name)}</code>. Try <code>/add</code>, <code>/remove</code>, ` +
+    `<code>/list</code>, or <code>/addstaff</code>.`
+  );
 }

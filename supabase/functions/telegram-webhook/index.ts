@@ -1,5 +1,5 @@
 // Receives Telegram Bot API webhook updates and handles the roster admin
-// commands: /add, /remove, /list.
+// commands: /add, /remove, /list, /addstaff.
 //
 // Unlike the app's other functions this one is called by Telegram, not the
 // browser, so there is no Supabase session to verify. It MUST be deployed with
@@ -48,6 +48,13 @@ import {
   type ExistingFellow,
   type RosterRow,
 } from '../_shared/fellowCommands.ts';
+import {
+  addStaffUsageMessage,
+  addedStaffMessage,
+  alreadyExistsStaffMessage,
+  parseAddStaffArgs,
+  type ExistingStaff,
+} from '../_shared/staffCommands.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE_KEY = Deno.env.get('SB_SECRET_KEY') ?? Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -169,6 +176,37 @@ Deno.serve(async req => {
       if (listError) throw listError;
 
       await reply(listMessage((rows ?? []) as RosterRow[]));
+      return new Response('ok');
+    }
+
+    if (command.name === 'addstaff') {
+      const parsed = parseAddStaffArgs(command.args);
+      if (!parsed.ok) {
+        await reply(addStaffUsageMessage());
+        return new Response('ok');
+      }
+
+      const { data: existing, error: existingError } = await admin
+        .from('staff')
+        .select('full_name, institution')
+        .eq('line_user_id', parsed.value.lineUserId)
+        .maybeSingle();
+      if (existingError) throw existingError;
+
+      if (existing) {
+        await reply(alreadyExistsStaffMessage(existing as ExistingStaff));
+        return new Response('ok');
+      }
+
+      const { error: insertError } = await admin.from('staff').insert({
+        full_name: parsed.value.fullName,
+        institution: parsed.value.institution,
+        line_user_id: parsed.value.lineUserId,
+      });
+      if (insertError) throw insertError;
+
+      const { count } = await admin.from('staff').select('id', { count: 'exact', head: true });
+      await reply(addedStaffMessage(parsed.value, count ?? 0));
       return new Response('ok');
     }
 
