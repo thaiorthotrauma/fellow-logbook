@@ -8,6 +8,13 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    # Unit tests import modules that construct the Supabase client at module
+    # load (e.g. casesApi.ts, staffApi.ts), which throws unless these are
+    # set — no real Supabase project is contacted by these tests, so
+    # placeholder values are enough to satisfy the constructor.
+    env:
+      VITE_SUPABASE_URL: https://placeholder.supabase.co
+      VITE_SUPABASE_ANON_KEY: placeholder-anon-key
     steps:
       - uses: actions/checkout@v4
 
