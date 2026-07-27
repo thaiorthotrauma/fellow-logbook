@@ -8,7 +8,10 @@
 // goes straight to Drive — the image bytes are never stored in Supabase.
 //
 // The function is JWT-protected (Supabase verifies the caller's session before
-// this runs); we additionally resolve the user to reject anonymous callers.
+// this runs); we additionally resolve the user to authorize each action —
+// upload/delete require a linked fellow row, get checks per-image ownership
+// or staff access. Staff's session is legitimately anonymous, so anonymous
+// callers aren't rejected outright (see the Deno.serve handler below).
 //
 // Actions (POST JSON { action, ... }):
 //   upload  { caseId, filename, contentType, dataBase64 } -> { id }
@@ -143,7 +146,13 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
 
   try {
-    // Reject anyone without a valid, non-anonymous Supabase session.
+    // Reject anyone without a valid Supabase session. Staff legitimately
+    // authenticate via an anonymous session (see AuthGate.tsx's
+    // tryLinkAsStaff — a linked staff device's real, ongoing session is
+    // anonymous, not just a transitional probe), so this can't reject
+    // anonymous sessions outright: `get` below relies on staff being able
+    // to reach it. Anonymous/unlinked callers are instead cut off from
+    // upload/delete specifically, by the fellow-row check next.
     const authHeader = req.headers.get('Authorization') ?? '';
     const user = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
@@ -154,6 +163,21 @@ Deno.serve(async req => {
     const payload = await req.json();
     const action = payload?.action;
     const token = await getAccessToken();
+
+    // upload/delete are only ever legitimately performed by the fellow who
+    // owns the case the image belongs to — staff are read-only reviewers
+    // (see schema.sql) and must never reach these two actions. Requiring a
+    // linked fellow row also rejects a bare/unlinked anonymous session,
+    // since it has no fellow row either. `get` isn't gated here: it does
+    // its own per-image ownership/staff check below.
+    if (action === 'upload' || action === 'delete') {
+      const { data: fellowRow, error: fellowErr } = await user
+        .from('fellow')
+        .select('user_id')
+        .limit(1);
+      if (fellowErr) throw fellowErr;
+      if (!fellowRow || fellowRow.length === 0) return json({ error: 'not authorized' }, 403);
+    }
 
     if (action === 'upload') {
       const { filename, contentType, dataBase64 } = payload;
@@ -202,11 +226,12 @@ Deno.serve(async req => {
     }
 
     if (action === 'delete') {
-      // No case-ownership check here (unlike `get`): both legitimate callers
-      // run when no owning row exists — deleteCaseById removes the DB row before
-      // this cleanup, and the orphan-cleanup path fires when the insert failed
-      // so a row never existed. Delete only removes a file whose id the caller
-      // already holds; it discloses nothing.
+      // No per-image ownership check here (unlike `get`): both legitimate
+      // callers run when no owning row exists — deleteCaseById removes the
+      // DB row before this cleanup, and the orphan-cleanup path fires when
+      // the insert failed so a row never existed. Instead, the caller-level
+      // check above restricts this action to linked fellows, so at least
+      // only a fellow (never staff or an anonymous session) can reach it.
       const ids: unknown = payload?.ids;
       if (!Array.isArray(ids)) return json({ error: 'ids[] is required' }, 400);
       await Promise.all(ids.filter((x): x is string => typeof x === 'string').map(id => driveDelete(token, id)));

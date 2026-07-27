@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   casesMonthBounds,
   filterByMonthRange,
@@ -40,12 +40,23 @@ const DONE_NOTE: Record<string, string> = {
 
 export default function StaffExportPdfPanel({ cases, institution, profileLoading }: StaffExportPdfPanelProps) {
   const bounds = useMemo(() => casesMonthBounds(cases), [cases]);
-  const [from, setFrom] = useState(bounds?.min ?? '');
-  const [to, setTo] = useState(bounds?.max ?? '');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
   const [grouping, setGrouping] = useState<Grouping>('month');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState('');
+
+  // Cases load asynchronously, so `bounds` can still be null on first render.
+  // Seed the default range once real bounds arrive, but only if staff hasn't
+  // already picked a range themselves.
+  useEffect(() => {
+    if (bounds && !from && !to) {
+      setFrom(bounds.min);
+      setTo(bounds.max);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only seed on bounds arriving, not on every from/to edit
+  }, [bounds]);
 
   const monthOptions = useMemo(() => (bounds ? monthsBetween(bounds.min, bounds.max) : []), [bounds]);
   const selected = useMemo(
