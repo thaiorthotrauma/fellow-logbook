@@ -164,10 +164,19 @@ alter table public.cases enable row level security;
 
 drop policy if exists "physicians manage their own cases" on public.cases;
 drop policy if exists "fellow manage their own cases" on public.cases;
+-- Requires auth.uid() to own a fellow row, not just match user_id — closes
+-- the gap where a leftover anonymous session (e.g. from the staff-link probe
+-- in AuthGate) could otherwise write cases under an identity-less user_id.
 create policy "fellow manage their own cases"
   on public.cases for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+  using (
+    auth.uid() = user_id
+    and exists (select 1 from public.fellow f where f.user_id = auth.uid())
+  )
+  with check (
+    auth.uid() = user_id
+    and exists (select 1 from public.fellow f where f.user_id = auth.uid())
+  );
 
 create index if not exists cases_user_id_idx on public.cases (user_id);
 
