@@ -8,7 +8,10 @@
 // goes straight to Drive — the image bytes are never stored in Supabase.
 //
 // The function is JWT-protected (Supabase verifies the caller's session before
-// this runs); we additionally resolve the user to reject anonymous callers.
+// this runs); we additionally resolve the user to authorize each action —
+// upload/delete require a linked fellow row, get checks per-image ownership
+// or staff access. Staff's session is legitimately anonymous, so anonymous
+// callers aren't rejected outright (see the Deno.serve handler below).
 //
 // Actions (POST JSON { action, ... }):
 //   upload  { caseId, filename, contentType, dataBase64 } -> { id }
