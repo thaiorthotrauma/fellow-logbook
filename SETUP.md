@@ -68,6 +68,7 @@ supabase secrets set LINE_CHANNEL_ID=2010758904
 supabase functions deploy check-line-user
 supabase functions deploy link-line-user
 supabase functions deploy drive-images   # see §3a for its Google secrets
+supabase functions deploy cluster-labels # see §3b for its AI secret
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
@@ -127,6 +128,24 @@ supabase functions deploy drive-images            # redeploy after setting secre
 ```
 
 Until these are set, cases save fine — only cases *with images* will error.
+
+## 3b. AI clustering for the PDF summary page
+
+The PDF export's "Top 5 Diagnoses/Procedures" ranking on the summary page
+counts synonymous free-text entries together (e.g. "ORIF" and "open
+reduction internal fixation", "LCP" and "locking plate") via the
+`cluster-labels` function, which sends the distinct diagnosis/procedure
+wordings for the export's date range — never case dates, hospital numbers,
+or fellow names — to the Claude API for grouping.
+
+```sh
+supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+supabase functions deploy cluster-labels   # redeploy after setting the secret
+```
+
+Get a key from the [Anthropic Console](https://console.anthropic.com/). Until
+this secret is set, PDF exports still work fine — the ranking just falls back
+to grouping by exact wording, same as before this feature existed.
 
 ## 4. LINE Developers console
 

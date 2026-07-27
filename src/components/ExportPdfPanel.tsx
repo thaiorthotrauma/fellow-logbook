@@ -8,7 +8,9 @@ import {
   monthFileSegment,
   rangeLabel,
   sortChronological,
+  uniqueLabels,
 } from '../lib/pdf/stats';
+import { clusterLabels } from '../lib/pdf/clusterLabels';
 import { describeError } from '../lib/errors';
 import type { CaseEntry } from '../types';
 
@@ -68,6 +70,13 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
     setDone('');
     try {
       const selected = sortChronological(filterByMonthRange(cases, from, to));
+      // Best-effort AI grouping of synonymous diagnosis/procedure wording
+      // (e.g. "ORIF" / "open reduction internal fixation") for the summary
+      // page's top-5 ranking. Falls back to exact-text ranking on failure.
+      const [dxClusters, procClusters] = await Promise.all([
+        clusterLabels(uniqueLabels(selected, c => c.diagnosis)),
+        clusterLabels(uniqueLabels(selected, c => c.procedure)),
+      ]);
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
       const { generateLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
       const blob = await generateLogbookBlob({
@@ -76,6 +85,8 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
         yearLabel: YEAR_LABEL,
         rangeLabel: rangeLabel(from, to),
         cases: selected,
+        dxClusters,
+        procClusters,
       });
       const result = await deliverPdf(blob, pdfFileName(fellowName, from, to));
       setDone(DONE_NOTE[result] ?? '');
