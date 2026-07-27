@@ -1,0 +1,38 @@
+name: Temp - Reassign orphaned cases to doctorbenz2025
+
+on:
+  push:
+    branches: [claude/fix-orphaned-cases]
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reassign the 3 anonymous-session cases to the correct fellow
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          ids='("e52c3537-07c0-499d-ae07-4c1c7173d404","b819ea09-7a73-4496-bc79-bbde210d9238","98385179-d183-4215-98d9-7002c5fbcc04")'
+          new_user_id="05002e76-a179-416f-86b2-06133e6f3fff"
+
+          echo "--- before ---"
+          curl -sS "$SUPABASE_URL/rest/v1/cases?id=in.$ids&select=id,user_id" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            | python3 -m json.tool
+
+          echo "--- updating ---"
+          curl -sS -X PATCH "$SUPABASE_URL/rest/v1/cases?id=in.$ids" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=representation" \
+            -d "{\"user_id\": \"$new_user_id\"}" \
+            | python3 -m json.tool
+
+          echo "--- after ---"
+          curl -sS "$SUPABASE_URL/rest/v1/cases?id=in.$ids&select=id,user_id" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            | python3 -m json.tool
