@@ -28,9 +28,15 @@
 // Required secrets:
 //   TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, TELEGRAM_ADMIN_IDS (comma-
 //   separated Telegram user ids), SB_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY)
+//
+// Optional, to auto-assign the staff LINE rich menu on /addstaff (see
+// line-oa/README.md, staff section): LINE_CHANNEL_ACCESS_TOKEN,
+// LINE_STAFF_RICH_MENU_ID. If either is missing, /addstaff still adds the
+// person but tells the admin to run that README's step 3 curl by hand.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { timingSafeEqual } from '../_shared/security.ts';
 import { sendTelegramTo } from '../_shared/telegram.ts';
+import { linkRichMenuToUser } from '../_shared/line.ts';
 import {
   addUsageMessage,
   addedMessage,
@@ -54,6 +60,7 @@ import {
   alreadyExistsStaffMessage,
   parseAddStaffArgs,
   type ExistingStaff,
+  type RichMenuLinkStatus,
 } from '../_shared/staffCommands.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -65,6 +72,12 @@ const ADMIN_IDS = new Set(
     .map(id => id.trim())
     .filter(Boolean),
 );
+// Both required to auto-assign the staff rich menu right after /addstaff.
+// See line-oa/README.md (staff section) for how STAFF_RICH_MENU_ID is
+// created; if either is unset, the assignment is skipped and the admin is
+// told to run that README's step 3 curl by hand instead.
+const LINE_CHANNEL_ACCESS_TOKEN = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN') ?? '';
+const LINE_STAFF_RICH_MENU_ID = Deno.env.get('LINE_STAFF_RICH_MENU_ID') ?? '';
 
 interface TelegramUpdate {
   message?: {
@@ -205,8 +218,25 @@ Deno.serve(async req => {
       });
       if (insertError) throw insertError;
 
+      let richMenuStatus: RichMenuLinkStatus;
+      if (!LINE_CHANNEL_ACCESS_TOKEN || !LINE_STAFF_RICH_MENU_ID) {
+        richMenuStatus = 'not-configured';
+      } else {
+        try {
+          await linkRichMenuToUser(
+            parsed.value.lineUserId,
+            LINE_STAFF_RICH_MENU_ID,
+            LINE_CHANNEL_ACCESS_TOKEN,
+          );
+          richMenuStatus = 'linked';
+        } catch (err) {
+          console.error('Automatic staff rich menu assignment failed:', err);
+          richMenuStatus = 'failed';
+        }
+      }
+
       const { count } = await admin.from('staff').select('id', { count: 'exact', head: true });
-      await reply(addedStaffMessage(parsed.value, count ?? 0));
+      await reply(addedStaffMessage(parsed.value, count ?? 0, richMenuStatus));
       return new Response('ok');
     }
 

@@ -44,6 +44,28 @@ export async function verifyLineSignature(
   return timingSafeEqual(expected, signature);
 }
 
+/** Assigns a rich menu to one specific LINE user id (LINE's per-user
+ *  richmenu linking endpoint). Throws on any non-2xx response — callers
+ *  decide how to surface that (e.g. telling the admin the automatic
+ *  assignment failed and the manual curl from line-oa/README.md is still
+ *  needed for this person). */
+export async function linkRichMenuToUser(
+  lineUserId: string,
+  richMenuId: string,
+  channelAccessToken: string,
+): Promise<void> {
+  const res = await fetchWithRetry(
+    `https://api.line.me/v2/bot/user/${encodeURIComponent(lineUserId)}/richmenu/${encodeURIComponent(richMenuId)}`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${channelAccessToken}` },
+    },
+  );
+  if (!res.ok) {
+    throw new Error(`LINE richmenu link failed: ${res.status} ${await res.text()}`);
+  }
+}
+
 export async function verifyLineIdToken(idToken: string, channelId: string): Promise<string> {
   const res = await fetchWithRetry('https://api.line.me/oauth2/v2.1/verify', {
     method: 'POST',
