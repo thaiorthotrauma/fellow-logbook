@@ -29,6 +29,12 @@ jobs:
           echo "--- fellow rows count ---"
           python3 -c "import json; print(len(json.load(open('fellow_rows.json'))))"
 
+          echo "--- unmatched auth user lookup ---"
+          curl -sS "$SUPABASE_URL/auth/v1/admin/users/81919f3e-1fcc-427b-bceb-727a2fb2a161" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            | python3 -m json.tool
+
           python3 - <<'PY'
           import json
           cases = json.load(open("cases_rows.json"))
