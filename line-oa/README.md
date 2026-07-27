@@ -182,11 +182,23 @@ curl -s "https://api.line.me/v2/bot/user/<their LINE user id>/richmenu" \
 Should return `{"richMenuId":"..."}` matching `$STAFF_RICH_MENU_ID` for a
 staff id, or the default menu's id for anyone else.
 
-**Note:** this step-3 assignment is manual today — done once per person, right
-after adding them to the `staff` table (via the Telegram `/addstaff` command,
-mirroring `/addfellow`, or directly via `supabase/seed_staff.sql`). If the
-roster grows past a handful of people, step 3 could eventually be triggered
-automatically instead of by hand.
+**Note:** when someone is added via the Telegram `/addstaff` command, step 3
+now happens automatically right after the `staff` table insert — the webhook
+calls this same endpoint itself, using the `LINE_CHANNEL_ACCESS_TOKEN` and
+`LINE_STAFF_RICH_MENU_ID` secrets (`supabase/functions/telegram-webhook`,
+via `linkRichMenuToUser` in `supabase/functions/_shared/line.ts`). Set
+`LINE_CHANNEL_ACCESS_TOKEN` to the same `$CHANNEL_TOKEN` used above and
+`LINE_STAFF_RICH_MENU_ID` to `$STAFF_RICH_MENU_ID`:
+
+```sh
+npx supabase secrets set LINE_CHANNEL_ACCESS_TOKEN="$CHANNEL_TOKEN" LINE_STAFF_RICH_MENU_ID="$STAFF_RICH_MENU_ID"
+```
+
+If either secret is unset, or the LINE API call fails (e.g. rate limit,
+revoked token), `/addstaff` still adds the row and its reply tells the admin
+to run the step-3 curl above by hand for that person — it never silently
+skips it. Adding someone directly via `supabase/seed_staff.sql` still bypasses
+this entirely, same as before, since that path never calls the webhook.
 
 ---
 

@@ -47,6 +47,31 @@ describe('message rendering', () => {
     expect(msg).toContain('Roster now has 1 staff member.');
   });
 
+  it('addedStaffMessage defaults to reporting the rich menu as linked', () => {
+    const msg = addedStaffMessage({ fullName: 'A B', institution: 'Home', lineUserId: 'Uabc' }, 1);
+    expect(msg).toContain('rich menu assigned automatically');
+  });
+
+  it('addedStaffMessage flags a missing LINE config as a manual step', () => {
+    const msg = addedStaffMessage(
+      { fullName: 'A B', institution: 'Home', lineUserId: 'Uabc' },
+      1,
+      'not-configured',
+    );
+    expect(msg).toContain("isn't set");
+    expect(msg).toContain('line-oa/README.md');
+  });
+
+  it('addedStaffMessage flags a failed LINE API call as a manual step', () => {
+    const msg = addedStaffMessage(
+      { fullName: 'A B', institution: 'Home', lineUserId: 'Uabc' },
+      1,
+      'failed',
+    );
+    expect(msg).toContain('assignment failed');
+    expect(msg).toContain('line-oa/README.md');
+  });
+
   it('alreadyExistsStaffMessage shows who owns that LINE id without changing anything', () => {
     const msg = alreadyExistsStaffMessage({ full_name: 'A B', institution: 'Home' });
     expect(msg).toContain('A B');

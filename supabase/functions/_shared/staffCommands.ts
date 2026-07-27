@@ -43,13 +43,41 @@ export function addStaffUsageMessage(): string {
   return ADD_STAFF_USAGE;
 }
 
-export function addedStaffMessage(input: AddStaffInput, totalCount: number): string {
+/** Outcome of the automatic LINE rich-menu assignment attempted right after
+ *  the DB insert — surfaced to the admin so a 'failed'/'not-configured'
+ *  result is visibly a call to do the line-oa/README.md step 3 curl by hand,
+ *  rather than a silent gap like before this was automated. */
+export type RichMenuLinkStatus = 'linked' | 'not-configured' | 'failed';
+
+function richMenuStatusLine(status: RichMenuLinkStatus): string {
+  switch (status) {
+    case 'linked':
+      return `LINE staff rich menu assigned automatically.`;
+    case 'not-configured':
+      return (
+        `⚠️ LINE_CHANNEL_ACCESS_TOKEN / LINE_STAFF_RICH_MENU_ID isn't set, so the ` +
+        `rich menu wasn't assigned — do it by hand (line-oa/README.md, staff section, step 3).`
+      );
+    case 'failed':
+      return (
+        `⚠️ Automatic rich menu assignment failed — do it by hand ` +
+        `(line-oa/README.md, staff section, step 3).`
+      );
+  }
+}
+
+export function addedStaffMessage(
+  input: AddStaffInput,
+  totalCount: number,
+  richMenuStatus: RichMenuLinkStatus = 'linked',
+): string {
   return (
     `✅ <b>Staff added</b>\n` +
     `<b>Name</b> ${esc(input.fullName)}\n` +
     `<b>Institution</b> ${esc(input.institution)}\n\n` +
     `Active immediately — staff sign in by LINE id alone, no verification step.\n` +
-    `Roster now has ${totalCount} staff member${totalCount === 1 ? '' : 's'}.`
+    `Roster now has ${totalCount} staff member${totalCount === 1 ? '' : 's'}.\n` +
+    richMenuStatusLine(richMenuStatus)
   );
 }
 
