@@ -9,7 +9,9 @@ import {
   monthFileSegment,
   rangeLabel,
   sortChronological,
+  uniqueLabels,
 } from '../lib/pdf/stats';
+import { clusterLabels } from '../lib/pdf/clusterLabels';
 import { describeError } from '../lib/errors';
 import type { StaffCaseEntry } from '../types';
 
@@ -71,6 +73,15 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
     setError('');
     setDone('');
     try {
+      // Best-effort AI grouping of synonymous diagnosis/procedure wording
+      // (e.g. "ORIF" / "open reduction internal fixation") for the summary
+      // page's top-5 ranking — one merged map shared across every fellow's
+      // summary, however the export is grouped. Falls back to exact-text
+      // ranking on failure.
+      const [dxClusters, procClusters] = await Promise.all([
+        clusterLabels(uniqueLabels(selected, c => c.diagnosis)),
+        clusterLabels(uniqueLabels(selected, c => c.procedure)),
+      ]);
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
       const { generateLogbookBlob, generateStaffLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
 
@@ -82,12 +93,16 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
               yearLabel: YEAR_LABEL,
               rangeLabel: rangeLabel(from, to),
               cases: selected,
+              dxClusters,
+              procClusters,
             })
           : await generateStaffLogbookBlob({
               institution,
               yearLabel: YEAR_LABEL,
               rangeLabel: rangeLabel(from, to),
               fellows: groupByFellow(selected),
+              dxClusters,
+              procClusters,
             });
 
       const result = await deliverPdf(blob, pdfFileName(institution, grouping, from, to));

@@ -8,9 +8,11 @@ import {
   monthLabel,
   monthsBetween,
   nameFileSegment,
+  normalizeLabel,
   rangeLabel,
   sortChronological,
   topN,
+  uniqueLabels,
 } from './stats';
 import { PLACE, PROC_TYPE } from '../../data';
 import { emptyForm, type CaseEntry, type StaffCaseEntry } from '../../types';
@@ -85,6 +87,41 @@ describe('topN', () => {
   it('caps at n', () => {
     const cases = ['a', 'b', 'c', 'd', 'e', 'f'].map(d => makeCase({ procedure: d }));
     expect(topN(cases, c => c.procedure, 5)).toHaveLength(5);
+  });
+
+  it('merges entries via a cluster map, using the canonical label for display', () => {
+    const cases = [
+      makeCase({ procedure: 'ORIF' }),
+      makeCase({ procedure: 'Open reduction internal fixation' }),
+      makeCase({ procedure: 'ORIF' }),
+      makeCase({ procedure: 'K-wire fixation' }),
+    ];
+    const clusters = new Map([
+      [normalizeLabel('ORIF').key, 'Open reduction internal fixation'],
+      [normalizeLabel('Open reduction internal fixation').key, 'Open reduction internal fixation'],
+    ]);
+    const ranked = topN(cases, c => c.procedure, 5, clusters);
+    expect(ranked[0]).toEqual({ label: 'Open reduction internal fixation', count: 3 });
+    expect(ranked[1]).toEqual({ label: 'K-wire fixation', count: 1 });
+    expect(ranked).toHaveLength(2);
+  });
+
+  it('falls back to exact-text ranking for labels the cluster map has no entry for', () => {
+    const cases = [makeCase({ diagnosis: 'Ankle fracture' }), makeCase({ diagnosis: 'Femur fracture' })];
+    const ranked = topN(cases, c => c.diagnosis, 5, new Map());
+    expect(ranked).toHaveLength(2);
+  });
+});
+
+describe('uniqueLabels', () => {
+  it('returns one entry per normalized wording, ignoring empties', () => {
+    const cases = [
+      makeCase({ diagnosis: 'ORIF' }),
+      makeCase({ diagnosis: '  ORIF  ' }), // same after normalize
+      makeCase({ diagnosis: 'Open reduction internal fixation' }),
+      makeCase({ diagnosis: '' }),
+    ];
+    expect(uniqueLabels(cases, c => c.diagnosis)).toEqual(['ORIF', 'Open reduction internal fixation']);
   });
 });
 

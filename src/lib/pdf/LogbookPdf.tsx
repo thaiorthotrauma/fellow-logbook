@@ -25,6 +25,11 @@ export interface LogbookPdfProps {
    *  wide month-range export) shows it as a chip in the content page — a
    *  single fellow's own export never needs this, since every case is theirs. */
   cases: (CaseEntry & { fellowName?: string })[];
+  /** AI-clustered synonym groupings for the summary page's top-5 ranking
+   *  (see clusterLabels.ts). Omitted or empty falls back to exact-text
+   *  ranking. */
+  dxClusters?: ReadonlyMap<string, string>;
+  procClusters?: ReadonlyMap<string, string>;
 }
 
 function RankTable({ title, items }: { title: string; items: RankItem[] }) {
@@ -52,15 +57,26 @@ export interface SummaryPageProps {
   yearLabel: string;
   rangeLabel: string;
   cases: CaseEntry[];
+  /** AI-clustered synonym groupings — see LogbookPdfProps above. */
+  dxClusters?: ReadonlyMap<string, string>;
+  procClusters?: ReadonlyMap<string, string>;
 }
 
 /** Page 1 of a logbook: case count, top diagnoses/procedures, distribution
  *  charts. `headingName` is a fellow's name for a single-fellow export, or
  *  the institution for the staff by-month-range export — the page itself
  *  doesn't care which, it just needs a heading and a case set to summarize. */
-export function SummaryPage({ headingName, institution, yearLabel, rangeLabel, cases }: SummaryPageProps) {
-  const topDx = topN(cases, c => c.diagnosis, 5);
-  const topProc = topN(cases, c => c.procedure, 5);
+export function SummaryPage({
+  headingName,
+  institution,
+  yearLabel,
+  rangeLabel,
+  cases,
+  dxClusters,
+  procClusters,
+}: SummaryPageProps) {
+  const topDx = topN(cases, c => c.diagnosis, 5, dxClusters);
+  const topProc = topN(cases, c => c.procedure, 5, procClusters);
   const typeDist = distribution(cases, c => c.procedureType, PROC_TYPE);
   const roleDist = distribution(cases, c => c.role, ROLES);
   const placeDist = distribution(cases, c => c.place, PLACE);
@@ -162,11 +178,27 @@ export function ContentPage({ runHeaderName, cases }: ContentPageProps) {
   );
 }
 
-export default function LogbookPdf({ fellowName, institution, yearLabel, rangeLabel, cases }: LogbookPdfProps) {
+export default function LogbookPdf({
+  fellowName,
+  institution,
+  yearLabel,
+  rangeLabel,
+  cases,
+  dxClusters,
+  procClusters,
+}: LogbookPdfProps) {
   const runHeaderName = institution ? `${fellowName}, ${institution}` : fellowName;
   return (
     <Document title={`TOTS Logbook — ${fellowName}`} author={fellowName}>
-      <SummaryPage headingName={fellowName} institution={institution} yearLabel={yearLabel} rangeLabel={rangeLabel} cases={cases} />
+      <SummaryPage
+        headingName={fellowName}
+        institution={institution}
+        yearLabel={yearLabel}
+        rangeLabel={rangeLabel}
+        cases={cases}
+        dxClusters={dxClusters}
+        procClusters={procClusters}
+      />
       <ContentPage runHeaderName={runHeaderName} cases={cases} />
     </Document>
   );
