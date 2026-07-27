@@ -14,7 +14,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          since=$(date -u -d "-4 hours" +%Y-%m-%dT%H:%M:%SZ)
+          since=$(date -u -d "-8 hours" +%Y-%m-%dT%H:%M:%SZ)
 
           curl -sS "$SUPABASE_URL/rest/v1/cases?select=*&created_at=gte.$since&order=created_at.desc" \
             -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
@@ -25,6 +25,9 @@ jobs:
             -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
             -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
             -o fellow_rows.json
+
+          echo "--- fellow rows count ---"
+          python3 -c "import json; print(len(json.load(open('fellow_rows.json'))))"
 
           python3 - <<'PY'
           import json
