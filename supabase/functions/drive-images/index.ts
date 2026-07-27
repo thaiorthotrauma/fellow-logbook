@@ -149,11 +149,26 @@ Deno.serve(async req => {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: userData, error: userError } = await user.auth.getUser();
-    if (userError || !userData.user) return json({ error: 'not authenticated' }, 401);
+    if (userError || !userData.user || userData.user.is_anonymous) {
+      return json({ error: 'not authenticated' }, 401);
+    }
 
     const payload = await req.json();
     const action = payload?.action;
     const token = await getAccessToken();
+
+    // upload/delete are only ever legitimately performed by the fellow who
+    // owns the case the image belongs to — staff are read-only reviewers
+    // (see schema.sql) and must never reach these two actions. `get` isn't
+    // gated here: it does its own per-image ownership/staff check below.
+    if (action === 'upload' || action === 'delete') {
+      const { data: fellowRow, error: fellowErr } = await user
+        .from('fellow')
+        .select('user_id')
+        .limit(1);
+      if (fellowErr) throw fellowErr;
+      if (!fellowRow || fellowRow.length === 0) return json({ error: 'not authorized' }, 403);
+    }
 
     if (action === 'upload') {
       const { filename, contentType, dataBase64 } = payload;
@@ -202,11 +217,12 @@ Deno.serve(async req => {
     }
 
     if (action === 'delete') {
-      // No case-ownership check here (unlike `get`): both legitimate callers
-      // run when no owning row exists — deleteCaseById removes the DB row before
-      // this cleanup, and the orphan-cleanup path fires when the insert failed
-      // so a row never existed. Delete only removes a file whose id the caller
-      // already holds; it discloses nothing.
+      // No per-image ownership check here (unlike `get`): both legitimate
+      // callers run when no owning row exists — deleteCaseById removes the
+      // DB row before this cleanup, and the orphan-cleanup path fires when
+      // the insert failed so a row never existed. Instead, the caller-level
+      // check above restricts this action to linked fellows, so at least
+      // only a fellow (never staff or an anonymous session) can reach it.
       const ids: unknown = payload?.ids;
       if (!Array.isArray(ids)) return json({ error: 'ids[] is required' }, 400);
       await Promise.all(ids.filter((x): x is string => typeof x === 'string').map(id => driveDelete(token, id)));
