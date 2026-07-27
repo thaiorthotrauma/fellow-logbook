@@ -143,15 +143,19 @@ Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
 
   try {
-    // Reject anyone without a valid, non-anonymous Supabase session.
+    // Reject anyone without a valid Supabase session. Staff legitimately
+    // authenticate via an anonymous session (see AuthGate.tsx's
+    // tryLinkAsStaff — a linked staff device's real, ongoing session is
+    // anonymous, not just a transitional probe), so this can't reject
+    // anonymous sessions outright: `get` below relies on staff being able
+    // to reach it. Anonymous/unlinked callers are instead cut off from
+    // upload/delete specifically, by the fellow-row check next.
     const authHeader = req.headers.get('Authorization') ?? '';
     const user = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: userData, error: userError } = await user.auth.getUser();
-    if (userError || !userData.user || userData.user.is_anonymous) {
-      return json({ error: 'not authenticated' }, 401);
-    }
+    if (userError || !userData.user) return json({ error: 'not authenticated' }, 401);
 
     const payload = await req.json();
     const action = payload?.action;
@@ -159,8 +163,10 @@ Deno.serve(async req => {
 
     // upload/delete are only ever legitimately performed by the fellow who
     // owns the case the image belongs to — staff are read-only reviewers
-    // (see schema.sql) and must never reach these two actions. `get` isn't
-    // gated here: it does its own per-image ownership/staff check below.
+    // (see schema.sql) and must never reach these two actions. Requiring a
+    // linked fellow row also rejects a bare/unlinked anonymous session,
+    // since it has no fellow row either. `get` isn't gated here: it does
+    // its own per-image ownership/staff check below.
     if (action === 'upload' || action === 'delete') {
       const { data: fellowRow, error: fellowErr } = await user
         .from('fellow')
