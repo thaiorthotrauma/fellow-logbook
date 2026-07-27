@@ -2,6 +2,8 @@ name: Temp - Query fellow table
 
 on:
   workflow_dispatch:
+  push:
+    branches: [claude/track-new-entries-b7nhdk]
 
 jobs:
   query:
