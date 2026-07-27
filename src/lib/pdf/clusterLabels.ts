@@ -5,7 +5,7 @@ const CLUSTER_FN = 'cluster-labels';
 
 /** Groups synonymous free-text diagnosis/procedure labels (e.g. "ORIF" and
  *  "open reduction internal fixation", "LCP" and "locking compression
- *  plate") via a server-side AI call, so the PDF summary's top-5 ranking
+ *  plate") via a server-side DeepSeek call, so the PDF summary's top-5 ranking
  *  counts synonyms together instead of splitting them by exact wording.
  *
  *  Only the distinct label text is sent — no dates, hospital numbers, or

@@ -136,14 +136,14 @@ counts synonymous free-text entries together (e.g. "ORIF" and "open
 reduction internal fixation", "LCP" and "locking plate") via the
 `cluster-labels` function, which sends the distinct diagnosis/procedure
 wordings for the export's date range — never case dates, hospital numbers,
-or fellow names — to the Claude API for grouping.
+or fellow names — to the DeepSeek API for grouping.
 
 ```sh
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+supabase secrets set DEEPSEEK_API_KEY=sk-...
 supabase functions deploy cluster-labels   # redeploy after setting the secret
 ```
 
-Get a key from the [Anthropic Console](https://console.anthropic.com/). Until
+Get a key from the [DeepSeek platform](https://platform.deepseek.com/). Until
 this secret is set, PDF exports still work fine — the ranking just falls back
 to grouping by exact wording, same as before this feature existed.
 

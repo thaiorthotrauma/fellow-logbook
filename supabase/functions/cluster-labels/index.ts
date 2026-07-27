@@ -19,7 +19,7 @@
 // Deployed like the other functions (JWT verified):
 //   npx supabase functions deploy cluster-labels
 //
-// Required secret: ANTHROPIC_API_KEY
+// Required secret: DEEPSEEK_API_KEY (from https://platform.deepseek.com)
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -51,8 +51,8 @@ interface LabelGroup {
 /** Read per call, not at module load, so a secret set after a warm isolate
  *  started still takes effect immediately (see telegram.ts for the same
  *  reasoning). */
-function anthropicKey(): string {
-  return (Deno.env.get('ANTHROPIC_API_KEY') ?? '').trim();
+function deepseekKey(): string {
+  return (Deno.env.get('DEEPSEEK_API_KEY') ?? '').trim();
 }
 
 /** No secret set → every label is its own group, i.e. today's exact-text
@@ -81,10 +81,10 @@ Deno.serve(async req => {
     const trimmed = [...new Set(labels.map(l => l.trim()).filter(Boolean))].slice(0, MAX_LABELS);
     if (trimmed.length < 2) return json({ groups: identityGroups(trimmed) });
 
-    const apiKey = anthropicKey();
+    const apiKey = deepseekKey();
     if (!apiKey) return json({ groups: identityGroups(trimmed) });
 
-    const groups = await groupWithClaude(trimmed, apiKey);
+    const groups = await groupWithDeepSeek(trimmed, apiKey);
     const map: Record<string, string> = {};
     for (const g of groups) {
       for (const m of g.members) map[m] = g.canonical;
@@ -100,17 +100,17 @@ Deno.serve(async req => {
   }
 });
 
-async function groupWithClaude(labels: string[], apiKey: string): Promise<LabelGroup[]> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+/** DeepSeek's API is OpenAI-compatible: chat completions with function-calling
+ *  tools, at https://api.deepseek.com (no /v1 prefix — see their docs). */
+async function groupWithDeepSeek(labels: string[], apiKey: string): Promise<LabelGroup[]> {
+  const res = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
+      authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 4096,
+      model: 'deepseek-chat',
       messages: [
         {
           role: 'user',
@@ -127,37 +127,42 @@ async function groupWithClaude(labels: string[], apiKey: string): Promise<LabelG
       ],
       tools: [
         {
-          name: TOOL_NAME,
-          description: 'Report the grouping of the given labels.',
-          input_schema: {
-            type: 'object',
-            properties: {
-              groups: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: {
-                    canonical: { type: 'string' },
-                    members: { type: 'array', items: { type: 'string' } },
+          type: 'function',
+          function: {
+            name: TOOL_NAME,
+            description: 'Report the grouping of the given labels.',
+            parameters: {
+              type: 'object',
+              properties: {
+                groups: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      canonical: { type: 'string' },
+                      members: { type: 'array', items: { type: 'string' } },
+                    },
+                    required: ['canonical', 'members'],
                   },
-                  required: ['canonical', 'members'],
                 },
               },
+              required: ['groups'],
             },
-            required: ['groups'],
           },
         },
       ],
-      tool_choice: { type: 'tool', name: TOOL_NAME },
+      tool_choice: { type: 'function', function: { name: TOOL_NAME } },
     }),
   });
 
-  if (!res.ok) throw new Error(`Claude API error: ${res.status} ${await res.text()}`);
+  if (!res.ok) throw new Error(`DeepSeek API error: ${res.status} ${await res.text()}`);
   const data = await res.json();
-  const toolUse = (data.content as Array<{ type: string; input?: unknown }> | undefined)?.find(
-    b => b.type === 'tool_use',
-  );
-  const groups = (toolUse?.input as { groups?: unknown } | undefined)?.groups;
-  if (!Array.isArray(groups)) throw new Error('malformed tool response');
-  return groups as LabelGroup[];
+  const toolCall = data.choices?.[0]?.message?.tool_calls?.[0] as
+    | { function?: { arguments?: string } }
+    | undefined;
+  const rawArgs = toolCall?.function?.arguments;
+  if (typeof rawArgs !== 'string') throw new Error('malformed tool response');
+  const parsed = JSON.parse(rawArgs) as { groups?: unknown };
+  if (!Array.isArray(parsed.groups)) throw new Error('malformed tool response');
+  return parsed.groups as LabelGroup[];
 }
