@@ -1,0 +1,24 @@
+name: Temp - Query fellow table
+
+on:
+  workflow_dispatch:
+
+jobs:
+  query:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Query public.fellow via Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          curl -sS "$SUPABASE_URL/rest/v1/fellow?select=*&order=created_at.desc" \
+            -H "apikey: $SUPABASE_SERVICE_ROLE_KEY" \
+            -H "Authorization: Bearer $SUPABASE_SERVICE_ROLE_KEY" \
+            | tee fellow_rows.json | python3 -m json.tool
+
+      - name: Upload result
+        uses: actions/upload-artifact@v4
+        with:
+          name: fellow-rows
+          path: fellow_rows.json
