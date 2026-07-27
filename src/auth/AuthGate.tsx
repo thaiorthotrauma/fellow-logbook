@@ -127,7 +127,15 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       body: { id_token: idToken },
     });
     if (error) throw new Error(await functionErrorMessage(error));
-    return data?.status === 'ok';
+
+    const linked = data?.status === 'ok';
+    if (!linked) {
+      // Not staff — this anonymous session was only a probe. Drop it so it
+      // doesn't linger in the browser and get mistaken for a real session
+      // (it has a working auth.uid() but no fellow/staff identity behind it).
+      await supabase.auth.signOut();
+    }
+    return linked;
   }
 
   /** The normal fellow login: verify with check-line-user, redeem a session if
