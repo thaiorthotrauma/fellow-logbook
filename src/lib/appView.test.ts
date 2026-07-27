@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { getAppView } from './appView';
 
 describe('getAppView', () => {
-  it('recognizes ?view=staff and ?view=demo', () => {
+  it('recognizes ?view=staff, ?view=demo, and ?view=addperson', () => {
     expect(getAppView('?view=staff')).toBe('staff');
     expect(getAppView('?view=demo')).toBe('demo');
+    expect(getAppView('?view=addperson')).toBe('addperson');
   });
 
   it('no view param → null', () => {

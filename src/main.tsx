@@ -14,11 +14,20 @@ import '@fontsource/ibm-plex-sans-thai/700.css'
 import './index.css'
 import App from './App.tsx'
 import AuthGate from './auth/AuthGate.tsx'
+import AddPersonMiniApp from './admin/AddPersonMiniApp.tsx'
+import { getAppView } from './lib/appView.ts'
+
+// ?view=addperson is the Telegram Mini App admin form — opened from the
+// bot's menu button, never from LINE. It has its own identity model
+// (Telegram's signed initData, not LIFF/Supabase auth), so it's checked here,
+// before AuthGate, rather than inside it: AuthGate's bootstrap() assumes
+// every caller is inside LIFF and would refuse this one outright.
+const root = getAppView() === 'addperson' ? <AddPersonMiniApp /> : (
+  <AuthGate>
+    <App />
+  </AuthGate>
+)
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AuthGate>
-      <App />
-    </AuthGate>
-  </StrictMode>,
+  <StrictMode>{root}</StrictMode>,
 )

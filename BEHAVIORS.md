@@ -372,6 +372,42 @@ tool) — logged server-side instead.
   Deno/Supabase dependency, so they're unit-tested from the app's own vitest
   suite rather than only by hand.
 
+## 6c. Add Person Telegram Mini App (admin)
+
+A form-based alternative to `/addfellow` and `/addstaff` (§6b), reached via a
+`web_app` button on the bot's menu — opened inside Telegram's own in-app
+browser (`?view=addperson`), never from LINE.
+
+- **Different auth mechanism than the webhook.** A Mini App page is loaded
+  in a WebView, not called by Telegram's servers, so there's no
+  `X-Telegram-Bot-Api-Secret-Token` header to check. Telegram instead signs
+  the page's `initData` string; the Edge Function (`telegram-add-person`)
+  reproduces that signature (`_shared/telegramInitData.ts`) and rejects
+  anything that doesn't match, then checks the verified sender's id against
+  the same `TELEGRAM_ADMIN_IDS` allowlist §6b uses. Opened outside Telegram
+  (a bookmarked link, a plain browser), `initData` is always empty, so the
+  page shows a "open this from the bot's menu" message instead of a form.
+- **First name / last name are two inputs, one column.** Both roles show them
+  stacked, but `fellow`/`staff` each only ever had a single `full_name`
+  column — the two fields are joined with a space before the insert, the
+  same shape `/addfellow` and `/addstaff` already write.
+- **The role-specific field differs from the roster commands only in how
+  it's entered, not in what's required:** Fellow shows Email (validated
+  client-side and again server-side); Staff shows a "paste the forwarded
+  message" box instead of typing a bare LINE user id — `extractLineUserId`
+  (`src/lib/lineIdExtract.ts`) pulls the id out of the "message from
+  unregistered user" text `line-webhook` already posts (§6a), trying the
+  labelled `LINE user ID` line first and falling back to the bare
+  `U`+32-hex shape in case forwarding stripped everything else.
+- **Submits through Telegram's native MainButton**, not an in-page button —
+  it belongs to Telegram's chrome, matching how a real Mini App looks and
+  behaves.
+- Duplicate email/LINE id is refused the same way the roster commands refuse
+  it — the response identifies who already holds it, not just "duplicate".
+- A confirmation is still posted to the admin Telegram chat (`TELEGRAM_CHAT_ID`)
+  on success, same as `/addfellow`/`/addstaff`, so there's one durable record
+  regardless of which entry point was used.
+
 ## 7. Display & rendering
 
 - **Responsive:** a single content column capped at 960px and centered. On
