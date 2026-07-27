@@ -263,7 +263,7 @@ security definer
 set search_path = public
 as $$
   select
-    c.id, c.date, c.timing, c.place, p.full_name as fellow_name, c.staff,
+    c.id, c.date, c.timing, c.place, f.full_name as fellow_name, c.staff,
     case
       when length(c.hn) <= 4 then coalesce(nullif(c.hn, ''), '—')
       else '•••' || right(c.hn, 4)
