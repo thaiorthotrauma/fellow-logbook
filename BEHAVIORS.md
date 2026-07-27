@@ -336,7 +336,7 @@ A message that fails either gate gets **no reply at all** (not "not
 authorised", which would confirm to a stranger that they'd found an admin
 tool) — logged server-side instead.
 
-- **`/add name | email | institution`** — fields split on `|` rather than
+- **`/addfellow name | email | institution`** — fields split on `|` rather than
   whitespace, since Thai names contain spaces and emails don't; institution is
   optional. Inserts an unverified, unlinked row — exactly the state
   `seed_fellow.sql` produces. Adding someone does **not** create a login or
@@ -360,7 +360,7 @@ tool) — logged server-side instead.
   roster's address list doesn't end up sitting in Telegram chat history.
 - **`/addstaff name | institution | LINE user id`** — adds a row to the
   **`staff`** table (not `fellow`). All three fields are required, unlike
-  `/add`: staff have no email/OTP step to link a LINE id later (§2), so the
+  `/addfellow`: staff have no email/OTP step to link a LINE id later (§2), so the
   admin has to supply it up front — in practice, copied from the "message
   from unregistered user" notification `line-webhook` posts the first time
   that person messages the official account (§6). The row is **active

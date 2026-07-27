@@ -1,5 +1,5 @@
 // Receives Telegram Bot API webhook updates and handles the roster admin
-// commands: /add, /remove, /list, /addstaff.
+// commands: /addfellow, /remove, /list, /addstaff.
 //
 // Unlike the app's other functions this one is called by Telegram, not the
 // browser, so there is no Supabase session to verify. It MUST be deployed with
@@ -103,7 +103,7 @@ Deno.serve(async req => {
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
     const reply = (html: string) => sendTelegramTo(String(chatId), html);
 
-    if (command.name === 'add') {
+    if (command.name === 'addfellow') {
       const parsed = parseAddArgs(command.args);
       if (!parsed.ok) {
         await reply(parsed.error === 'usage' ? addUsageMessage() : invalidEmailMessage(parsed.email ?? ''));

@@ -18,19 +18,19 @@ import {
 
 describe('parseCommand', () => {
   it('splits the command name from its arguments', () => {
-    expect(parseCommand('/add ปองสิทธิ์ | a@b.com | Home')).toEqual({
-      name: 'add',
+    expect(parseCommand('/addfellow ปองสิทธิ์ | a@b.com | Home')).toEqual({
+      name: 'addfellow',
       args: 'ปองสิทธิ์ | a@b.com | Home',
     });
   });
 
   it('is case-insensitive on the command name', () => {
-    expect(parseCommand('/ADD a | b@c.com')).toMatchObject({ name: 'add' });
+    expect(parseCommand('/ADDFELLOW a | b@c.com')).toMatchObject({ name: 'addfellow' });
   });
 
-  it('strips a bot-username suffix ("/add@MyBot ...")', () => {
-    expect(parseCommand('/add@TotsLogbookBot a | b@c.com')).toMatchObject({
-      name: 'add',
+  it('strips a bot-username suffix ("/addfellow@MyBot ...")', () => {
+    expect(parseCommand('/addfellow@TotsLogbookBot a | b@c.com')).toMatchObject({
+      name: 'addfellow',
       args: 'a | b@c.com',
     });
   });

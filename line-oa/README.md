@@ -183,10 +183,9 @@ Should return `{"richMenuId":"..."}` matching `$STAFF_RICH_MENU_ID` for a
 staff id, or the default menu's id for anyone else.
 
 **Note:** this step-3 assignment is manual today — done once per person, right
-after adding them to the `staff` table (see `supabase/seed_staff.sql`). If the
-roster grows past a handful of people, this is a natural candidate for a
-future Telegram `/addstaff` command to automate (mirroring the existing
-`/add` roster command), the same way step 3 could eventually be triggered
+after adding them to the `staff` table (via the Telegram `/addstaff` command,
+mirroring `/addfellow`, or directly via `supabase/seed_staff.sql`). If the
+roster grows past a handful of people, step 3 could eventually be triggered
 automatically instead of by hand.
 
 ---
