@@ -34,7 +34,7 @@ export default function EmailStep({ onSubmit }: EmailStepProps) {
         <input
           type="email"
           className="field-input"
-          placeholder="your gmail"
+          placeholder="your personal email"
           value={email}
           onChange={e => setEmail(e.target.value)}
           autoFocus
