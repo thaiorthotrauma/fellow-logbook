@@ -129,12 +129,13 @@ create table if not exists public.cases (
 
 -- Added after the initial table creation — explicit ALTER so re-running this
 -- script against a table created before these columns existed still works.
--- (staff/hn/memo default to '' so existing rows are valid; the app enforces
--- staff and hn as required at write time.)
+-- (staff/hn/memo/position default to '' so existing rows are valid; the app
+-- enforces staff and hn as required at write time.)
 alter table public.cases add column if not exists image_paths text[] not null default '{}';
 alter table public.cases add column if not exists staff text not null default '';
 alter table public.cases add column if not exists hn text not null default '';
 alter table public.cases add column if not exists memo text not null default '';
+alter table public.cases add column if not exists "position" text not null default '';
 
 -- Constrain the enumerated columns to the exact value sets the app uses (these
 -- mirror the option arrays in src/data.ts). Dropped-then-added so the script
