@@ -271,7 +271,7 @@ function App() {
 
   return (
     <div className="app">
-      <div className="header">
+      <div className={`header${isStaff ? ' header-staff' : ''}`}>
         <div>
           {isDemo ? (
             <>

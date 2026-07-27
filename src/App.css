@@ -57,6 +57,16 @@ button {
   box-shadow: 0 12px 28px -8px rgba(6, 38, 34, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
+/* Staff view is reached via the rich menu's "Fellow Cases" button, whose tile
+   is orange/amber (see line-oa/richmenu-staff.jpg) — match that theme here
+   instead of the default teal, which belongs to the "Logbook Demo" tile. */
+.header-staff {
+  background:
+    radial-gradient(120% 180% at 15% -20%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 55%),
+    linear-gradient(135deg, #d68a3a 0%, #a8621f 48%, #5c3212 100%);
+  box-shadow: 0 12px 28px -8px rgba(56, 30, 6, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
 .header-title {
   font-size: 22px;
   font-weight: 700;
