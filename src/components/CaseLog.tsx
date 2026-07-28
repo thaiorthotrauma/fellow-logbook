@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { OPTIME_MAP, PLACE_MAP, PROC_MAP, ROLE_MAP, TIMING_MAP } from '../data';
+import { fuzzyScoreWords } from '../lib/fuzzyMatch';
 import { formatBulletedField, formatClassification, stripBullets } from '../lib/textFormat';
 import type { CaseEntry, StaffCaseEntry } from '../types';
 import CaseImages from './CaseImages';
@@ -69,20 +70,31 @@ export default function CaseLog({
   const [sort, setSort] = useState<SortOrder>('newest');
 
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = query.trim();
     const rows = cases
-      .map((c, i) => ({ c, i })) // keep insertion order for a stable tie-break
-      .filter(({ c }) => {
-        if (place !== 'all' && c.place !== place) return false;
-        if (!q) return true;
-        const fellowName = isStaffEntry(c) ? c.fellowName : '';
-        return [c.diagnosis, c.otherClassification, c.approach, c.procedure, c.aoCode, c.aoRegionLabel, fellowName]
+      .map((c, i) => ({ c, i, score: 0 })) // keep insertion order for a stable tie-break
+      .filter(({ c }) => place === 'all' || c.place === place)
+      .flatMap(row => {
+        if (!q) return [row];
+        const fellowName = isStaffEntry(row.c) ? row.c.fellowName : '';
+        const haystack = [
+          row.c.diagnosis,
+          row.c.otherClassification,
+          row.c.approach,
+          row.c.procedure,
+          row.c.aoCode,
+          row.c.aoRegionLabel,
+          fellowName,
+        ]
           .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-          .includes(q);
+          .join(' ');
+        const score = fuzzyScoreWords(q, haystack);
+        return score === null ? [] : [{ ...row, score }];
       });
     rows.sort((a, b) => {
+      // While searching, best matches lead; the newest/oldest toggle only
+      // governs order once the query is empty (and all scores are 0).
+      if (q && a.score !== b.score) return b.score - a.score;
       const cmp = a.c.date < b.c.date ? -1 : a.c.date > b.c.date ? 1 : a.i - b.i;
       return sort === 'newest' ? -cmp : cmp;
     });
