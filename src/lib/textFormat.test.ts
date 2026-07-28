@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatBulletedField, formatClassification, stripBullets } from './textFormat';
+import { fellowBadgeLabel, formatBulletedField, formatClassification, stripBullets } from './textFormat';
 
 describe('stripBullets', () => {
   it('removes leading "- " markers from each line', () => {
@@ -70,5 +70,19 @@ describe('formatBulletedField', () => {
 
   it('empty input → empty string', () => {
     expect(formatBulletedField('')).toBe('');
+  });
+});
+
+describe('fellowBadgeLabel', () => {
+  it('skips a pre-posed leading vowel to find the actual initial consonant', () => {
+    expect(fellowBadgeLabel('ปองสิทธิ์ โพธิคุณ')).toBe('ปองสิทธิ์ พ');
+  });
+
+  it('takes the first letter as-is when the last name has no leading vowel', () => {
+    expect(fellowBadgeLabel('เวชศักดิ์ บุนนาค')).toBe('เวชศักดิ์ บ');
+  });
+
+  it('falls back to the name as-is when it has no last name', () => {
+    expect(fellowBadgeLabel('เดี่ยว')).toBe('เดี่ยว');
   });
 });

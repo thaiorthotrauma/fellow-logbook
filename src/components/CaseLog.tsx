@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { OPTIME_MAP, PLACE_MAP, PROC_MAP, ROLE_MAP, TIMING_MAP } from '../data';
 import { fuzzyScoreWords } from '../lib/fuzzyMatch';
-import { formatBulletedField, formatClassification, stripBullets } from '../lib/textFormat';
+import { fellowBadgeLabel, formatBulletedField, formatClassification, stripBullets } from '../lib/textFormat';
 import type { CaseEntry, StaffCaseEntry } from '../types';
 import CaseImages from './CaseImages';
 
@@ -68,15 +68,42 @@ export default function CaseLog({
   const [query, setQuery] = useState('');
   const [place, setPlace] = useState<PlaceFilter>('all');
   const [sort, setSort] = useState<SortOrder>('newest');
+  // Staff view only: which fellows' cases to show. Empty = no filter (show
+  // all) — badges start deselected rather than "all selected" so the row
+  // reads as an opt-in narrowing, not a set of togglable exclusions.
+  const [selectedFellows, setSelectedFellows] = useState<Set<string>>(new Set());
+
+  const fellowBadges = useMemo(() => {
+    const seen = new Map<string, string>(); // fellowName -> badge label
+    for (const c of cases) {
+      if (isStaffEntry(c) && !seen.has(c.fellowName)) {
+        seen.set(c.fellowName, fellowBadgeLabel(c.fellowName));
+      }
+    }
+    return [...seen.entries()]
+      .map(([fellowName, label]) => ({ fellowName, label }))
+      .sort((a, b) => a.fellowName.localeCompare(b.fellowName, 'th-TH'));
+  }, [cases]);
+
+  function toggleFellow(fellowName: string) {
+    setSelectedFellows(prev => {
+      const next = new Set(prev);
+      if (next.has(fellowName)) next.delete(fellowName);
+      else next.add(fellowName);
+      return next;
+    });
+  }
 
   const visible = useMemo(() => {
     const q = query.trim();
     const rows = cases
       .map((c, i) => ({ c, i, score: 0 })) // keep insertion order for a stable tie-break
       .filter(({ c }) => place === 'all' || c.place === place)
+      .filter(({ c }) => selectedFellows.size === 0 || (isStaffEntry(c) && selectedFellows.has(c.fellowName)))
       .flatMap(row => {
         if (!q) return [row];
-        const fellowName = isStaffEntry(row.c) ? row.c.fellowName : '';
+        // Name is filtered via the fellow badges, not the search box, so it's
+        // excluded from the fuzzy-matched fields here.
         const haystack = [
           row.c.diagnosis,
           row.c.otherClassification,
@@ -84,7 +111,6 @@ export default function CaseLog({
           row.c.procedure,
           row.c.aoCode,
           row.c.aoRegionLabel,
-          fellowName,
         ]
           .filter(Boolean)
           .join(' ');
@@ -99,7 +125,7 @@ export default function CaseLog({
       return sort === 'newest' ? -cmp : cmp;
     });
     return rows.map(r => r.c);
-  }, [cases, query, place, sort]);
+  }, [cases, query, place, sort, selectedFellows]);
 
   const countLabel =
     visible.length === cases.length
@@ -139,6 +165,22 @@ export default function CaseLog({
               </button>
             </div>
           </div>
+          {fellowBadges.length > 0 && (
+            <div className="fellow-badges" role="group" aria-label="Filter by fellow">
+              {fellowBadges.map(({ fellowName, label }) => (
+                <button
+                  type="button"
+                  key={fellowName}
+                  className={`fellow-badge ${selectedFellows.has(fellowName) ? 'active' : ''}`}
+                  aria-pressed={selectedFellows.has(fellowName)}
+                  title={fellowName}
+                  onClick={() => toggleFellow(fellowName)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

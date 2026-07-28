@@ -41,3 +41,19 @@ export function formatClassification(aoCode: string, other: string): string {
   }
   return '';
 }
+
+// Pre-posed Thai vowels — written before the consonant they modify (e.g.
+// "โพธิคุณ" = leading โ + consonant พ), so a naive first-character read
+// would grab the vowel instead of the actual initial consonant.
+const THAI_LEADING_VOWELS = new Set(['เ', 'แ', 'โ', 'ใ', 'ไ']);
+
+/** Staff-view filter badge label for a fellow: first name + first letter of
+ *  last name, skipping a pre-posed leading vowel so the badge shows the
+ *  initial consonant (e.g. "ปองสิทธิ์ โพธิคุณ" → "ปองสิทธิ์ พ", not "... โ").
+ *  Falls back to the name as-is if it doesn't split into two parts. */
+export function fellowBadgeLabel(fullName: string): string {
+  const [first, last] = fullName.trim().split(/\s+/);
+  if (!last) return first ?? fullName;
+  const initial = THAI_LEADING_VOWELS.has(last[0]) ? (last[1] ?? last[0]) : last[0];
+  return `${first} ${initial}`;
+}
