@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { functionErrorMessage } from '../lib/errors';
 import { loadTelegramWebApp, type TelegramWebApp } from '../lib/telegramWebApp';
 import { extractLineUserId } from '../lib/lineIdExtract';
+import { INSTITUTIONS } from '../data';
 import './addPerson.css';
 
 type Role = 'fellow' | 'staff';
@@ -168,7 +169,16 @@ export default function AddPersonMiniApp() {
         </div>
         <div>
           <label htmlFor="fInst">Institution</label>
-          <input id="fInst" type="text" value={institution} onChange={e => setInstitution(e.target.value)} />
+          <select id="fInst" value={institution} onChange={e => setInstitution(e.target.value)}>
+            <option value="" disabled>
+              Select institution…
+            </option>
+            {INSTITUTIONS.map(inst => (
+              <option key={inst} value={inst}>
+                {inst}
+              </option>
+            ))}
+          </select>
         </div>
 
         {role === 'fellow' ? (
