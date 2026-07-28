@@ -57,6 +57,7 @@
 }
 .addperson input[type='text'],
 .addperson input[type='email'],
+.addperson select,
 .addperson textarea {
   width: 100%;
   font-family: inherit;
@@ -68,7 +69,8 @@
   padding: 11px 12px;
   outline: none;
 }
-.addperson input:focus, .addperson textarea:focus { border-color: #12a091; }
+.addperson select { appearance: none; }
+.addperson input:focus, .addperson select:focus, .addperson textarea:focus { border-color: #12a091; }
 .addperson input.invalid { border-color: #b3261e; }
 .addperson .help { font-size: 12px; color: #6b7a76; margin-top: 5px; }
 .addperson .help.error { color: #b3261e; }

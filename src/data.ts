@@ -165,6 +165,24 @@ export const TYPE_OPTS = [
 
 export const GROUP_OPTS = ['1', '2', '3'] as const;
 
+// Institutions in the fellow roster (supabase/seed_fellow.sql), sorted
+// ascending per Thai collation. Used as the dropdown in the Telegram
+// "add person" mini-app.
+export const INSTITUTIONS = [
+  'กรุงเทพ',
+  'จุฬาลงกรณ์มหาวิทยาลัย',
+  'ตำรวจ',
+  'ธรรมศาสตร์',
+  'พระมงกุฎเกล้า',
+  'ภูมิพลอดุลยเดช',
+  'มหาราชนครราชสีมา',
+  'รามาธิบดี',
+  'เลิดสิน',
+  'วชิรพยาบาล',
+  'สงขลานครินทร์',
+  'สมเด็จพระบรมราชเทวี ณ ศรีราชา',
+] as const;
+
 // Literal-union types for the constrained fields — kept in lockstep with the
 // option arrays above and the CHECK constraints in schema.sql.
 export type Timing = (typeof TIMING)[number]['value'];
