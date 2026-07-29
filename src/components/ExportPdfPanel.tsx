@@ -28,7 +28,9 @@ interface ExportPdfPanelProps {
 const YEAR_LABEL = '2026–2027';
 
 function pdfFileName(fellowName: string, from: string, to: string): string {
-  return `TOTS-fellow-logbook_${nameFileSegment(fellowName)}_${monthFileSegment(from)}_to_${monthFileSegment(to)}.pdf`;
+  const range =
+    from === to ? monthFileSegment(from) : `${monthFileSegment(from)}_to_${monthFileSegment(to)}`;
+  return `TOTS-fellow-logbook_${nameFileSegment(fellowName)}_${range}.pdf`;
 }
 
 // 'shared' has no note: the native share sheet is itself the feedback that
