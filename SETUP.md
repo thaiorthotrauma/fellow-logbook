@@ -68,7 +68,7 @@ supabase secrets set LINE_CHANNEL_ID=2010758904
 supabase functions deploy check-line-user
 supabase functions deploy link-line-user
 supabase functions deploy drive-images   # see §3a for its Google secrets
-supabase functions deploy cluster-labels # see §3b for its AI secret
+supabase functions deploy classify-region # see §3b for its AI secret
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
@@ -129,23 +129,27 @@ supabase functions deploy drive-images            # redeploy after setting secre
 
 Until these are set, cases save fine — only cases *with images* will error.
 
-## 3b. AI clustering for the PDF summary page
+## 3b. AI region/pediatric classification for the PDF summary page
 
-The PDF export's "Top 5 Diagnoses/Procedures" ranking on the summary page
-counts synonymous free-text entries together (e.g. "ORIF" and "open
-reduction internal fixation", "LCP" and "locking plate") via the
-`cluster-labels` function, which sends the distinct diagnosis/procedure
-wordings for the export's date range — never case dates, hospital numbers,
-or fellow names — to the DeepSeek API for grouping.
+The PDF export's "Top 5 Operated Regions" ranking and "Experiences on Pelvis
+& Acetabulum" table both categorize cases by AO/OTA region. A case with Q6
+(the AO/OTA code) filled in resolves deterministically, no AI involved. For a
+case with Q6 left blank, the `classify-region` function reads its free-text
+diagnosis/Q7/memo — never case dates, hospital numbers, or fellow names — and
+assigns it to one of the app's fixed AO/OTA region labels via the DeepSeek
+API. The same call also flags a pediatric patient when the text names one in
+words rather than a number (e.g. "infant"), since a numeric-age regex can't
+catch that on its own.
 
 ```sh
 supabase secrets set DEEPSEEK_API_KEY=sk-...
-supabase functions deploy cluster-labels   # redeploy after setting the secret
+supabase functions deploy classify-region   # redeploy after setting the secret
 ```
 
 Get a key from the [DeepSeek platform](https://platform.deepseek.com/). Until
-this secret is set, PDF exports still work fine — the ranking just falls back
-to grouping by exact wording, same as before this feature existed.
+this secret is set, PDF exports still work fine — any case with no Q6 code
+just falls back to "Unclassified" in the regions ranking and is not counted
+in the pelvis/acetabulum table.
 
 ## 4. LINE Developers console
 

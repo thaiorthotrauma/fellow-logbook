@@ -22,10 +22,9 @@
 // dates, hospital numbers, or fellow names ever reach this function or the
 // AI provider.
 //
-// Called by the app right before building a PDF summary page, alongside
-// cluster-labels. Advisory: any failure here must fall back to empty maps,
-// leaving every case where the deterministic passes put it — never block
-// the export.
+// Called by the app right before building a PDF summary page. Advisory: any
+// failure here must fall back to empty maps, leaving every case where the
+// deterministic passes put it — never block the export.
 //
 // POST body: { texts: string[], regions: string[] }
 // Response:  { assignments: Record<string, string>,   (text -> one of `regions`, omitted if unclear)
