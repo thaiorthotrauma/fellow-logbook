@@ -16,6 +16,7 @@ import {
 import { fetchCurrentFellow, type Fellow } from './lib/fellowApi';
 import { fetchStaffCases, fetchStaffProfile, type StaffProfile } from './lib/staffApi';
 import { getAppView } from './lib/appView';
+import { DEMO_FULL_ACCESS_LINE_USER_ID, getLineUserId } from './lib/liff';
 import { parseAoCode } from './lib/aoCode';
 import { describeError } from './lib/errors';
 import { emptyAo, emptyForm, formFromEntry, type AoState, type CaseEntry, type FormState, type StaffCaseEntry } from './types';
@@ -54,6 +55,9 @@ function App() {
 
   const isStaff = staffProfile !== null;
   const isDemo = view === 'demo';
+  // Everyone else who taps "Logbook Demo" gets the read-only preview below;
+  // only this one LINE id gets the fully interactive sandbox.
+  const isDemoFullAccess = isDemo && getLineUserId() === DEMO_FULL_ACCESS_LINE_USER_ID;
 
   useEffect(() => {
     // Demo mode touches no account and no real data at all — "voluntary
@@ -180,7 +184,7 @@ function App() {
     // Demo has no Drive/DB behind it: images become local blob URLs (picked up
     // as already-resolved by CaseImages/SavedImages, which fetch through Drive
     // only for real file ids), and the edit just replaces the case in state.
-    if (isDemo) {
+    if (isDemoFullAccess) {
       savedImages.filter(p => !keptImages.includes(p)).forEach(url => URL.revokeObjectURL(url));
       const region = findRegion(ao.regionKey);
       const entry: CaseEntry = {
@@ -242,7 +246,7 @@ function App() {
     if (!checkBeforeSave()) return;
     setSaving(true);
     const caseId = crypto.randomUUID();
-    if (isDemo) {
+    if (isDemoFullAccess) {
       const region = findRegion(ao.regionKey);
       const entry: CaseEntry = {
         id: caseId,
@@ -294,7 +298,7 @@ function App() {
     // saving the form later could only fail.
     if (editingId === id) resetForm();
     setCases(cases.filter(c => c.id !== id));
-    if (isDemo) {
+    if (isDemoFullAccess) {
       target?.imagePaths.forEach(url => URL.revokeObjectURL(url));
       return;
     }
@@ -319,7 +323,11 @@ function App() {
           {isDemo ? (
             <>
               <div className="header-title">Logbook Demo</div>
-              <div className="header-subtitle">A sandbox of the fellow experience — nothing here is saved</div>
+              <div className="header-subtitle">
+                {isDemoFullAccess
+                  ? 'A sandbox of the fellow experience — nothing here is saved'
+                  : 'A preview of the fellow experience — nothing here is saved'}
+              </div>
             </>
           ) : profileLoading ? (
             <div className="header-skeleton" aria-hidden="true">
@@ -364,26 +372,32 @@ function App() {
         {tab === 'form' && !isStaff && (
           <>
             {isDemo && (
-              <div className="demo-banner">Demo — try it out. Nothing is saved and it resets on reload.</div>
+              <div className="demo-banner">
+                {isDemoFullAccess
+                  ? 'Demo — try it out. Nothing is saved and it resets on reload.'
+                  : 'Demo — inputs are disabled and nothing is saved.'}
+              </div>
             )}
-            <NewEntryForm
-              form={form}
-              ao={ao}
-              errors={errors}
-              images={images}
-              updateForm={updateForm}
-              setAo={setAo}
-              onAddImages={files => setImages(prev => [...prev, ...files])}
-              onRemoveImage={index => setImages(prev => prev.filter((_, i) => i !== index))}
-              onReset={editingId ? cancelEdit : resetForm}
-              onSubmit={handleSubmit}
-              saving={saving}
-              editing={editingId !== null}
-              existingImages={editingId ? keptImages : undefined}
-              onRemoveExistingImage={
-                editingId ? index => setKeptImages(prev => prev.filter((_, i) => i !== index)) : undefined
-              }
-            />
+            <div className={isDemo && !isDemoFullAccess ? 'demo-inert' : undefined}>
+              <NewEntryForm
+                form={form}
+                ao={ao}
+                errors={errors}
+                images={images}
+                updateForm={updateForm}
+                setAo={setAo}
+                onAddImages={files => setImages(prev => [...prev, ...files])}
+                onRemoveImage={index => setImages(prev => prev.filter((_, i) => i !== index))}
+                onReset={editingId ? cancelEdit : resetForm}
+                onSubmit={handleSubmit}
+                saving={saving}
+                editing={editingId !== null}
+                existingImages={editingId ? keptImages : undefined}
+                onRemoveExistingImage={
+                  editingId ? index => setKeptImages(prev => prev.filter((_, i) => i !== index)) : undefined
+                }
+              />
+            </div>
           </>
         )}
         {tab === 'log' && isStaff && (
