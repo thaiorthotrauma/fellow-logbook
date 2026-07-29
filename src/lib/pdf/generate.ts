@@ -38,22 +38,17 @@ export async function deliverPdf(blob: Blob, filename: string): Promise<Delivery
   const file = new File([blob], filename, { type: 'application/pdf' });
   const nav = navigator as Navigator & { canShare?: (data: unknown) => boolean };
   const canShareFiles = typeof navigator.share === 'function' && nav.canShare?.({ files: [file] });
-  console.log(`[pdf] delivering ${filename} (${blob.size} bytes), canShareFiles=${canShareFiles}`);
 
   if (canShareFiles) {
     try {
       await navigator.share({ files: [file], title: filename });
-      console.log('[pdf] delivered via share sheet');
       return 'shared';
     } catch (err) {
       // User dismissed the sheet — treat as done, don't fall back.
-      if (err instanceof Error && err.name === 'AbortError') {
-        console.log('[pdf] share sheet dismissed by user');
-        return 'shared';
-      }
+      if (err instanceof Error && err.name === 'AbortError') return 'shared';
       // Most likely NotAllowedError: the user activation from the tap expired
-      // while the PDF was being built. Logged so the cause is visible.
-      console.error('[pdf] share failed, falling back:', err);
+      // before the share call. Logged because it silently degrades delivery.
+      console.error('PDF share failed, falling back:', err);
     }
   }
 
@@ -62,16 +57,14 @@ export async function deliverPdf(blob: Blob, filename: string): Promise<Delivery
 
   try {
     if (liff?.openWindow) {
-      console.log('[pdf] falling back to liff.openWindow');
       liff.openWindow({ url, external: true });
       revokeSoon();
       return 'opened';
     }
   } catch (err) {
-    console.error('[pdf] liff.openWindow failed:', err);
+    console.error('PDF liff.openWindow failed, falling back:', err);
   }
 
-  console.log('[pdf] falling back to anchor download (no-op on iOS WKWebView)');
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
