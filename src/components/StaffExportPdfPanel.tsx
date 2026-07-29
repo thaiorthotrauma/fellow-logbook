@@ -11,7 +11,7 @@ import {
   sortChronological,
   uniqueLabels,
 } from '../lib/pdf/stats';
-import { clusterLabels } from '../lib/pdf/clusterLabels';
+import { clustersFor } from '../lib/pdf/clusterCache';
 import { describeError } from '../lib/errors';
 import type { StaffCaseEntry } from '../types';
 
@@ -37,6 +37,7 @@ function pdfFileName(institution: string, grouping: Grouping, from: string, to: 
 // 'shared' has no note: the native share sheet is itself the feedback that
 // the PDF is ready, so an extra message here would just be redundant.
 const DONE_NOTE: Record<string, string> = {
+  opened: 'PDF opened in your browser — save it from there.',
   downloaded: 'PDF downloaded.',
 };
 
@@ -94,6 +95,18 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
     !invalidRange &&
     (grouping === 'single' ? !!selectedFellow && fellowCases.length > 0 : selected.length > 0);
 
+  const dxLabels = useMemo(() => uniqueLabels(fellowCases, c => c.diagnosis), [fellowCases]);
+  const procLabels = useMemo(() => uniqueLabels(fellowCases, c => c.procedure), [fellowCases]);
+
+  // Warm the DeepSeek clustering as soon as the selection is known, so the
+  // export click doesn't have to await it. This is what broke the staff
+  // export specifically: an institution-wide range has far more distinct
+  // labels than one fellow's, so the call was slow enough to burn the tap's
+  // user activation and make iOS refuse the share sheet. See clusterCache.
+  useEffect(() => {
+    if (fellowCases.length > 0) void clustersFor(dxLabels, procLabels);
+  }, [fellowCases, dxLabels, procLabels]);
+
   async function generate() {
     setBusy(true);
     setError('');
@@ -105,10 +118,8 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
       // summary, however the export is grouped. Falls back to exact-text
       // ranking on failure. Scoped to fellowCases so a single-fellow export
       // only clusters that fellow's own wording, not the whole institution's.
-      const [dxClusters, procClusters] = await Promise.all([
-        clusterLabels(uniqueLabels(fellowCases, c => c.diagnosis)),
-        clusterLabels(uniqueLabels(fellowCases, c => c.procedure)),
-      ]);
+      // Normally already resolved by the prefetch above.
+      const [dxClusters, procClusters] = await clustersFor(dxLabels, procLabels);
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
       const { generateLogbookBlob, generateStaffLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
 
