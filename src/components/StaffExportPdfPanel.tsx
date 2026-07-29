@@ -29,9 +29,14 @@ const YEAR_LABEL = '2026–2027';
 type Grouping = 'month' | 'fellow' | 'single';
 
 function pdfFileName(institution: string, grouping: Grouping, from: string, to: string, fellowName: string): string {
-  const suffix =
-    grouping === 'fellow' ? 'by-fellow' : grouping === 'single' ? nameFileSegment(fellowName) : monthFileSegment(to);
-  return `TOTS-staff-logbook_${nameFileSegment(institution)}_${monthFileSegment(from)}_to_${suffix}.pdf`;
+  if (grouping === 'month') {
+    const range =
+      from === to ? monthFileSegment(from) : `${monthFileSegment(from)}_to_${monthFileSegment(to)}`;
+    return `TOTS-staff-logbook_${nameFileSegment(institution)}_${range}.pdf`;
+  }
+  const groupSuffix = grouping === 'fellow' ? 'by-fellow' : nameFileSegment(fellowName);
+  const joiner = from === to ? '_' : '_to_';
+  return `TOTS-staff-logbook_${nameFileSegment(institution)}_${monthFileSegment(from)}${joiner}${groupSuffix}.pdf`;
 }
 
 // 'shared' has no note: the native share sheet is itself the feedback that
