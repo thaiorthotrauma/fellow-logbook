@@ -817,7 +817,7 @@ button {
 /* Shown above the New Entry form in demo mode (reached via the staff rich
    menu's "Logbook Demo" button) — amber rather than the edit-banner's teal,
    so a demo session reads as visually distinct from a real one. Full-access
-   demo sessions (see DEMO_FULL_ACCESS_LINE_USER_ID) get a live, usable form;
+   demo sessions (see DEMO_FULL_ACCESS_LINE_USER_IDS) get a live, usable form;
    everyone else gets the inert one below. */
 .demo-banner {
   background: #fff6e6;

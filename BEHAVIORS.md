@@ -162,7 +162,7 @@ session/account is ever created and no real data is touched either way.
 
 That LINE id decides which of two demo experiences is shown:
 
-- **Everyone except `DEMO_FULL_ACCESS_LINE_USER_ID`** (`src/lib/liff.ts`) gets
+- **Everyone not in `DEMO_FULL_ACCESS_LINE_USER_IDS`** (`src/lib/liff.ts`) gets
   the read-only preview: New Entry shows a banner ("Demo — inputs are
   disabled and nothing is saved.") and the form is wrapped so nothing in it
   can be typed, selected, or submitted (`pointer-events: none`, not a
@@ -170,8 +170,8 @@ That LINE id decides which of two demo experiences is shown:
   shows the empty state — cases are never fetched in demo mode, and nothing
   can be added to it either. PDF shows its normal "no cases to export yet"
   state.
-- **The one id in `DEMO_FULL_ACCESS_LINE_USER_ID`** (the staff admin seeded in
-  `supabase/seed_staff.sql`) gets a **fully usable** sandbox instead — every
+- **The ids in `DEMO_FULL_ACCESS_LINE_USER_IDS`** (the staff admins seeded in
+  `supabase/seed_staff.sql`) get a **fully usable** sandbox instead — every
   function (log a case, edit it, delete it, export a PDF) works, entirely
   local to the browser tab:
   - **New Entry** shows a banner ("Demo — try it out. Nothing is saved and it

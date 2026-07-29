@@ -4,7 +4,8 @@
 -- alone.
 
 insert into public.staff (full_name, institution, line_user_id, is_admin) values
-  ('ปองสิทธิ์ โพธิคุณ', 'สมุทรสาคร', 'U1f7800c1ec874bb896bb11598c5ec49e', true)
+  ('ปองสิทธิ์ โพธิคุณ', 'สมุทรสาคร', 'U1f7800c1ec874bb896bb11598c5ec49e', true),
+  ('Staff Admin', 'สมุทรสาคร', 'Udbdae946176342d40b9a2cc117c37da3', true)
 on conflict (line_user_id) do update
   set full_name = excluded.full_name,
       institution = excluded.institution,
