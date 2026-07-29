@@ -1,6 +1,7 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import PieChart from './PieChart';
 import { distribution, topN, type RankItem } from './stats';
+import { topRegions } from './regionCategory';
 import { s, formatPdfDate, pdfFooter } from './pdfShared';
 import {
   OPTIME_MAP,
@@ -25,10 +26,13 @@ export interface LogbookPdfProps {
    *  wide month-range export) shows it as a chip in the content page — a
    *  single fellow's own export never needs this, since every case is theirs. */
   cases: (CaseEntry & { fellowName?: string })[];
-  /** AI-clustered synonym groupings for the summary page's top-5 ranking
-   *  (see clusterLabels.ts). Omitted or empty falls back to exact-text
-   *  ranking. */
-  dxClusters?: ReadonlyMap<string, string>;
+  /** AI region classification for cases with no Q6 (aoCode) — see
+   *  classifyRegion.ts. Omitted or empty falls back to "Unclassified" for
+   *  those cases; a case with aoCode never needs this map. */
+  regionMap?: ReadonlyMap<string, string>;
+  /** AI-clustered synonym groupings for the summary page's top-5 procedures
+   *  ranking (see clusterLabels.ts). Omitted or empty falls back to
+   *  exact-text ranking. */
   procClusters?: ReadonlyMap<string, string>;
 }
 
@@ -57,8 +61,8 @@ export interface SummaryPageProps {
   yearLabel: string;
   rangeLabel: string;
   cases: CaseEntry[];
-  /** AI-clustered synonym groupings — see LogbookPdfProps above. */
-  dxClusters?: ReadonlyMap<string, string>;
+  /** AI-derived region/synonym data — see LogbookPdfProps above. */
+  regionMap?: ReadonlyMap<string, string>;
   procClusters?: ReadonlyMap<string, string>;
 }
 
@@ -72,10 +76,10 @@ export function SummaryPage({
   yearLabel,
   rangeLabel,
   cases,
-  dxClusters,
+  regionMap,
   procClusters,
 }: SummaryPageProps) {
-  const topDx = topN(cases, c => c.diagnosis, 5, dxClusters);
+  const topRegionsList = topRegions(cases, 5, regionMap);
   const topProc = topN(cases, c => c.procedure, 5, procClusters);
   const typeDist = distribution(cases, c => c.procedureType, PROC_TYPE);
   const roleDist = distribution(cases, c => c.role, ROLES);
@@ -104,7 +108,7 @@ export function SummaryPage({
       </View>
 
       <View style={s.sectionRow}>
-        <RankTable title="Top 5 Diagnoses" items={topDx} />
+        <RankTable title="Top 5 Operated Regions" items={topRegionsList} />
         <RankTable title="Top 5 Procedures" items={topProc} />
       </View>
 
@@ -184,7 +188,7 @@ export default function LogbookPdf({
   yearLabel,
   rangeLabel,
   cases,
-  dxClusters,
+  regionMap,
   procClusters,
 }: LogbookPdfProps) {
   const runHeaderName = institution ? `${fellowName}, ${institution}` : fellowName;
@@ -196,7 +200,7 @@ export default function LogbookPdf({
         yearLabel={yearLabel}
         rangeLabel={rangeLabel}
         cases={cases}
-        dxClusters={dxClusters}
+        regionMap={regionMap}
         procClusters={procClusters}
       />
       <ContentPage runHeaderName={runHeaderName} cases={cases} />

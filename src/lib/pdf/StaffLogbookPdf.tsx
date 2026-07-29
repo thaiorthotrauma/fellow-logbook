@@ -15,10 +15,10 @@ export interface StaffLogbookPdfProps {
   rangeLabel: string;
   /** One summary + content page pair per fellow, in this order. */
   fellows: FellowGroup[];
-  /** AI-clustered synonym groupings, computed once over every fellow's cases
-   *  in range and shared across each fellow's summary page — see
-   *  clusterLabels.ts. */
-  dxClusters?: ReadonlyMap<string, string>;
+  /** AI-derived region classification and procedure-synonym groupings,
+   *  computed once over every fellow's cases in range and shared across each
+   *  fellow's summary page — see classifyRegion.ts / clusterLabels.ts. */
+  regionMap?: ReadonlyMap<string, string>;
   procClusters?: ReadonlyMap<string, string>;
 }
 
@@ -32,7 +32,7 @@ export default function StaffLogbookPdf({
   yearLabel,
   rangeLabel,
   fellows,
-  dxClusters,
+  regionMap,
   procClusters,
 }: StaffLogbookPdfProps) {
   return (
@@ -45,7 +45,7 @@ export default function StaffLogbookPdf({
             yearLabel={yearLabel}
             rangeLabel={rangeLabel}
             cases={f.cases}
-            dxClusters={dxClusters}
+            regionMap={regionMap}
             procClusters={procClusters}
           />
           <ContentPage runHeaderName={`${f.fellowName}, ${institution}`} cases={f.cases} />

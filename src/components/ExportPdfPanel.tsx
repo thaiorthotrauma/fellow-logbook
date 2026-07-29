@@ -10,6 +10,7 @@ import {
   sortChronological,
   uniqueLabels,
 } from '../lib/pdf/stats';
+import { uniqueUnclassifiedTexts } from '../lib/pdf/regionCategory';
 import { clustersFor } from '../lib/pdf/clusterCache';
 import { describeError } from '../lib/errors';
 import type { CaseEntry } from '../types';
@@ -65,25 +66,27 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
   const invalidRange = Boolean(from && to && from > to);
   const canGenerate = !busy && !profileLoading && !!from && !!to && !invalidRange && inRange > 0;
 
-  const dxLabels = useMemo(() => uniqueLabels(selected, c => c.diagnosis), [selected]);
   const procLabels = useMemo(() => uniqueLabels(selected, c => c.procedure), [selected]);
+  const unclassifiedTexts = useMemo(() => uniqueUnclassifiedTexts(selected), [selected]);
 
-  // Warm the DeepSeek clustering as soon as the range is known, so the export
-  // click doesn't have to await it — see clusterCache for why that matters.
+  // Warm the DeepSeek clustering/classification as soon as the range is
+  // known, so the export click doesn't have to await it — see clusterCache
+  // for why that matters.
   useEffect(() => {
-    if (selected.length > 0) void clustersFor(dxLabels, procLabels);
-  }, [selected, dxLabels, procLabels]);
+    if (selected.length > 0) void clustersFor(procLabels, unclassifiedTexts);
+  }, [selected, procLabels, unclassifiedTexts]);
 
   async function generate() {
     setBusy(true);
     setError('');
     setDone('');
     try {
-      // Best-effort AI grouping of synonymous diagnosis/procedure wording
-      // (e.g. "ORIF" / "open reduction internal fixation") for the summary
-      // page's top-5 ranking. Falls back to exact-text ranking on failure.
+      // Best-effort AI grouping of synonymous procedure wording (e.g. "ORIF"
+      // / "open reduction internal fixation") and region classification for
+      // cases with no Q6 code, both for the summary page's top-5 rankings.
+      // Falls back to exact-text ranking / "Unclassified" on failure.
       // Normally already resolved by the prefetch above.
-      const [dxClusters, procClusters] = await clustersFor(dxLabels, procLabels);
+      const { procClusters, regionMap } = await clustersFor(procLabels, unclassifiedTexts);
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
       const { generateLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
       const blob = await generateLogbookBlob({
@@ -92,7 +95,7 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
         yearLabel: YEAR_LABEL,
         rangeLabel: rangeLabel(from, to),
         cases: selected,
-        dxClusters,
+        regionMap,
         procClusters,
       });
       const result = await deliverPdf(blob, pdfFileName(fellowName, from, to));
@@ -116,8 +119,8 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
       ) : (
         <>
           <div className="field-label" style={{ marginBottom: 14 }}>
-            Choose the month range to include. The PDF opens with a summary page (case count, top diagnoses &amp;
-            procedures, and charts), followed by each case in date order, oldest first.
+            Choose the month range to include. The PDF opens with a summary page (case count, top operated regions
+            &amp; procedures, and charts), followed by each case in date order, oldest first.
           </div>
 
           <div className="export-fields">

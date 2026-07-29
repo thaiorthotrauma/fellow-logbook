@@ -81,7 +81,7 @@ const base = {
   institution: 'Test Institute',
   yearLabel: '2026–2027',
   rangeLabel: 'July 2026',
-  dxClusters: new Map<string, string>(),
+  regionMap: new Map<string, string>(),
   procClusters: new Map<string, string>(),
 };
 
@@ -99,7 +99,7 @@ describe('generateLogbookBlob (fellow export)', () => {
       yearLabel: '2026–2027',
       rangeLabel: 'July 2026',
       cases,
-      dxClusters: new Map(),
+      regionMap: new Map(),
       procClusters: new Map(),
     });
 
@@ -149,7 +149,7 @@ describe('generateLogbookBlob (fellow export)', () => {
     const withClusters = await render({
       ...base,
       cases,
-      dxClusters: new Map([['femoral shaft fracture', 'Femur fracture']]),
+      regionMap: new Map([['distal radius fracture no aocode', 'Femur']]),
       procClusters: new Map([['orif', 'Open reduction internal fixation']]),
     });
 
