@@ -1,29 +1,35 @@
-// Classifies free-text diagnosis/Q7(other classification)/memo entries into
-// an AO/OTA anatomical region+bone(+segment) bucket, via an LLM call, for
-// cases that have no structured Q6 (aoCode) answer to resolve
-// deterministically — see resolveStructuredRegion in
-// src/lib/pdf/regionCategory.ts, which always wins when aoCode is present.
-// This function only ever runs on the leftover free text, and only ever
-// returns one of the caller-supplied `regions` labels (the closed list from
-// allRegionLabelOptions()) — anything else is discarded server-side, and
-// again client-side in classifyRegion.ts.
+// Reads free-text diagnosis/Q7(other classification)/memo entries from a
+// surgical logbook via an LLM call, answering two questions per entry:
+//
+//  1. Which AO/OTA anatomical region+bone(+segment) it describes — only for
+//     cases with no structured Q6 (aoCode) to resolve deterministically. See
+//     resolveStructuredRegion in src/lib/pdf/regionCategory.ts, which always
+//     wins when the code parses. Only ever one of the caller-supplied
+//     `regions` labels (the closed list from allRegionLabelOptions()) —
+//     anything else is discarded server-side, and again client-side.
+//  2. Whether the patient is pediatric — only for entries stating no
+//     explicit age. detectAge in regionCategory.ts settles anything with a
+//     numeric age marker ("12 YO", "65 YO") deterministically and is never
+//     overridden; this call exists for the half a number-anchored regex
+//     structurally cannot read, where a child is named in words alone
+//     ("infant", "toddler", "เด็กชาย").
 //
 // Laterality (left/right/bilateral/Lt/Rt) must be ignored entirely — the
-// region categories carry no side information. Patient age must also be
-// ignored here; pediatric tagging is handled separately, client-side, by a
-// deterministic regex (isPediatric in regionCategory.ts), not by this call.
+// region categories carry no side information.
 //
 // Input is deliberately just the distinct combined-text entries the client
-// already deduplicated (see uniqueUnclassifiedTexts in regionCategory.ts) —
-// no case dates, hospital numbers, or fellow names ever reach this function
-// or the AI provider.
+// already deduplicated (see uniqueAiTexts in regionCategory.ts) — no case
+// dates, hospital numbers, or fellow names ever reach this function or the
+// AI provider.
 //
 // Called by the app right before building a PDF summary page, alongside
-// cluster-labels. Advisory: any failure here must fall back to
-// "Unclassified" (i.e. an empty assignments map) — never block the export.
+// cluster-labels. Advisory: any failure here must fall back to empty maps,
+// leaving every case where the deterministic passes put it — never block
+// the export.
 //
 // POST body: { texts: string[], regions: string[] }
-// Response:  { assignments: Record<string, string> }  (text -> one of `regions`, omitted if unclear)
+// Response:  { assignments: Record<string, string>,   (text -> one of `regions`, omitted if unclear)
+//              pediatric:   Record<string, boolean> }  (text -> is the patient a child)
 //
 // Deployed like the other functions (JWT verified):
 //   npx supabase functions deploy classify-region
@@ -75,38 +81,47 @@ Deno.serve(async req => {
     }
 
     const trimmed = [...new Set(texts.map((t: string) => t.trim()).filter(Boolean))].slice(0, MAX_TEXTS);
-    if (trimmed.length === 0) return json({ assignments: {} });
+    if (trimmed.length === 0) return json({ assignments: {}, pediatric: {} });
 
     const apiKey = (Deno.env.get('DEEPSEEK_API_KEY') ?? '').trim();
-    if (!apiKey) return json({ assignments: {} });
+    if (!apiKey) return json({ assignments: {}, pediatric: {} });
 
-    const assignments = await classifyWithDeepSeek(trimmed, regions as string[], apiKey);
+    const rows = await classifyWithDeepSeek(trimmed, regions as string[], apiKey);
 
-    // Belt-and-braces: only ever hand back an assignment that is one of the
+    // Belt-and-braces: only ever hand back a region that is one of the
     // caller's own allowed labels, even though the prompt already constrains
     // the model to them.
     const validRegions = new Set(regions as string[]);
-    const out: Record<string, string> = {};
-    for (const [text, region] of Object.entries(assignments)) {
-      if (validRegions.has(region)) out[text] = region;
+    const assignments: Record<string, string> = {};
+    const pediatric: Record<string, boolean> = {};
+    for (const row of rows) {
+      if (typeof row.text !== 'string') continue;
+      if (typeof row.region === 'string' && validRegions.has(row.region)) assignments[row.text] = row.region;
+      if (typeof row.pediatric === 'boolean') pediatric[row.text] = row.pediatric;
     }
 
-    return json({ assignments: out });
+    return json({ assignments, pediatric });
   } catch (err) {
     console.error(err);
-    // Advisory: every case falls back to "Unclassified" on any failure here,
-    // never a broken export.
-    return json({ assignments: {} });
+    // Advisory: on any failure here every case stays exactly where the
+    // client's deterministic passes put it, never a broken export.
+    return json({ assignments: {}, pediatric: {} });
   }
 });
 
 /** DeepSeek's API is OpenAI-compatible: chat completions with function-calling
  *  tools, at https://api.deepseek.com (no /v1 prefix — see their docs). */
+interface ClassifiedRow {
+  text?: unknown;
+  region?: unknown;
+  pediatric?: unknown;
+}
+
 async function classifyWithDeepSeek(
   texts: string[],
   regions: string[],
   apiKey: string,
-): Promise<Record<string, string>> {
+): Promise<ClassifiedRow[]> {
   const res = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
     headers: {
@@ -120,12 +135,20 @@ async function classifyWithDeepSeek(
           role: 'user',
           content:
             'These are free-text orthopaedic diagnosis/classification/memo entries from a surgical logbook, ' +
-            'each missing a structured AO/OTA region code. Assign each entry to exactly one anatomical region ' +
-            'from the closed list below, based on the bone or joint it names. Ignore laterality entirely ' +
-            '(left, right, bilateral, Lt, Rt) — it never affects the assigned region. Ignore patient age ' +
-            'entirely. If an entry gives no identifiable anatomical region, omit it from your answer rather ' +
-            'than guessing.\n\n' +
-            `Allowed regions (choose one, verbatim, per entry):\n${JSON.stringify(regions)}\n\n` +
+            'written in English, Thai, or a mix. Report one row per entry, copying "text" verbatim, with ' +
+            'two judgements:\n\n' +
+            '1. "region": the single anatomical region the entry names, chosen verbatim from the closed ' +
+            'list below, based on the bone or joint involved. Ignore laterality entirely (left, right, ' +
+            'bilateral, Lt, Rt) — it never affects the region. If the entry names no identifiable ' +
+            'anatomical region, omit "region" for that row rather than guessing.\n\n' +
+            '2. "pediatric": true when the entry describes a child under 16 years old, false otherwise. ' +
+            'Judge this from the words actually present — a child may be named without any number ' +
+            '("infant", "newborn", "toddler", "child", "boy", "girl", "adolescent", "เด็ก", "เด็กชาย", ' +
+            '"เด็กหญิง", "ทารก"). Be careful with durations: a bare month or year count is usually time ' +
+            'elapsed, not an age, so "ORIF 12 months post-op", "6 เดือน post op" and "2 years after ' +
+            'injury" are all pediatric=false. When the entry gives no indication of the patient\'s age at ' +
+            'all, answer false.\n\n' +
+            `Allowed regions:\n${JSON.stringify(regions)}\n\n` +
             `Entries:\n${JSON.stringify(texts)}`,
         },
       ],
@@ -134,7 +157,7 @@ async function classifyWithDeepSeek(
           type: 'function',
           function: {
             name: TOOL_NAME,
-            description: 'Report the region assignment for each entry.',
+            description: 'Report the region and pediatric judgement for each entry.',
             parameters: {
               type: 'object',
               properties: {
@@ -145,8 +168,9 @@ async function classifyWithDeepSeek(
                     properties: {
                       text: { type: 'string' },
                       region: { type: 'string' },
+                      pediatric: { type: 'boolean' },
                     },
-                    required: ['text', 'region'],
+                    required: ['text', 'pediatric'],
                   },
                 },
               },
@@ -168,10 +192,5 @@ async function classifyWithDeepSeek(
   if (typeof rawArgs !== 'string') throw new Error('malformed tool response');
   const parsed = JSON.parse(rawArgs) as { assignments?: unknown };
   if (!Array.isArray(parsed.assignments)) throw new Error('malformed tool response');
-
-  const out: Record<string, string> = {};
-  for (const a of parsed.assignments as { text?: unknown; region?: unknown }[]) {
-    if (typeof a.text === 'string' && typeof a.region === 'string') out[a.text] = a.region;
-  }
-  return out;
+  return parsed.assignments as ClassifiedRow[];
 }

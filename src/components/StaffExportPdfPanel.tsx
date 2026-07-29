@@ -11,7 +11,7 @@ import {
   sortChronological,
   uniqueLabels,
 } from '../lib/pdf/stats';
-import { uniqueUnclassifiedTexts } from '../lib/pdf/regionCategory';
+import { uniqueAiTexts } from '../lib/pdf/regionCategory';
 import { clustersFor } from '../lib/pdf/clusterCache';
 import { describeError } from '../lib/errors';
 import type { StaffCaseEntry } from '../types';
@@ -97,7 +97,7 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
     (grouping === 'single' ? !!selectedFellow && fellowCases.length > 0 : selected.length > 0);
 
   const procLabels = useMemo(() => uniqueLabels(fellowCases, c => c.procedure), [fellowCases]);
-  const unclassifiedTexts = useMemo(() => uniqueUnclassifiedTexts(fellowCases), [fellowCases]);
+  const aiTexts = useMemo(() => uniqueAiTexts(fellowCases), [fellowCases]);
 
   // Warm the DeepSeek clustering/classification as soon as the selection is
   // known, so the export click doesn't have to await it. This is what broke
@@ -106,23 +106,23 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
   // the tap's user activation and make iOS refuse the share sheet. See
   // clusterCache.
   useEffect(() => {
-    if (fellowCases.length > 0) void clustersFor(procLabels, unclassifiedTexts);
-  }, [fellowCases, procLabels, unclassifiedTexts]);
+    if (fellowCases.length > 0) void clustersFor(procLabels, aiTexts);
+  }, [fellowCases, procLabels, aiTexts]);
 
   async function generate() {
     setBusy(true);
     setError('');
     setDone('');
     try {
-      // Best-effort AI grouping of synonymous procedure wording (e.g. "ORIF"
-      // / "open reduction internal fixation") and region classification for
-      // cases with no Q6 code — one merged map shared across every fellow's
-      // summary, however the export is grouped. Falls back to exact-text
-      // ranking / "Unclassified" on failure. Scoped to fellowCases so a
-      // single-fellow export only clusters/classifies that fellow's own
-      // wording, not the whole institution's. Normally already resolved by
-      // the prefetch above.
-      const { procClusters, regionMap } = await clustersFor(procLabels, unclassifiedTexts);
+      // Best-effort AI: grouping of synonymous procedure wording (e.g.
+      // "ORIF" / "open reduction internal fixation"), plus region and
+      // pediatric judgements for the cases the deterministic passes left
+      // open — one merged set of maps shared across every fellow's summary,
+      // however the export is grouped. Falls back to exact-text ranking and
+      // to those passes' own answers on failure. Scoped to fellowCases so a
+      // single-fellow export only covers that fellow's own wording, not the
+      // whole institution's. Normally already resolved by the prefetch above.
+      const { procClusters, regionMap, pediatricMap } = await clustersFor(procLabels, aiTexts);
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
       const { generateLogbookBlob, generateStaffLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
 
@@ -135,6 +135,7 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
               rangeLabel: rangeLabel(from, to),
               cases: selected,
               regionMap,
+              pediatricMap,
               procClusters,
             })
           : grouping === 'single'
@@ -145,6 +146,7 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
                 rangeLabel: rangeLabel(from, to),
                 cases: fellowCases,
                 regionMap,
+                pediatricMap,
                 procClusters,
               })
             : await generateStaffLogbookBlob({
@@ -153,6 +155,7 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
                 rangeLabel: rangeLabel(from, to),
                 fellows: groupByFellow(selected),
                 regionMap,
+                pediatricMap,
                 procClusters,
               });
 

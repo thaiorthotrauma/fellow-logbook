@@ -19,6 +19,7 @@ export interface StaffLogbookPdfProps {
    *  computed once over every fellow's cases in range and shared across each
    *  fellow's summary page — see classifyRegion.ts / clusterLabels.ts. */
   regionMap?: ReadonlyMap<string, string>;
+  pediatricMap?: ReadonlyMap<string, boolean>;
   procClusters?: ReadonlyMap<string, string>;
 }
 
@@ -33,6 +34,7 @@ export default function StaffLogbookPdf({
   rangeLabel,
   fellows,
   regionMap,
+  pediatricMap,
   procClusters,
 }: StaffLogbookPdfProps) {
   return (
@@ -46,6 +48,7 @@ export default function StaffLogbookPdf({
             rangeLabel={rangeLabel}
             cases={f.cases}
             regionMap={regionMap}
+            pediatricMap={pediatricMap}
             procClusters={procClusters}
           />
           <ContentPage runHeaderName={`${f.fellowName}, ${institution}`} cases={f.cases} />

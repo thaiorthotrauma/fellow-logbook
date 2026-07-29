@@ -4,25 +4,42 @@ import { allRegionLabelOptions } from './regionCategory';
 
 const CLASSIFY_FN = 'classify-region';
 
-/** Classifies free-text diagnosis/Q7/memo entries into an AO/OTA region
- *  bucket via a server-side DeepSeek call, for cases whose Q6 (aoCode) was
- *  left blank — resolveStructuredRegion (regionCategory.ts) always wins
- *  over this when a case does have a structured code.
+export interface RegionClassification {
+  /** normalized text key → AO/OTA region label. */
+  regionMap: Map<string, string>;
+  /** normalized text key → whether the text describes a pediatric patient. */
+  pediatricMap: Map<string, boolean>;
+}
+
+const empty = (): RegionClassification => ({ regionMap: new Map(), pediatricMap: new Map() });
+
+/** Reads free-text diagnosis/Q7/memo entries via a server-side DeepSeek call,
+ *  answering the two questions the deterministic passes in regionCategory.ts
+ *  left open for a given text:
+ *
+ *   - which AO/OTA region it describes, for cases whose Q6 (aoCode) resolved
+ *     to nothing — resolveStructuredRegion always wins over this.
+ *   - whether the patient is pediatric, for text stating no explicit age —
+ *     detectAge always wins over this. This is the half a regex cannot do:
+ *     "infant", "toddler", "เด็กชาย" name a child without naming a number.
  *
  *  Only the distinct combined-text entries are sent — no dates, hospital
  *  numbers, or fellow names ever leave the device for this call.
  *
  *  Best-effort like clusterLabels: any failure (offline, quota, malformed
- *  response, or a returned label outside the allowed set) resolves to an
- *  empty map, which makes topRegions bucket those cases as "Unclassified" —
+ *  response, or a region outside the allowed set) resolves to empty maps,
+ *  which leaves every case exactly where the deterministic passes put it —
  *  a slow or broken AI call must never block a PDF export. */
 const CLASSIFY_TIMEOUT_MS = 8_000;
 
-export async function classifyRegions(texts: string[]): Promise<Map<string, string>> {
-  if (texts.length === 0) return new Map();
+export async function classifyRegions(texts: string[]): Promise<RegionClassification> {
+  if (texts.length === 0) return empty();
   const validLabels = new Set(allRegionLabelOptions());
   try {
-    const invocation = supabase.functions.invoke<{ assignments?: Record<string, string> }>(CLASSIFY_FN, {
+    const invocation = supabase.functions.invoke<{
+      assignments?: Record<string, string>;
+      pediatric?: Record<string, boolean>;
+    }>(CLASSIFY_FN, {
       body: { texts, regions: [...validLabels] },
     });
     const { data, error } = await Promise.race([
@@ -31,19 +48,23 @@ export async function classifyRegions(texts: string[]): Promise<Map<string, stri
         setTimeout(() => reject(new Error(`Region classification timed out after ${CLASSIFY_TIMEOUT_MS}ms`)), CLASSIFY_TIMEOUT_MS),
       ),
     ]);
-    if (error || !data?.assignments) {
+    if (error || !data) {
       if (error) console.error('Region classification failed:', error);
-      return new Map();
+      return empty();
     }
-    const map = new Map<string, string>();
-    for (const [raw, region] of Object.entries(data.assignments)) {
+
+    const out = empty();
+    for (const [raw, region] of Object.entries(data.assignments ?? {})) {
       if (typeof region === 'string' && validLabels.has(region)) {
-        map.set(normalizeLabel(raw).key, region);
+        out.regionMap.set(normalizeLabel(raw).key, region);
       }
     }
-    return map;
+    for (const [raw, pediatric] of Object.entries(data.pediatric ?? {})) {
+      if (typeof pediatric === 'boolean') out.pediatricMap.set(normalizeLabel(raw).key, pediatric);
+    }
+    return out;
   } catch (err) {
     console.error('Region classification failed:', err);
-    return new Map();
+    return empty();
   }
 }

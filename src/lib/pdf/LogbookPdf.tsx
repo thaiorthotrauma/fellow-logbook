@@ -26,10 +26,12 @@ export interface LogbookPdfProps {
    *  wide month-range export) shows it as a chip in the content page — a
    *  single fellow's own export never needs this, since every case is theirs. */
   cases: (CaseEntry & { fellowName?: string })[];
-  /** AI region classification for cases with no Q6 (aoCode) — see
-   *  classifyRegion.ts. Omitted or empty falls back to "Unclassified" for
-   *  those cases; a case with aoCode never needs this map. */
+  /** AI region classification for cases Q6 could not resolve, and AI
+   *  pediatric judgement for cases stating no explicit age — see
+   *  classifyRegion.ts. Omitted or empty leaves each case where the
+   *  deterministic passes in regionCategory.ts put it. */
   regionMap?: ReadonlyMap<string, string>;
+  pediatricMap?: ReadonlyMap<string, boolean>;
   /** AI-clustered synonym groupings for the summary page's top-5 procedures
    *  ranking (see clusterLabels.ts). Omitted or empty falls back to
    *  exact-text ranking. */
@@ -61,8 +63,9 @@ export interface SummaryPageProps {
   yearLabel: string;
   rangeLabel: string;
   cases: CaseEntry[];
-  /** AI-derived region/synonym data — see LogbookPdfProps above. */
+  /** AI-derived region/age/synonym data — see LogbookPdfProps above. */
   regionMap?: ReadonlyMap<string, string>;
+  pediatricMap?: ReadonlyMap<string, boolean>;
   procClusters?: ReadonlyMap<string, string>;
 }
 
@@ -77,9 +80,10 @@ export function SummaryPage({
   rangeLabel,
   cases,
   regionMap,
+  pediatricMap,
   procClusters,
 }: SummaryPageProps) {
-  const topRegionsList = topRegions(cases, 5, regionMap);
+  const topRegionsList = topRegions(cases, 5, regionMap, pediatricMap);
   const topProc = topN(cases, c => c.procedure, 5, procClusters);
   const typeDist = distribution(cases, c => c.procedureType, PROC_TYPE);
   const roleDist = distribution(cases, c => c.role, ROLES);
@@ -189,6 +193,7 @@ export default function LogbookPdf({
   rangeLabel,
   cases,
   regionMap,
+  pediatricMap,
   procClusters,
 }: LogbookPdfProps) {
   const runHeaderName = institution ? `${fellowName}, ${institution}` : fellowName;
@@ -201,6 +206,7 @@ export default function LogbookPdf({
         rangeLabel={rangeLabel}
         cases={cases}
         regionMap={regionMap}
+        pediatricMap={pediatricMap}
         procClusters={procClusters}
       />
       <ContentPage runHeaderName={runHeaderName} cases={cases} />

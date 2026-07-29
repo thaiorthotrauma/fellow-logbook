@@ -21,7 +21,7 @@ describe('clustersFor', () => {
 
   it('reuses the warm promise, so an export click awaits no new network call', async () => {
     clusterLabels.mockResolvedValue(new Map());
-    classifyRegions.mockResolvedValue(new Map());
+    classifyRegions.mockResolvedValue({ regionMap: new Map(), pediatricMap: new Map() });
     const proc = ['plate', 'plating'];
     const unclassified = ['ORIF of femur no code'];
 
@@ -41,7 +41,7 @@ describe('clustersFor', () => {
 
   it('keys on label content, not array identity, so re-renders reuse the cache', async () => {
     clusterLabels.mockResolvedValue(new Map());
-    classifyRegions.mockResolvedValue(new Map());
+    classifyRegions.mockResolvedValue({ regionMap: new Map(), pediatricMap: new Map() });
     await clustersFor(['c'], ['a', 'b']);
     const after = clusterLabels.mock.calls.length;
 
@@ -52,7 +52,7 @@ describe('clustersFor', () => {
 
   it('re-runs when the selection actually changes', async () => {
     clusterLabels.mockResolvedValue(new Map());
-    classifyRegions.mockResolvedValue(new Map());
+    classifyRegions.mockResolvedValue({ regionMap: new Map(), pediatricMap: new Map() });
     await clustersFor(['c'], ['a', 'b']);
     const after = clusterLabels.mock.calls.length;
 
@@ -63,7 +63,7 @@ describe('clustersFor', () => {
 
   it('passes procedure labels and unclassified region texts through to their own calls', async () => {
     clusterLabels.mockResolvedValue(new Map());
-    classifyRegions.mockResolvedValue(new Map());
+    classifyRegions.mockResolvedValue({ regionMap: new Map(), pediatricMap: new Map() });
     await clustersFor(['proc1', 'proc2'], ['text1', 'text2']);
 
     expect(clusterLabels).toHaveBeenCalledWith(['proc1', 'proc2']);
@@ -75,8 +75,9 @@ describe('clustersFor', () => {
     classifyRegions.mockRejectedValue(new Error('deepseek down'));
     // Clustering/classification only refine rankings, so a failure must never
     // surface as a "Could not export" error in generate()'s catch.
-    const { procClusters, regionMap } = await clustersFor(['z'], ['x']);
+    const { procClusters, regionMap, pediatricMap } = await clustersFor(['z'], ['x']);
     expect(procClusters.size).toBe(0);
     expect(regionMap.size).toBe(0);
+    expect(pediatricMap.size).toBe(0);
   });
 });

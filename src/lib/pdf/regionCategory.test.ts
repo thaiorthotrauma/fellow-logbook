@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   allRegionLabelOptions,
+  detectAge,
   isPediatric,
   regionBucketLabel,
   resolveStructuredRegion,
   topRegions,
-  uniqueUnclassifiedTexts,
+  uniqueAiTexts,
 } from './regionCategory';
 import { emptyForm, type CaseEntry } from '../../types';
 
@@ -116,6 +117,29 @@ describe('isPediatric', () => {
   });
 });
 
+describe('detectAge', () => {
+  it('settles an explicit age either way, so the AI is never asked about it', () => {
+    expect(detectAge('12 YO fall from height')).toBe('pediatric');
+    expect(detectAge('65 YO fall')).toBe('adult');
+    expect(detectAge('16 years old')).toBe('adult');
+    expect(detectAge('อายุ 6 เดือน')).toBe('pediatric');
+  });
+
+  it('reports unknown — not adult — when no number-anchored age marker is present', () => {
+    // This is the whole point of the tri-state: these name a child in words
+    // alone, so they must reach the AI pass rather than be silently settled.
+    expect(detectAge('infant with birth injury')).toBe('unknown');
+    expect(detectAge('เด็กชาย ตกจากที่สูง')).toBe('unknown');
+    expect(detectAge('Femoral shaft fracture')).toBe('unknown');
+    expect(detectAge('')).toBe('unknown');
+  });
+
+  it('reports unknown for a bare duration, leaving the AI to confirm it is not an age', () => {
+    expect(detectAge('ORIF 12 months post-op')).toBe('unknown');
+    expect(detectAge('6 เดือน post op')).toBe('unknown');
+  });
+});
+
 describe('regionBucketLabel', () => {
   it('prefers the structured Q6 code over any AI region map', () => {
     const c = makeCase({ aoCode: '32-A1', aoRegionLabel: 'Femur', diagnosis: 'Some other wording' });
@@ -139,6 +163,28 @@ describe('regionBucketLabel', () => {
     expect(regionBucketLabel(c)).toBe('Femur – Diaphyseal (pediatric)');
   });
 
+  it('takes the AI pediatric verdict when the text names a child without a number', () => {
+    const c = makeCase({ aoCode: '32-A1', aoRegionLabel: 'Femur', memo: 'infant, birth injury' });
+    const pediatricMap = new Map([['infant, birth injury', true]]);
+    expect(regionBucketLabel(c, undefined, pediatricMap)).toBe('Femur – Diaphyseal (pediatric)');
+    // Without the AI map the deterministic pass alone cannot see it.
+    expect(regionBucketLabel(c)).toBe('Femur – Diaphyseal');
+  });
+
+  it('never lets the AI override an explicitly stated adult age', () => {
+    // The regex is authoritative when it fires, in both directions — this is
+    // what keeps the common case deterministic across repeat exports.
+    const c = makeCase({ aoCode: '32-A1', aoRegionLabel: 'Femur', memo: '65 YO, fell at home' });
+    const pediatricMap = new Map([['65 yo, fell at home', true]]);
+    expect(regionBucketLabel(c, undefined, pediatricMap)).toBe('Femur – Diaphyseal');
+  });
+
+  it('leaves a case untagged when the AI says the number was a duration, not an age', () => {
+    const c = makeCase({ aoCode: '32-A1', aoRegionLabel: 'Femur', memo: 'ORIF 12 months post-op' });
+    const pediatricMap = new Map([['orif 12 months post-op', false]]);
+    expect(regionBucketLabel(c, undefined, pediatricMap)).toBe('Femur – Diaphyseal');
+  });
+
   it('ignores laterality words when the AI map key already normalizes past them', () => {
     // The AI classification step itself is responsible for treating left/right
     // as the same clinical concept; here we only assert the local plumbing
@@ -153,22 +199,28 @@ describe('regionBucketLabel', () => {
   });
 });
 
-describe('uniqueUnclassifiedTexts', () => {
-  it('excludes cases Q6 resolves, deduplicated by normalized text', () => {
+describe('uniqueAiTexts', () => {
+  it('excludes a case only when Q6 resolved it AND its age is already settled', () => {
+    const settled = makeCase({ aoCode: '32-A1', aoRegionLabel: 'Femur', diagnosis: 'Femoral shaft fracture', memo: '40 YO' });
     const cases = [
-      makeCase({ aoCode: '32-A1', aoRegionLabel: 'Femur', diagnosis: 'Femoral shaft fracture' }),
-      makeCase({ diagnosis: 'Distal radius fracture' }),
-      makeCase({ diagnosis: '  distal   radius fracture  ' }),
+      settled,
+      makeCase({ diagnosis: 'Distal radius fracture', memo: '40 YO' }),
+      makeCase({ diagnosis: '  distal   radius fracture  ', memo: '40 YO' }),
       makeCase({ diagnosis: '', otherClassification: '', memo: '' }),
     ];
-    expect(uniqueUnclassifiedTexts(cases)).toEqual(['Distal radius fracture']);
+    expect(uniqueAiTexts(cases)).toEqual(['Distal radius fracture 40 YO']);
+  });
+
+  it('includes a Q6-resolved case when its text states no age, since only the AI can read "infant"', () => {
+    const c = makeCase({ aoCode: '32-A1', aoRegionLabel: 'Femur', diagnosis: 'Femoral shaft fracture', memo: 'infant, birth injury' });
+    expect(uniqueAiTexts([c])).toEqual(['Femoral shaft fracture infant, birth injury']);
   });
 
   it('includes a case whose aoCode parses to no known region, since that is what the bucket falls back on', () => {
     // Keying off "aoCode is blank" instead would leave this text unsent and
     // strand the case in "Unclassified" however good the model's answer.
     const c = makeCase({ aoCode: 'XYZ99', aoRegionLabel: 'Tibia', diagnosis: 'Tibial plateau fracture' });
-    expect(uniqueUnclassifiedTexts([c])).toEqual(['Tibial plateau fracture']);
+    expect(uniqueAiTexts([c])).toEqual(['Tibial plateau fracture']);
     expect(regionBucketLabel(c, new Map([['tibial plateau fracture', 'Tibia / Fibula (Leg) – Tibia – Proximal']]))).toBe(
       'Tibia / Fibula (Leg) – Tibia – Proximal',
     );
