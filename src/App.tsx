@@ -16,6 +16,7 @@ import {
 import { fetchCurrentFellow, type Fellow } from './lib/fellowApi';
 import { fetchStaffCases, fetchStaffProfile, type StaffProfile } from './lib/staffApi';
 import { getAppView } from './lib/appView';
+import { DEMO_FULL_ACCESS_LINE_USER_ID, getLineUserId } from './lib/liff';
 import { parseAoCode } from './lib/aoCode';
 import { describeError } from './lib/errors';
 import { emptyAo, emptyForm, formFromEntry, type AoState, type CaseEntry, type FormState, type StaffCaseEntry } from './types';
@@ -54,6 +55,9 @@ function App() {
 
   const isStaff = staffProfile !== null;
   const isDemo = view === 'demo';
+  // Everyone else who taps "Logbook Demo" gets the read-only preview below;
+  // only this one LINE id gets the fully interactive sandbox.
+  const isDemoFullAccess = isDemo && getLineUserId() === DEMO_FULL_ACCESS_LINE_USER_ID;
 
   useEffect(() => {
     // Demo mode touches no account and no real data at all — "voluntary
@@ -176,9 +180,30 @@ function App() {
 
   async function saveEdit(id: string) {
     if (!checkBeforeSave()) return;
+    setSaving(true);
+    // Demo has no Drive/DB behind it: images become local blob URLs (picked up
+    // as already-resolved by CaseImages/SavedImages, which fetch through Drive
+    // only for real file ids), and the edit just replaces the case in state.
+    if (isDemoFullAccess) {
+      savedImages.filter(p => !keptImages.includes(p)).forEach(url => URL.revokeObjectURL(url));
+      const region = findRegion(ao.regionKey);
+      const entry: CaseEntry = {
+        id,
+        ...form,
+        aoCode: computeAoCode(ao),
+        aoRegionLabel: region ? region.name : '',
+        imagePaths: [...keptImages, ...images.map(f => URL.createObjectURL(f))],
+      };
+      setCases(prev => prev.map(c => (c.id === id ? entry : c)));
+      resetForm();
+      setTab('log');
+      setExpandedId(id);
+      setToast({ message: 'Demo case updated — nothing is saved', sticky: false });
+      setSaving(false);
+      return;
+    }
     // Captured before the update so the notification can report what changed.
     const before = cases.find(c => c.id === id);
-    setSaving(true);
     // Name new uploads past the case's existing ones so an edit can't reuse a
     // filename already in the Drive folder.
     let addedIds: string[] = [];
@@ -220,10 +245,28 @@ function App() {
     }
     if (!checkBeforeSave()) return;
     setSaving(true);
+    const caseId = crypto.randomUUID();
+    if (isDemoFullAccess) {
+      const region = findRegion(ao.regionKey);
+      const entry: CaseEntry = {
+        id: caseId,
+        ...form,
+        aoCode: computeAoCode(ao),
+        aoRegionLabel: region ? region.name : '',
+        imagePaths: images.map(f => URL.createObjectURL(f)),
+      };
+      setCases(prev => [...prev, entry]);
+      setErrors([]);
+      setForm(emptyForm());
+      setAo(emptyAo());
+      setImages([]);
+      setToast({ message: 'Demo case added — nothing is saved', sticky: false });
+      setSaving(false);
+      return;
+    }
     // Generate the id up front so images can be named per-case and uploaded to
     // Drive before the row exists. If any upload fails we abort before
     // inserting, so we never create a case that's missing its images.
-    const caseId = crypto.randomUUID();
     let imagePaths: string[] = [];
     try {
       imagePaths = await uploadCaseImages(caseId, images);
@@ -255,6 +298,10 @@ function App() {
     // saving the form later could only fail.
     if (editingId === id) resetForm();
     setCases(cases.filter(c => c.id !== id));
+    if (isDemoFullAccess) {
+      target?.imagePaths.forEach(url => URL.revokeObjectURL(url));
+      return;
+    }
     try {
       // Notified (and awaited) before the row is gone: unlike created/updated,
       // a deleted row can't be re-read afterward, so the server builds this
@@ -276,7 +323,11 @@ function App() {
           {isDemo ? (
             <>
               <div className="header-title">Logbook Demo</div>
-              <div className="header-subtitle">A preview of the fellow experience — nothing here is saved</div>
+              <div className="header-subtitle">
+                {isDemoFullAccess
+                  ? 'A sandbox of the fellow experience — nothing here is saved'
+                  : 'A preview of the fellow experience — nothing here is saved'}
+              </div>
             </>
           ) : profileLoading ? (
             <div className="header-skeleton" aria-hidden="true">
@@ -320,8 +371,14 @@ function App() {
       <div className="content">
         {tab === 'form' && !isStaff && (
           <>
-            {isDemo && <div className="demo-banner">Demo — inputs are disabled and nothing is saved.</div>}
-            <div className={isDemo ? 'demo-inert' : undefined}>
+            {isDemo && (
+              <div className="demo-banner">
+                {isDemoFullAccess
+                  ? 'Demo — try it out. Nothing is saved and it resets on reload.'
+                  : 'Demo — inputs are disabled and nothing is saved.'}
+              </div>
+            )}
+            <div className={isDemo && !isDemoFullAccess ? 'demo-inert' : undefined}>
               <NewEntryForm
                 form={form}
                 ao={ao}

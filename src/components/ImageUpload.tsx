@@ -13,6 +13,13 @@ interface ImageUploadProps {
   onRemoveExisting?: (index: number) => void;
 }
 
+/** True for a path that's already a usable image URL rather than a Drive file
+ *  id — demo mode's cases hold local `blob:` URLs (there's no Drive behind
+ *  it), so those can be shown directly instead of fetched. */
+function isResolvedUrl(path: string): boolean {
+  return path.startsWith('blob:') || path.startsWith('data:');
+}
+
 /** Thumbnails of a case's already-saved images, each removable. Loaded
  *  positionally so a failed image still occupies its slot and the remove
  *  buttons stay aligned with the caller's id list. */
@@ -20,6 +27,10 @@ function SavedImages({ paths, onRemove }: { paths: string[]; onRemove: (index: n
   const [urls, setUrls] = useState<(string | null)[] | null>(null);
 
   useEffect(() => {
+    if (paths.every(isResolvedUrl)) {
+      setUrls(paths);
+      return;
+    }
     let cancelled = false;
     getImageUrlsPositional(paths)
       .then(u => !cancelled && setUrls(u))

@@ -78,10 +78,12 @@ verify against.
   flow (or the email screen, for a genuinely unrecognized account) rather than
   showing an error.
 
-### Demo mode (no identity at all)
+### Demo mode
 
-`?view=demo` (the staff rich menu's "Logbook Demo" button) skips login
-entirely — only the device gate above applies. See §4a.
+`?view=demo` (the staff rich menu's "Logbook Demo" button) skips Supabase
+login/session entirely, but still runs LIFF's own (silent) login, purely so
+the app can read the visitor's LINE user id and decide which of the two demo
+experiences to show. See §4a.
 
 ## 3. Header
 
@@ -154,21 +156,41 @@ RLS-scoped rows and is not included in the exported PDF.
 
 Reached via `?view=demo` (see §2), shown to anyone the staff rich menu's
 "Logbook Demo" button was tapped by. Same three tabs as the normal fellow
-view, all inert:
+view. LIFF login still runs (silently, same as every other view) purely so
+the app can read the visitor's LINE user id client-side — no Supabase
+session/account is ever created and no real data is touched either way.
 
-- **New Entry** shows a banner ("Demo — inputs are disabled and nothing is
-  saved") and the form is wrapped so nothing in it can be typed, selected, or
-  submitted (`pointer-events: none`, not a `disabled` prop threaded through
-  every field individually).
-- **Case Log** always shows the empty state — cases are never fetched at all
-  in demo mode, not fetched-then-hidden, so no network request touches real
-  data.
-- **PDF** shows its normal "no cases to export yet" state, since there's
-  nothing to export — the month pickers never render in that state, so
-  there's no dedicated "disable the picker" code path; it falls out of the
-  already-empty case list.
-- No LINE verification, no Supabase session, no account involved — the
-  device gate (in-app, mobile) still applies, identity does not.
+That LINE id decides which of two demo experiences is shown:
+
+- **Everyone except `DEMO_FULL_ACCESS_LINE_USER_ID`** (`src/lib/liff.ts`) gets
+  the read-only preview: New Entry shows a banner ("Demo — inputs are
+  disabled and nothing is saved.") and the form is wrapped so nothing in it
+  can be typed, selected, or submitted (`pointer-events: none`, not a
+  `disabled` prop threaded through every field individually). Case Log always
+  shows the empty state — cases are never fetched in demo mode, and nothing
+  can be added to it either. PDF shows its normal "no cases to export yet"
+  state.
+- **The one id in `DEMO_FULL_ACCESS_LINE_USER_ID`** (the staff admin seeded in
+  `supabase/seed_staff.sql`) gets a **fully usable** sandbox instead — every
+  function (log a case, edit it, delete it, export a PDF) works, entirely
+  local to the browser tab:
+  - **New Entry** shows a banner ("Demo — try it out. Nothing is saved and it
+    resets on reload.") and is fully live: saving builds a `CaseEntry`
+    client-side (a random id, no network call) and adds it to the in-memory
+    case list — no Drive upload, no `cases` row, no Telegram notification.
+    Picked images become local `blob:` object URLs instead of Drive file ids.
+  - **Case Log** starts empty but fills in with whatever's added this
+    session, and supports edit/delete exactly like the real fellow view.
+    `CaseImages`/`ImageUpload`'s "saved images" thumbnails fetch a Drive file
+    id only when the path isn't already a resolved URL (`blob:`/`data:`), so
+    demo images render directly without hitting Drive.
+  - **PDF** exports whatever demo cases exist in the session.
+  - Nothing persists across a reload — it only ever lived in React state.
+
+No LINE verification against `check-line-user`/`link-line-staff` happens in
+demo mode either way — the id comparison is a client-side UI gate, not an
+authorization check on real data, since neither demo experience ever reads or
+writes a real row.
 
 ## 5. Case Log
 

@@ -20,9 +20,10 @@ type Stage =
   | 'rejected'
   | 'error'
   | 'authenticated'
-  // The disabled, no-real-data demo view reached via the staff rich menu's
-  // "Logbook Demo" button (?view=demo). No identity is involved, so it skips
-  // login entirely — see the device-gate-only check in bootstrap() below.
+  // The no-real-data demo view reached via the staff rich menu's "Logbook
+  // Demo" button (?view=demo). No Supabase session/account is involved, but
+  // LIFF login still runs (silently) so App.tsx can read the LINE user id
+  // and gate full functions to DEMO_FULL_ACCESS_LINE_USER_ID — see bootstrap().
   | 'demo';
 
 interface CheckLineUserResponse {
@@ -67,9 +68,17 @@ export default function AuthGate({ children }: { children: ReactNode }) {
 
       const view = getAppView();
 
-      // Demo mode shows no real data and involves no account, so it skips
-      // identity entirely — only the device gate above applies.
+      // Demo mode involves no Supabase session/account — it never touches
+      // real data either way — but it does still need LIFF's own login (silent
+      // inside LINE's client, same as every other view) so the app can read
+      // whose LINE id this is, purely client-side, to decide whether this
+      // device gets full demo functions or the read-only default. See
+      // DEMO_FULL_ACCESS_LINE_USER_ID / App.tsx.
       if (view === 'demo') {
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return; // page will redirect through LINE login and reload
+        }
         setStage('demo');
         return;
       }
