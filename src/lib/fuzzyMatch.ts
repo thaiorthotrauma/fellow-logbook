@@ -13,14 +13,37 @@ function initials(target: string): string {
     .join('');
 }
 
+const MIN_STEM_PREFIX = 4;
+const MAX_STEM_SUFFIX = 3;
+
+/** How many leading characters `a` and `b` share. */
+function sharedPrefix(a: string, b: string): number {
+  const max = Math.min(a.length, b.length);
+  let i = 0;
+  while (i < max && a[i] === b[i]) i++;
+  return i;
+}
+
+/** True when two words look like the same term with different endings, e.g.
+ *  "pelvis"/"pelvic", "radius"/"radial", "tibia"/"tibial". Anatomy is written
+ *  as a noun in some fields and an adjective in others, so an exact substring
+ *  search for "pelvis" would miss every "Pelvic ring" case. Requires a long
+ *  shared prefix AND a short remainder on both sides, which is what keeps
+ *  "radius"/"radiographic" and "distal"/"distraction" apart. */
+function isStemMatch(a: string, b: string): boolean {
+  const prefix = sharedPrefix(a, b);
+  return prefix >= MIN_STEM_PREFIX && a.length - prefix <= MAX_STEM_SUFFIX && b.length - prefix <= MAX_STEM_SUFFIX;
+}
+
 /** Scores one query word against one field. A word must appear as an actual
- *  substring (case-insensitive), or as an acronym of the field's words —
- *  deliberately NOT as a scattered character subsequence. Subsequence
- *  matching (fzf-style) is far too loose for clinical free text: "radius"
- *  matches "closed f[r][a]cture ... [d]elto[i]d ... inj[u]ry ... un[s]table"
- *  purely by accident, which made searches return unrelated regions.
- *  Returns `null` for no match, otherwise a score where higher is better —
- *  whole-word hits beat word-start hits, which beat mid-word hits, which
+ *  substring (case-insensitive), as the same term under a different ending
+ *  (see `isStemMatch`), or as an acronym of the field's words — deliberately
+ *  NOT as a scattered character subsequence. Subsequence matching (fzf-style)
+ *  is far too loose for clinical free text: "radius" matches "closed
+ *  f[r][a]cture ... [d]elto[i]d ... inj[u]ry ... un[s]table" purely by
+ *  accident, which made searches return unrelated regions. Returns `null` for
+ *  no match, otherwise a score where higher is better — whole-word hits beat
+ *  word-start hits, which beat mid-word hits, which beat stem hits, which
  *  beat acronym hits. */
 export function matchScore(query: string, target: string): number | null {
   const q = query.toLowerCase();
@@ -35,6 +58,8 @@ export function matchScore(query: string, target: string): number | null {
     if (endsWord) score += 20;
     return score;
   }
+
+  if (t.split(WORD_BREAK).some(word => word && isStemMatch(q, word))) return 60;
 
   // "orif" → "Open reduction internal fixation". A single-letter query can't
   // reach here: every initial is itself a character of `t`, so the substring
