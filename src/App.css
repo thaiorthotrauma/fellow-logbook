@@ -814,9 +814,11 @@ button {
   margin-bottom: 14px;
 }
 
-/* Shown above the inert form in demo mode (reached via the staff rich
+/* Shown above the New Entry form in demo mode (reached via the staff rich
    menu's "Logbook Demo" button) — amber rather than the edit-banner's teal,
-   so a demo session reads as visually distinct from a real one. */
+   so a demo session reads as visually distinct from a real one. The form
+   itself is fully usable in demo mode; this just flags that saves stay
+   local to the tab and are lost on reload. */
 .demo-banner {
   background: #fff6e6;
   border: 1px solid #e3c584;
@@ -826,16 +828,6 @@ button {
   font-size: 13px;
   font-weight: 600;
   margin-bottom: 14px;
-}
-
-/* Wraps the New Entry form in demo mode: fully inert, so nothing can be
-   typed, selected, or submitted, without needing to thread a `disabled`
-   prop through every field across NewEntryForm/AoClassification/
-   BulletTextarea/ImageUpload/Pill individually. */
-.demo-inert {
-  pointer-events: none;
-  opacity: 0.6;
-  user-select: none;
 }
 
 .case-card-delete {

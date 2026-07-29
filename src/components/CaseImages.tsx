@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react';
 import { getImageUrls } from '../lib/casesApi';
 
+/** True for a path that's already a usable image URL rather than a Drive file
+ *  id — demo mode's cases hold local `blob:` URLs (there's no Drive behind
+ *  it), so those can be shown directly instead of fetched. */
+function isResolvedUrl(path: string): boolean {
+  return path.startsWith('blob:') || path.startsWith('data:');
+}
+
 /** Renders a case's saved images as thumbnails. Images live in the app's
  *  private Google Drive, so they're fetched back through the drive-images
  *  function on mount (i.e. when the card expands) and shown as data URLs.
@@ -12,6 +19,10 @@ export default function CaseImages({ paths }: { paths: string[] }) {
   const [viewIndex, setViewIndex] = useState<number | null>(null);
 
   useEffect(() => {
+    if (paths.every(isResolvedUrl)) {
+      setUrls(paths);
+      return;
+    }
     let cancelled = false;
     getImageUrls(paths)
       .then(u => !cancelled && setUrls(u))

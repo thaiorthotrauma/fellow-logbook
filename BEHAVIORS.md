@@ -154,19 +154,25 @@ RLS-scoped rows and is not included in the exported PDF.
 
 Reached via `?view=demo` (see §2), shown to anyone the staff rich menu's
 "Logbook Demo" button was tapped by. Same three tabs as the normal fellow
-view, all inert:
+view, and **fully usable** — every function (log a case, edit it, delete it,
+export a PDF) works, just entirely local to the browser tab:
 
-- **New Entry** shows a banner ("Demo — inputs are disabled and nothing is
-  saved") and the form is wrapped so nothing in it can be typed, selected, or
-  submitted (`pointer-events: none`, not a `disabled` prop threaded through
-  every field individually).
-- **Case Log** always shows the empty state — cases are never fetched at all
-  in demo mode, not fetched-then-hidden, so no network request touches real
-  data.
-- **PDF** shows its normal "no cases to export yet" state, since there's
-  nothing to export — the month pickers never render in that state, so
-  there's no dedicated "disable the picker" code path; it falls out of the
-  already-empty case list.
+- **New Entry** shows a banner ("Demo — try it out. Nothing is saved and it
+  resets on reload.") but the form itself is live: filling it in and saving
+  builds a `CaseEntry` client-side (a random id, no network call) and adds it
+  to the in-memory case list — no Drive upload, no `cases` row, no Telegram
+  notification. Any picked images become local `blob:` object URLs instead of
+  Drive file ids.
+- **Case Log** starts empty (cases are never fetched from the server in demo
+  mode — there's no real fellow behind it to fetch for) but fills in with
+  whatever's been added this session, and supports edit/delete exactly like
+  the real fellow view. `CaseImages`/`ImageUpload`'s "saved images" thumbnail
+  fetch a Drive file id only when the path isn't already a resolved URL
+  (`blob:`/`data:`), so demo images render directly without hitting Drive.
+- **PDF** exports whatever demo cases exist in the session, same as the real
+  fellow view — export never touches images or the network either way.
+- Nothing persists across a reload: refreshing the page (or navigating away)
+  loses every demo case, since it only ever lived in React state.
 - No LINE verification, no Supabase session, no account involved — the
   device gate (in-app, mobile) still applies, identity does not.
 

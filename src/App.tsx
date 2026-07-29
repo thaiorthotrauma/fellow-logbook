@@ -176,9 +176,30 @@ function App() {
 
   async function saveEdit(id: string) {
     if (!checkBeforeSave()) return;
+    setSaving(true);
+    // Demo has no Drive/DB behind it: images become local blob URLs (picked up
+    // as already-resolved by CaseImages/SavedImages, which fetch through Drive
+    // only for real file ids), and the edit just replaces the case in state.
+    if (isDemo) {
+      savedImages.filter(p => !keptImages.includes(p)).forEach(url => URL.revokeObjectURL(url));
+      const region = findRegion(ao.regionKey);
+      const entry: CaseEntry = {
+        id,
+        ...form,
+        aoCode: computeAoCode(ao),
+        aoRegionLabel: region ? region.name : '',
+        imagePaths: [...keptImages, ...images.map(f => URL.createObjectURL(f))],
+      };
+      setCases(prev => prev.map(c => (c.id === id ? entry : c)));
+      resetForm();
+      setTab('log');
+      setExpandedId(id);
+      setToast({ message: 'Demo case updated — nothing is saved', sticky: false });
+      setSaving(false);
+      return;
+    }
     // Captured before the update so the notification can report what changed.
     const before = cases.find(c => c.id === id);
-    setSaving(true);
     // Name new uploads past the case's existing ones so an edit can't reuse a
     // filename already in the Drive folder.
     let addedIds: string[] = [];
@@ -220,10 +241,28 @@ function App() {
     }
     if (!checkBeforeSave()) return;
     setSaving(true);
+    const caseId = crypto.randomUUID();
+    if (isDemo) {
+      const region = findRegion(ao.regionKey);
+      const entry: CaseEntry = {
+        id: caseId,
+        ...form,
+        aoCode: computeAoCode(ao),
+        aoRegionLabel: region ? region.name : '',
+        imagePaths: images.map(f => URL.createObjectURL(f)),
+      };
+      setCases(prev => [...prev, entry]);
+      setErrors([]);
+      setForm(emptyForm());
+      setAo(emptyAo());
+      setImages([]);
+      setToast({ message: 'Demo case added — nothing is saved', sticky: false });
+      setSaving(false);
+      return;
+    }
     // Generate the id up front so images can be named per-case and uploaded to
     // Drive before the row exists. If any upload fails we abort before
     // inserting, so we never create a case that's missing its images.
-    const caseId = crypto.randomUUID();
     let imagePaths: string[] = [];
     try {
       imagePaths = await uploadCaseImages(caseId, images);
@@ -255,6 +294,10 @@ function App() {
     // saving the form later could only fail.
     if (editingId === id) resetForm();
     setCases(cases.filter(c => c.id !== id));
+    if (isDemo) {
+      target?.imagePaths.forEach(url => URL.revokeObjectURL(url));
+      return;
+    }
     try {
       // Notified (and awaited) before the row is gone: unlike created/updated,
       // a deleted row can't be re-read afterward, so the server builds this
@@ -276,7 +319,7 @@ function App() {
           {isDemo ? (
             <>
               <div className="header-title">Logbook Demo</div>
-              <div className="header-subtitle">A preview of the fellow experience — nothing here is saved</div>
+              <div className="header-subtitle">A sandbox of the fellow experience — nothing here is saved</div>
             </>
           ) : profileLoading ? (
             <div className="header-skeleton" aria-hidden="true">
@@ -320,27 +363,27 @@ function App() {
       <div className="content">
         {tab === 'form' && !isStaff && (
           <>
-            {isDemo && <div className="demo-banner">Demo — inputs are disabled and nothing is saved.</div>}
-            <div className={isDemo ? 'demo-inert' : undefined}>
-              <NewEntryForm
-                form={form}
-                ao={ao}
-                errors={errors}
-                images={images}
-                updateForm={updateForm}
-                setAo={setAo}
-                onAddImages={files => setImages(prev => [...prev, ...files])}
-                onRemoveImage={index => setImages(prev => prev.filter((_, i) => i !== index))}
-                onReset={editingId ? cancelEdit : resetForm}
-                onSubmit={handleSubmit}
-                saving={saving}
-                editing={editingId !== null}
-                existingImages={editingId ? keptImages : undefined}
-                onRemoveExistingImage={
-                  editingId ? index => setKeptImages(prev => prev.filter((_, i) => i !== index)) : undefined
-                }
-              />
-            </div>
+            {isDemo && (
+              <div className="demo-banner">Demo — try it out. Nothing is saved and it resets on reload.</div>
+            )}
+            <NewEntryForm
+              form={form}
+              ao={ao}
+              errors={errors}
+              images={images}
+              updateForm={updateForm}
+              setAo={setAo}
+              onAddImages={files => setImages(prev => [...prev, ...files])}
+              onRemoveImage={index => setImages(prev => prev.filter((_, i) => i !== index))}
+              onReset={editingId ? cancelEdit : resetForm}
+              onSubmit={handleSubmit}
+              saving={saving}
+              editing={editingId !== null}
+              existingImages={editingId ? keptImages : undefined}
+              onRemoveExistingImage={
+                editingId ? index => setKeptImages(prev => prev.filter((_, i) => i !== index)) : undefined
+              }
+            />
           </>
         )}
         {tab === 'log' && isStaff && (
