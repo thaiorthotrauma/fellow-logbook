@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { OPTIME_MAP, PLACE_MAP, PROC_MAP, ROLE_MAP, TIMING_MAP } from '../data';
 import { fuzzyScoreWordsAcrossFields } from '../lib/fuzzyMatch';
 import { fellowBadgeLabel, formatBulletedField, formatClassification, stripBullets } from '../lib/textFormat';
@@ -72,6 +72,20 @@ export default function CaseLog({
   // all) — badges start deselected rather than "all selected" so the row
   // reads as an opt-in narrowing, not a set of togglable exclusions.
   const [selectedFellows, setSelectedFellows] = useState<Set<string>>(new Set());
+  const cardRefs = useRef(new Map<string, HTMLDivElement>());
+
+  // Bring a newly-expanded card's top just below the sticky header, instead
+  // of leaving it wherever it lands (potentially covered by the header, or
+  // requiring a manual scroll to see what just opened).
+  useLayoutEffect(() => {
+    if (!expandedId) return;
+    const card = cardRefs.current.get(expandedId);
+    if (!card) return;
+    const headerHeight = document.querySelector('.header')?.getBoundingClientRect().height ?? 0;
+    const gap = 12;
+    const target = window.scrollY + card.getBoundingClientRect().top - headerHeight - gap;
+    window.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+  }, [expandedId]);
 
   const fellowBadges = useMemo(() => {
     const seen = new Map<string, string>(); // fellowName -> badge label
@@ -196,7 +210,14 @@ export default function CaseLog({
           {visible.map(c => {
             const expanded = expandedId === c.id;
             return (
-              <div className={`case-card ${expanded ? 'expanded' : ''}`} key={c.id}>
+              <div
+                className={`case-card ${expanded ? 'expanded' : ''}`}
+                key={c.id}
+                ref={el => {
+                  if (el) cardRefs.current.set(c.id, el);
+                  else cardRefs.current.delete(c.id);
+                }}
+              >
                 <button
                   type="button"
                   className="case-card-main"
