@@ -42,25 +42,36 @@ export async function deliverPdf(blob: Blob, filename: string): Promise<Delivery
     }
   }
 
-  const url = URL.createObjectURL(blob);
-  const revokeSoon = () => setTimeout(() => URL.revokeObjectURL(url), 60_000);
-
   try {
     if (liff?.openWindow) {
-      liff.openWindow({ url, external: true });
-      revokeSoon();
+      // liff.openWindow({ external: true }) hands the URL to a separate
+      // browser process (e.g. Safari), which can't dereference a blob: URL —
+      // those only resolve within the document that created them. A data:
+      // URL carries the PDF bytes inline instead, so it survives the handoff.
+      const dataUrl = await blobToDataUrl(blob);
+      liff.openWindow({ url: dataUrl, external: true });
       return 'opened';
     }
   } catch {
     // fall through to anchor download
   }
 
+  const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
-  revokeSoon();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
   return 'downloaded';
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error ?? new Error('Failed to read PDF blob'));
+    reader.readAsDataURL(blob);
+  });
 }
