@@ -37,7 +37,6 @@ function pdfFileName(institution: string, grouping: Grouping, from: string, to: 
 // 'shared' has no note: the native share sheet is itself the feedback that
 // the PDF is ready, so an extra message here would just be redundant.
 const DONE_NOTE: Record<string, string> = {
-  opened: 'PDF opened in your browser — save it from there.',
   downloaded: 'PDF downloaded.',
 };
 
