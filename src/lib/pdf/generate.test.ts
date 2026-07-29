@@ -81,7 +81,7 @@ const base = {
   institution: 'Test Institute',
   yearLabel: '2026–2027',
   rangeLabel: 'July 2026',
-  dxClusters: new Map<string, string>(),
+  regionMap: new Map<string, string>(),
   procClusters: new Map<string, string>(),
 };
 
@@ -99,7 +99,7 @@ describe('generateLogbookBlob (fellow export)', () => {
       yearLabel: '2026–2027',
       rangeLabel: 'July 2026',
       cases,
-      dxClusters: new Map(),
+      regionMap: new Map(),
       procClusters: new Map(),
     });
 
@@ -142,14 +142,21 @@ describe('generateLogbookBlob (fellow export)', () => {
     expect(pageCount(pdf)).toBeGreaterThan(0);
   }, 30_000);
 
-  it('renders on both clustering outcomes — empty (DeepSeek failed) and populated', async () => {
+  it('renders on both AI outcomes — empty (DeepSeek failed) and populated', async () => {
     // clustersFor degrades to empty maps on failure, so the export has to be
-    // fine either way; clustering only refines the summary ranking.
-    const withoutClusters = await render({ ...base, cases });
+    // fine either way; clustering/classification only refine the summary
+    // rankings. The region map is keyed to the one case below with no aoCode,
+    // so the populated path is actually exercised rather than looked up and
+    // missed.
+    const withUnclassified = [
+      ...cases,
+      makeCase({ id: '4', date: '2026-07-25', diagnosis: 'Tibial plateau fracture', aoCode: '', aoRegionLabel: '' }),
+    ];
+    const withoutClusters = await render({ ...base, cases: withUnclassified });
     const withClusters = await render({
       ...base,
-      cases,
-      dxClusters: new Map([['femoral shaft fracture', 'Femur fracture']]),
+      cases: withUnclassified,
+      regionMap: new Map([['tibial plateau fracture', 'Tibia / Fibula (Leg) – Tibia – Proximal']]),
       procClusters: new Map([['orif', 'Open reduction internal fixation']]),
     });
 
