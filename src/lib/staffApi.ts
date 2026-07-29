@@ -5,6 +5,7 @@ import type { StaffCaseEntry } from '../types';
 export interface StaffProfile {
   fullName: string;
   institution: string;
+  isAdmin: boolean;
 }
 
 /** Loads the signed-in staff member's own name/institution via
@@ -16,7 +17,7 @@ export async function fetchStaffProfile(): Promise<StaffProfile | null> {
   if (error) throw error;
   const row = data?.[0];
   if (!row) return null;
-  return { fullName: row.full_name, institution: row.institution };
+  return { fullName: row.full_name, institution: row.institution, isAdmin: row.is_admin };
 }
 
 /** A row from staff_institution_cases(), before mapping to StaffCaseEntry.
@@ -67,8 +68,9 @@ export function fromStaffRow(row: StaffCaseRow): StaffCaseEntry {
   };
 }
 
-/** Every case logged by any fellow in the caller's own institution, newest
- *  first, HN pre-masked by the database. Empty array for a non-staff caller. */
+/** Every case logged by any fellow in the caller's own institution — or,
+ *  for admin staff, every institution — newest first, HN pre-masked by the
+ *  database. Empty array for a non-staff caller. */
 export async function fetchStaffCases(): Promise<StaffCaseEntry[]> {
   const { data, error } = await supabase.rpc('staff_institution_cases');
   if (error) throw error;

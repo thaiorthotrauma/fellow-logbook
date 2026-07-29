@@ -287,7 +287,9 @@ function App() {
           ) : isStaff ? (
             <>
               <div className="header-title">{staffProfile!.fullName}</div>
-              <div className="header-institution">Institution : {staffProfile!.institution}</div>
+              <div className="header-institution">
+                Institution : {staffProfile!.isAdmin ? 'All institutes' : staffProfile!.institution}
+              </div>
               <div className="header-subtitle">Staff view — read only</div>
             </>
           ) : (
@@ -346,7 +348,11 @@ function App() {
             cases={staffCases}
             expandedId={expandedId}
             onToggle={id => setExpandedId(cur => (cur === id ? null : id))}
-            emptyMessage="No cases logged yet by any fellow at this institution."
+            emptyMessage={
+              staffProfile?.isAdmin
+                ? 'No cases logged yet by any fellow.'
+                : 'No cases logged yet by any fellow at this institution.'
+            }
           />
         )}
         {tab === 'log' && !isStaff && (
@@ -361,7 +367,7 @@ function App() {
         {tab === 'pdf' && isStaff && (
           <StaffExportPdfPanel
             cases={staffCases}
-            institution={staffProfile!.institution}
+            institution={staffProfile!.isAdmin ? 'All institutes' : staffProfile!.institution}
             profileLoading={profileLoading}
           />
         )}

@@ -192,6 +192,12 @@ create table if not exists public.staff (
   created_at timestamptz not null default now()
 );
 
+-- Admin staff bypass the institution filter in staff_institution_cases() /
+-- staff_can_view_image() below and see every institution's fellows. `institution`
+-- stays populated (their own "home" institution, shown in the header) even for
+-- admins — it just no longer limits what they can read.
+alter table public.staff add column if not exists is_admin boolean not null default false;
+
 -- One row per device a staff member has signed in from — not one row per
 -- staff member. Staff authenticate via anonymous sign-in (no email to anchor
 -- an identity across devices the way a fellow's email does), so phone and
@@ -217,12 +223,12 @@ alter table public.staff_devices enable row level security;
 -- caller isn't a linked staff device. Lets the client show "who am I" without
 -- ever granting a raw select on the staff tables.
 create or replace function public.my_staff_profile()
-returns table (full_name text, institution text)
+returns table (full_name text, institution text, is_admin boolean)
 language sql
 security definer
 set search_path = public
 as $$
-  select s.full_name, s.institution
+  select s.full_name, s.institution, s.is_admin
   from public.staff_devices sd
   join public.staff s on s.id = sd.staff_id
   where sd.user_id = auth.uid();
@@ -274,11 +280,12 @@ as $$
     c.op_time, c.memo, c.image_paths, c.created_at
   from public.cases c
   join public.fellow f on f.user_id = c.user_id
-  where f.institution = (
-    select s.institution
+  where exists (
+    select 1
     from public.staff_devices sd
     join public.staff s on s.id = sd.staff_id
     where sd.user_id = auth.uid()
+      and (s.is_admin or f.institution = s.institution)
   )
   order by c.date desc;
 $$;
@@ -300,13 +307,10 @@ as $$
     select 1
     from public.cases c
     join public.fellow f on f.user_id = c.user_id
+    join public.staff_devices sd on sd.user_id = auth.uid()
+    join public.staff s on s.id = sd.staff_id
     where c.image_paths @> array[p_image_id]
-      and f.institution = (
-        select s.institution
-        from public.staff_devices sd
-        join public.staff s on s.id = sd.staff_id
-        where sd.user_id = auth.uid()
-      )
+      and (s.is_admin or f.institution = s.institution)
   );
 $$;
 
