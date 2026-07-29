@@ -23,7 +23,7 @@ type Stage =
   // The no-real-data demo view reached via the staff rich menu's "Logbook
   // Demo" button (?view=demo). No Supabase session/account is involved, but
   // LIFF login still runs (silently) so App.tsx can read the LINE user id
-  // and gate full functions to DEMO_FULL_ACCESS_LINE_USER_ID — see bootstrap().
+  // and gate full functions to DEMO_FULL_ACCESS_LINE_USER_IDS — see bootstrap().
   | 'demo';
 
 interface CheckLineUserResponse {
@@ -73,7 +73,7 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       // inside LINE's client, same as every other view) so the app can read
       // whose LINE id this is, purely client-side, to decide whether this
       // device gets full demo functions or the read-only default. See
-      // DEMO_FULL_ACCESS_LINE_USER_ID / App.tsx.
+      // DEMO_FULL_ACCESS_LINE_USER_IDS / App.tsx.
       if (view === 'demo') {
         if (!liff.isLoggedIn()) {
           liff.login();

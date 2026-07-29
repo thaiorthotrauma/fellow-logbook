@@ -29,12 +29,15 @@ export function getLineUserId(): string | null {
   return liff.getDecodedIDToken()?.sub ?? null;
 }
 
-/** The one LINE user allowed to use every function (log/edit/delete a case,
+/** The LINE users allowed to use every function (log/edit/delete a case,
  *  export a PDF) in the otherwise read-only Logbook Demo (`?view=demo`) —
- *  the staff admin seeded in supabase/seed_staff.sql, so they can exercise
+ *  the staff admins seeded in supabase/seed_staff.sql, so they can exercise
  *  the full flow without opening that up to everyone the rich menu's
  *  "Logbook Demo" button reaches. */
-export const DEMO_FULL_ACCESS_LINE_USER_ID = 'U1f7800c1ec874bb896bb11598c5ec49e';
+export const DEMO_FULL_ACCESS_LINE_USER_IDS = [
+  'U1f7800c1ec874bb896bb11598c5ec49e',
+  'Udbdae946176342d40b9a2cc117c37da3',
+];
 
 // Since iPadOS 13, Safari (and any embedded WebView that doesn't override its
 // user agent, which includes LINE's in-app browser) reports itself as a Mac

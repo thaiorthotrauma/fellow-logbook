@@ -16,7 +16,7 @@ import {
 import { fetchCurrentFellow, type Fellow } from './lib/fellowApi';
 import { fetchStaffCases, fetchStaffProfile, type StaffProfile } from './lib/staffApi';
 import { getAppView } from './lib/appView';
-import { DEMO_FULL_ACCESS_LINE_USER_ID, getLineUserId } from './lib/liff';
+import { DEMO_FULL_ACCESS_LINE_USER_IDS, getLineUserId } from './lib/liff';
 import { parseAoCode } from './lib/aoCode';
 import { describeError } from './lib/errors';
 import { emptyAo, emptyForm, formFromEntry, type AoState, type CaseEntry, type FormState, type StaffCaseEntry } from './types';
@@ -56,8 +56,9 @@ function App() {
   const isStaff = staffProfile !== null;
   const isDemo = view === 'demo';
   // Everyone else who taps "Logbook Demo" gets the read-only preview below;
-  // only this one LINE id gets the fully interactive sandbox.
-  const isDemoFullAccess = isDemo && getLineUserId() === DEMO_FULL_ACCESS_LINE_USER_ID;
+  // only these LINE ids get the fully interactive sandbox.
+  const lineUserId = getLineUserId();
+  const isDemoFullAccess = isDemo && lineUserId !== null && DEMO_FULL_ACCESS_LINE_USER_IDS.includes(lineUserId);
 
   useEffect(() => {
     // Demo mode touches no account and no real data at all — "voluntary
