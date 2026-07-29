@@ -69,6 +69,12 @@ supabase functions deploy check-line-user
 supabase functions deploy link-line-user
 supabase functions deploy drive-images   # see §3a for its Google secrets
 supabase functions deploy classify-region # see §3b for its AI secret
+
+# Error alerting (see §3c and TELEGRAM_ERRORS.md). --no-verify-jwt is
+# deliberate: plenty of failures worth knowing about happen before there is a
+# session at all, and a reporter that only works once you're logged in would
+# miss exactly the errors that stop people logging in.
+supabase functions deploy log-error --no-verify-jwt
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` are
@@ -90,6 +96,34 @@ supabase functions deploy link-line-user
 The functions use `SB_SECRET_KEY` when present and fall back to the injected
 service_role key otherwise. (`drive-images` is unaffected — it uses the
 caller's token, not the service role.)
+
+## 3c. Telegram error alerts
+
+Every failure in the app — browser, Edge Function, Postgres, the LINE API, the
+LINE webhook, and the notifier itself — is reported to the same admin chat that
+already receives case notifications. The message layout, severity tiers and
+redaction rules are specified in [TELEGRAM_ERRORS.md](./TELEGRAM_ERRORS.md).
+
+No new secrets: it reuses `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`, plus the
+service-role key already injected into every function. What it does need is
+`supabase/schema.sql` re-run, for the `error_events` / `error_budget` tables and
+the `error_gate()` function that flood control counts with. Without them nothing
+breaks — reporting degrades **open** and every occurrence is sent, because an
+alerting system that goes quiet when its own bookkeeping fails is the one
+outcome worth avoiding at the cost of duplicates.
+
+With Telegram unconfigured, every report silently no-ops, exactly as the case
+notifications already do.
+
+Re-deploy the other functions so they pick up the shared reporter:
+
+```sh
+supabase functions deploy notify-case
+supabase functions deploy line-webhook --no-verify-jwt
+supabase functions deploy telegram-webhook --no-verify-jwt
+supabase functions deploy telegram-add-person
+supabase functions deploy link-line-staff
+```
 
 ## 3a. Google Drive for case images
 

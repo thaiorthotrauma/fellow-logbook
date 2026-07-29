@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { reportDegraded } from '../errorReport';
 import { normalizeLabel } from './stats';
 import { allRegionLabelOptions } from './regionCategory';
 
@@ -49,7 +50,14 @@ export async function classifyRegions(texts: string[]): Promise<RegionClassifica
       ),
     ]);
     if (error || !data) {
-      if (error) console.error('Region classification failed:', error);
+      if (error) {
+        console.error('Region classification failed:', error);
+        reportDegraded(error, {
+          component: 'Region classification',
+          where: 'classifyRegions → classify-region',
+          context: [`${texts.length} labels · export fell back to deterministic labels`],
+        });
+      }
       return empty();
     }
 
@@ -65,6 +73,11 @@ export async function classifyRegions(texts: string[]): Promise<RegionClassifica
     return out;
   } catch (err) {
     console.error('Region classification failed:', err);
+    reportDegraded(err, {
+      component: 'Region classification',
+      where: 'classifyRegions → classify-region',
+      context: [`${texts.length} labels · export fell back to deterministic labels`],
+    });
     return empty();
   }
 }

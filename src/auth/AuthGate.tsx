@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { functionErrorMessage } from '../lib/errors';
+import { reportDegraded, reportError } from '../lib/errorReport';
 import { getLineIdToken, initLiff, isLikelyDesktop, liff } from '../lib/liff';
 import { getAppView } from '../lib/appView';
 import EmailStep from './EmailStep';
@@ -120,6 +121,9 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       await establishFellowSession(idToken, { staffFallback: true });
     } catch (err) {
       console.error(err);
+      // Reported even though there is no session yet: an error that stops
+      // people logging in is exactly the one a login-gated reporter misses.
+      reportError(err, { component: 'Sign in', where: 'AuthGate bootstrap' });
       setErrorMessage(err instanceof Error ? err.message : 'Something went wrong.');
       setStage('error');
     }
@@ -221,6 +225,11 @@ export default function AuthGate({ children }: { children: ReactNode }) {
       if (linkError) throw new Error(await functionErrorMessage(linkError));
     } catch (err) {
       console.error('Post-verification linking failed (continuing):', err);
+      reportDegraded(err, {
+        component: 'Sign in',
+        where: 'post-verification link-line-user',
+        context: ['The fellow was signed in anyway; this device is not linked'],
+      });
     }
 
     setStage('authenticated');

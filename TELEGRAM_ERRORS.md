@@ -1,12 +1,16 @@
 # Telegram error notifications — message layout
 
-Design proposal. Nothing here is implemented yet; this fixes the message shape
-before code is written. Companion to `BEHAVIORS.md` §6a–6c, which describe the
-Telegram messages the bot already sends.
+The message layout for the error alerts described in `BEHAVIORS.md` §6d.
+Companion to §6a–6c, which cover the Telegram messages the bot already sent
+before this: case activity, roster commands, and the Add Person Mini App.
 
-Today every failure in the app ends at `console.error` — roughly forty sites
-across `src/` and `supabase/functions/`. This routes all of them to the same
-admin chat that already receives case notifications.
+Builders live in `supabase/functions/_shared/errorMessage.ts` and are asserted
+against, character for character, in `src/lib/errorMessage.test.ts`.
+
+Before this, every failure in the app ended at `console.error` — roughly forty
+sites across `src/` and `supabase/functions/`, reaching a console nobody reads,
+on a phone, inside LINE's in-app browser, where there are no devtools to open.
+All of them now reach the admin chat that already receives case notifications.
 
 ## Severity tiers
 
@@ -15,7 +19,8 @@ admin chat that already receives case notifications.
 | Error | 🔴 | The action failed. Someone saw it fail, or a server path threw. |
 | Degraded | 🟠 | A fallback absorbed it. Nothing visibly broke, but it should be known. |
 | Rejected | 🛡 | An auth, signature or allowlist gate turned a request away. Not a bug. |
-| Repeating | 🔁 | Rollup emitted while a fingerprint is muted. |
+| Repeating | 🔁 | Rollup of what was suppressed while a fingerprint was muted. |
+| Budget | 🔇 | The hourly ceiling was reached; the quiet that follows is deliberate. |
 
 ## The envelope
 
@@ -48,8 +53,8 @@ Nine parts, in fixed order. Empty blocks are omitted entirely — the rule
   notification preview without truncating.
 - **Origin** — which of the six surfaces reported it, timestamped in +07, the
   clock the fellows and staff work on.
-- **Error** — the message alone, no stack. `describeError()` already unpacks
-  Postgres `message / details / hint / code`.
+- **Error** — the message alone, no stack. `describeError()` unpacks Postgres
+  `message / hint / code`, deliberately excluding `details` (see Redaction).
 - **Who** — resolved server-side from the roster, never from the request body.
   Dropped when the failure precedes identification.
 - **Where** — route, function and call site: enough to open the right file.
@@ -138,14 +143,18 @@ Who
 ปองสิทธิ์ โพธิคุณ · สมุทรสาคร
 
 Where
-insert into cases · policy cases_insert_own
+POST notify-case
 
 Context
+Responded 200 — the case itself was saved; only its notification was lost
 Detail withheld (contains row values)
-Responded 500
 
 9d4417 · 1st
 ```
+
+The headline names the **table**, pulled out of Postgres's own message, while
+the origin names the function that caught it: one sends you to `schema.sql`,
+the other to the handler.
 
 There is no database-side reporter and none is needed: the schema has no
 triggers and no cron — every function is `SECURITY DEFINER`, called from a
@@ -199,8 +208,8 @@ linkRichMenu → POST /v2/bot/user/{id}/richmenu/{menu}
 
 Context
 Staff added by /addstaff — menu not assigned
-LINE user U4af49807…
-Rich menu richmenu-8f3a…
+LINE user U4af49807ab1f2c3d4e5f60718293a4b5c
+Rich menu richmenu-8f3a1c05e0b34c2d9f7e6a1b2c3d4e5f
 Failed all 3 attempts
 
 b6f7d2 · 1st
@@ -250,9 +259,9 @@ telegram 429: Too Many Requests, retry after 31
 
 Context
 3 messages lost between 14:22 and 14:26
-· 1 new case logged
-· 1 function error · drive-images
-· 1 degraded · region classification
+· 🆕 New case logged
+· 🔴 Function error · drive-images
+· 🟠 Degraded · Region classification
 
 Sending has recovered.
 
@@ -260,8 +269,9 @@ f0c73d · 1st
 ```
 
 The one failure that cannot be reported through the channel it is about. A
-failed send appends its headline to a small in-memory buffer; the next send
-that *succeeds* emits this summary first. No retry queue and no storage — the
+failed send appends its headline — the message's own first line, tags stripped
+— to a small in-memory buffer; the next send that *succeeds* emits this summary
+first. No retry queue and no storage — the
 alert is that a gap happened, not a replay of its contents.
 
 Limits, stated plainly: an isolate recycled before recovery loses its buffer,
@@ -297,23 +307,33 @@ Muting for another hour.
   whether it is one fellow or everyone.
 - Then muted for **60 minutes**. The third message's occurrence line says so,
   so the silence is never ambiguous.
-- One rollup when the window closes, with the count, the spread across fellows,
-  and the time last seen. Still going means it re-mutes and says so.
+- One rollup once the window has closed, with the count, the spread across
+  people, and the time last seen. Still arriving means it re-mutes and says so;
+  gone quiet means it is released.
+- **The rollup rides along with the next report of any error.** There is no cron
+  in this schema, so nothing fires on its own. If the whole app goes quiet there
+  is nothing pending to report anyway, and the message that started the mute
+  already named the time it lifts.
 - **40 alerts per hour** globally. Past that, only rollups — a storm must never
   drown out a case being logged.
-- Frontend reports are capped harder and headed `App error · unverified` when
-  they arrive without a session.
-- Counters live in a small `error_events` table. Isolates are recycled, so
-  in-memory counting would reset mid-storm and defeat the mute.
+- Frontend reports arriving without a session are headed
+  `Frontend (unverified)` and capped at one full send instead of three — the
+  only unauthenticated path into the chat gets the tightest ceiling.
+- Counters live in `error_events` and `error_budget`, decided by one atomic
+  `error_gate()` call. Isolates are recycled and several report concurrently, so
+  in-memory counting would both reset mid-storm and miscount.
+- **Flood control fails open.** If the counters are unreachable every occurrence
+  is sent. Duplicates are a nuisance; an alerting system that goes quiet because
+  its own bookkeeping broke is the failure worth avoiding.
 
 ## Routing
 
 | Surface | Caught by | Path to Telegram | Tiers |
 | --- | --- | --- | --- |
-| Frontend | `window.onerror` + `unhandledrejection` in `main.tsx`, plus `reportError()` at each existing catch | POST `log-error` → `sendTelegram`. Deployed `--no-verify-jwt`; identity read from the session when one exists | 🔴 🟠 |
-| Edge Functions (all eight) | `withErrorReport()` around the existing `Deno.serve` handler | Direct `sendTelegram`, fire-and-forget | 🔴 🛡 |
+| Frontend | `window.onerror` + `unhandledrejection` in `main.tsx`, plus `reportError()` / `reportDegraded()` at each existing catch | POST `log-error` → `sendTelegram`. Deployed `--no-verify-jwt`; identity read from the session when one exists | 🔴 🟠 |
+| Edge Functions (all eight) | `reportFunctionError()` beside the `console.error` already in each top-level catch | Direct `sendTelegram`, fire-and-forget | 🔴 🟠 🛡 |
 | Postgres | The `PostgrestError` at whichever caller made the query | Inherits its caller's path; origin reads `Postgres via …` | 🔴 |
-| LINE API (outbound) | Throws out of `fetchWithRetry` in `_shared/line.ts` | Caught by the calling function's wrapper | 🔴 |
+| LINE API (outbound) | Throws out of `fetchWithRetry` in `_shared/line.ts`; re-headed from the message shape, which `line.ts` sets in one place | Caught by the calling function's catch | 🔴 |
 | LINE webhook (inbound) | Its own signature gate and top-level catch | Direct `sendTelegram`; still answers `200` so LINE won't disable the hook | 🔴 🛡 |
 | Telegram | `SendResult.sent === false` | Buffered; emitted by the next successful send | 🟠 |
 
@@ -349,8 +369,24 @@ Error payloads are riskier than case notifications: a stack or a Postgres
   statuses, durations, build SHA, device and app versions.
 - Third-party response bodies (Google, DeepSeek, LINE), truncated to 300 chars.
 
+## Where it lives
+
+| Piece | File |
+| --- | --- |
+| Message layout, all tiers | `supabase/functions/_shared/errorMessage.ts` |
+| describeError / redact / fingerprint | `supabase/functions/_shared/errorText.ts` |
+| Server reporter + flood-control client | `supabase/functions/_shared/errorReport.ts` |
+| Delivery-gap buffer | `supabase/functions/_shared/telegram.ts` |
+| Browser reporter + global handlers | `src/lib/errorReport.ts` |
+| Frontend endpoint | `supabase/functions/log-error/index.ts` |
+| Counters and the gate | `supabase/schema.sql` — `error_events`, `error_budget`, `error_gate()` |
+
 ## Testing
 
-Message builders go in a Deno-free module so the app's own Vitest suite can
-assert on the exact output, the way `notify.test.ts` already does for the four
-case messages.
+The message builders and the text rules are Deno-free, so the app's own Vitest
+suite asserts on their exact output — the same arrangement `notify.test.ts`
+uses for the four case messages. `error_gate()` was exercised against a real
+Postgres for each rule above: three full sends then a mute, the rollup on
+expiry (re-muting while the storm continues, releasing once it stops), the
+quiet-window reset, the tightened unverified cap, and the hourly ceiling
+announcing itself once and rolling over on its own.

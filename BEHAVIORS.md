@@ -430,6 +430,74 @@ browser (`?view=addperson`), never from LINE.
   on success, same as `/addfellow`/`/addstaff`, so there's one durable record
   regardless of which entry point was used.
 
+## 6d. Telegram error alerts (admin)
+
+Every failure in the app is reported to the same admin chat as the case
+notifications above. The full message layout, worked examples for each surface,
+and the redaction rules are in [TELEGRAM_ERRORS.md](./TELEGRAM_ERRORS.md); this
+section states the behaviour.
+
+- **One envelope for six surfaces.** The browser, the eight Edge Functions,
+  Postgres, the LINE API, the LINE webhook, and Telegram itself all render into
+  the same nine-part message, so triage on a phone is a glance rather than a
+  read. Blocks with no value are omitted entirely, the same rule §6a's messages
+  follow.
+- **Four tiers, because one colour trains you to ignore it.** 🔴 the action
+  failed · 🟠 a fallback absorbed it and nobody noticed · 🛡 an auth, signature
+  or allowlist gate turned a request away, which is not a bug · 🔁 a rollup of
+  what was suppressed while a fingerprint was muted.
+- **Nothing changes about how anything responds.** Reports sit next to the
+  `console.error` that was already in each catch block. `notify-case` still
+  answers 200, `line-webhook` still answers `ok` so LINE won't disable the
+  webhook, `classify-region` still returns empty assignments so the PDF export
+  survives. Reports are never awaited and their own failures are swallowed, so
+  the standing promise holds: a Telegram problem can never become a failed save.
+- **There is no database-side reporter and none is needed.** The schema has no
+  triggers and no cron — every function is `SECURITY DEFINER`, called from a
+  request — so a Postgres error always surfaces at a caller and is reported by
+  it, headed `Database error · <table>` with the origin reading
+  `Postgres via <function>`.
+- **The browser reports through `log-error`, deployed `--no-verify-jwt`.** Plenty
+  of failures worth knowing about happen before there is a session at all (LIFF
+  init, the whitelist check, the OTP round trip), and a reporter that only works
+  once you're logged in would miss precisely the errors that stop people logging
+  in. With a session, the report names the fellow or staff member, resolved
+  server-side from the roster; without one it is marked `Frontend (unverified)`
+  and capped at one full send per hour instead of three, since it is the only
+  unauthenticated path into the chat. Nothing in the request body is trusted as
+  identity and none of it is echoed as HTML.
+- **PHI, tightened past §6a.** A case notification masks HN because HN is the
+  point; an error has no reason to carry it at all, so it carries none. Clinical
+  free text never travels either, and Postgres `detail` is **always withheld** —
+  on a constraint or RLS failure it reads "Failing row contains (...)", the whole
+  row. Secrets (bot token, service-role key, Google refresh token, JWTs,
+  `Authorization` headers) and email addresses are scrubbed by pattern before
+  send, rather than by remembering to leave them out. The report says a detail
+  was withheld, so its absence reads as the rule it is.
+- **Flood control, because one Drive rate limit must not bury the chat.** The
+  first three occurrences of a fingerprint — six hex chars over surface, call
+  site and normalised message — send in full; the third mutes it for an hour and
+  says so, so the silence is never ambiguous. A ceiling of 40 alerts an hour
+  applies across every fingerprint and announces itself when reached. Counting
+  happens in one atomic `error_gate()` call in Postgres (`error_events` /
+  `error_budget`): isolates are recycled and several report concurrently, so
+  in-memory counters would both reset mid-storm and miscount.
+  - **Rollups ride along.** With no cron in the schema, the rollup that closes a
+    mute window is emitted by the next report of *any* error once the window has
+    passed. If the whole app goes quiet there is nothing pending to say anyway,
+    and the message that started the mute already named the time it lifts.
+  - **Flood control fails open.** If the counters are unreachable every
+    occurrence is sent. Duplicates are a nuisance; an alerting system that goes
+    quiet because its own bookkeeping broke is the failure worth avoiding.
+- **Telegram failing is the one fault that can't be reported through the channel
+  it's about.** A failed send leaves its headline in a small in-memory buffer and
+  the next send that *succeeds* leads with a summary of the gap. Not a retry
+  queue: nothing is stored and nothing is replayed — the alert is that a gap
+  happened. An isolate recycled before it recovers loses the buffer, and a total
+  Telegram outage is invisible by construction. Both are accepted, because every
+  alert is also a `console.error`, which leaves Supabase's function logs as the
+  system of record.
+
 ## 7. Display & rendering
 
 - **Responsive:** a single content column capped at 960px and centered. On

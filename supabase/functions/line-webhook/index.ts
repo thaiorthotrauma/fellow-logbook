@@ -22,6 +22,7 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyLineSignature } from '../_shared/line.ts';
 import { sendTelegram, telegramConfigured } from '../_shared/telegram.ts';
+import { reportFunctionError, reportRejected } from '../_shared/errorReport.ts';
 import { chatMessage } from '../_shared/caseMessage.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -54,6 +55,14 @@ Deno.serve(async req => {
     const valid = await verifyLineSignature(rawBody, signature, LINE_MESSAGING_CHANNEL_SECRET);
     if (!valid) {
       console.error('Rejected webhook call with an invalid X-Line-Signature');
+      void reportRejected('LINE webhook', 'LINE webhook', 'X-Line-Signature did not match', [
+        LINE_MESSAGING_CHANNEL_SECRET === ''
+          ? 'LINE_MESSAGING_CHANNEL_SECRET is not set on this deployment'
+          : signature === ''
+            ? 'Signature absent'
+            : 'Signature present but wrong',
+        `${rawBody.length}-byte body · answered 401`,
+      ]);
       return new Response('invalid signature', { status: 401 });
     }
 
@@ -62,6 +71,7 @@ Deno.serve(async req => {
     if (events.length === 0) return new Response('ok');
 
     if (!telegramConfigured()) {
+      // Nowhere to report this to, by definition — the console is all there is.
       console.error('LINE message received but Telegram is not configured');
       return new Response('ok');
     }
@@ -86,7 +96,18 @@ Deno.serve(async req => {
         .select('full_name, institution')
         .eq('line_user_id', lineUserId)
         .maybeSingle();
-      if (error) console.error('Fellow lookup failed:', error);
+      if (error) {
+        console.error('Fellow lookup failed:', error);
+        // The message is still forwarded, just unattributed — amber, not red.
+        reportFunctionError('line-webhook', error, {
+          severity: 'degraded',
+          where: 'select fellow by line_user_id',
+          context: [
+            'The LINE message was still forwarded, labelled as unregistered',
+            ['LINE user', lineUserId],
+          ],
+        });
+      }
 
       const result = await sendTelegram(
         chatMessage(
@@ -102,6 +123,10 @@ Deno.serve(async req => {
     return new Response('ok');
   } catch (err) {
     console.error(err);
+    reportFunctionError('line-webhook', err, {
+      where: 'POST line-webhook',
+      context: ['Answered 200 so LINE will not retry or disable the webhook'],
+    });
     // Swallow the error: a 500 would make LINE retry the same bad event.
     return new Response('ok');
   }

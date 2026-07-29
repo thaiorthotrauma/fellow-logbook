@@ -35,6 +35,7 @@
 //
 // Required secret: DEEPSEEK_API_KEY (from https://platform.deepseek.com)
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { reportFunctionError } from '../_shared/errorReport.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -61,6 +62,10 @@ const TOOL_NAME = 'classify_regions';
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
 
+  // Held outside the try so the report can say how big the batch was: this
+  // function fails differently at 5 labels and at 200.
+  let labelCount = 0;
+
   try {
     const authHeader = req.headers.get('Authorization') ?? '';
     const user = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -80,6 +85,7 @@ Deno.serve(async req => {
     }
 
     const trimmed = [...new Set(texts.map((t: string) => t.trim()).filter(Boolean))].slice(0, MAX_TEXTS);
+    labelCount = trimmed.length;
     if (trimmed.length === 0) return json({ assignments: {}, pediatric: {} });
 
     const apiKey = (Deno.env.get('DEEPSEEK_API_KEY') ?? '').trim();
@@ -102,8 +108,15 @@ Deno.serve(async req => {
     return json({ assignments, pediatric });
   } catch (err) {
     console.error(err);
-    // Advisory: on any failure here every case stays exactly where the
-    // client's deterministic passes put it, never a broken export.
+    // The export still works, so this is amber, not red: on any failure here
+    // every case stays exactly where the client's deterministic passes put
+    // it, never a broken export. Nobody would report it — which is precisely
+    // why it has to report itself.
+    reportFunctionError('classify-region', err, {
+      severity: 'degraded',
+      where: `POST classify-region · ${labelCount} labels`,
+      context: ['PDF export fell back to the deterministic region labels'],
+    });
     return json({ assignments: {}, pediatric: {} });
   }
 });

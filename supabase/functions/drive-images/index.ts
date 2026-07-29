@@ -22,6 +22,7 @@
 //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN
 //   GOOGLE_DRIVE_FOLDER_ID  (optional — target folder; omit to use Drive root)
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { reportFunctionError } from '../_shared/errorReport.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -145,6 +146,11 @@ async function driveDelete(token: string, id: string): Promise<void> {
 Deno.serve(async req => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
 
+  // Held outside the try so a failure report can name which action failed —
+  // a Drive rate limit on upload and a permission error on get are different
+  // problems with the same message.
+  let action: unknown = 'unknown';
+
   try {
     // Reject anyone without a valid Supabase session. Staff legitimately
     // authenticate via an anonymous session (see AuthGate.tsx's
@@ -161,7 +167,7 @@ Deno.serve(async req => {
     if (userError || !userData.user) return json({ error: 'not authenticated' }, 401);
 
     const payload = await req.json();
-    const action = payload?.action;
+    action = payload?.action;
     const token = await getAccessToken();
 
     // upload/delete are only ever legitimately performed by the fellow who
@@ -241,6 +247,10 @@ Deno.serve(async req => {
     return json({ error: `unknown action: ${action}` }, 400);
   } catch (err) {
     console.error(err);
+    reportFunctionError('drive-images', err, {
+      where: `POST drive-images · action=${typeof action === 'string' ? action : 'unknown'}`,
+      context: ['Responded 500 — the image operation failed'],
+    });
     return json({ error: err instanceof Error ? err.message : 'unexpected error' }, 500);
   }
 });

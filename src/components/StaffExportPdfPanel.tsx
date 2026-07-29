@@ -13,6 +13,7 @@ import {
 import { uniqueAiTexts } from '../lib/pdf/regionCategory';
 import { clustersFor } from '../lib/pdf/clusterCache';
 import { describeError } from '../lib/errors';
+import { reportError } from '../lib/errorReport';
 import type { StaffCaseEntry } from '../types';
 
 interface StaffExportPdfPanelProps {
@@ -160,6 +161,11 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
       setDone(DONE_NOTE[result] ?? '');
     } catch (err) {
       console.error(err);
+      reportError(err, {
+        component: 'Export PDF (staff)',
+        where: 'generateStaffLogbookBlob → deliverPdf',
+        context: [`${selected.length} cases · ${rangeLabel(from, to)}`],
+      });
       setError(describeError(err));
     } finally {
       setBusy(false);

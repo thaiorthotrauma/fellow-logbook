@@ -12,6 +12,8 @@
 // Notifications are advisory: when the secrets are absent, sends are skipped
 // rather than failing, so the app keeps working with Telegram unconfigured.
 
+import { deliveryGapMessage } from './errorMessage.ts';
+
 /** Read per call rather than once at module load: a warm isolate would
  *  otherwise keep serving the values captured at cold start, so correcting a
  *  secret would appear to have no effect until the function was redeployed.
@@ -36,6 +38,80 @@ export interface SendResult {
   error?: string;
 }
 
+/** Telegram failing is the one fault that cannot be reported through the
+ *  channel it is about. Until now every caller logged it to a console nobody
+ *  reads, so a rate-limited or misconfigured bot looked exactly like a quiet
+ *  week. Failed sends leave their headline here, and the next send that
+ *  SUCCEEDS leads with a summary of the gap.
+ *
+ *  Deliberately not a retry queue: nothing is stored and nothing is replayed.
+ *  The alert is that a gap happened, not what was in it. An isolate recycled
+ *  before it recovers loses the buffer, and a total Telegram outage is
+ *  invisible by construction — both accepted, because these are advisory
+ *  notifications and every one of them is also a console.error, which leaves
+ *  Supabase's function logs as the system of record. */
+interface Gap {
+  headlines: string[];
+  from: Date;
+  to: Date;
+  lastError: string;
+}
+let gap: Gap | null = null;
+
+/** Guards against the obvious recursion: a failed gap report must never
+ *  itself be buffered and reported. */
+let reportingGap = false;
+
+const MAX_GAP_HEADLINES = 5;
+
+/** The first line of a message with its tags stripped — "🔴 Function error ·
+ *  drive-images". Derived rather than passed in so every existing caller
+ *  keeps working unchanged. */
+function headlineOf(html: string): string {
+  const firstLine = html.split('\n', 1)[0] ?? '';
+  return firstLine
+    .replace(/<[^>]*>/g, '')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .trim();
+}
+
+function recordGap(html: string, error: string): void {
+  if (reportingGap) return;
+  const now = new Date();
+  if (gap === null) {
+    gap = { headlines: [], from: now, to: now, lastError: error };
+  }
+  gap.to = now;
+  gap.lastError = error;
+  // Keep the first few: which failure started the gap is more useful than
+  // which one happened to be last, and the count is reported in full anyway.
+  if (gap.headlines.length < MAX_GAP_HEADLINES) gap.headlines.push(headlineOf(html));
+  else gap.headlines.length = MAX_GAP_HEADLINES;
+}
+
+/** Emits the gap summary, if one is pending, before the message that proved
+ *  sending works again. Failures here are dropped rather than re-buffered —
+ *  the caller's own message is what matters. */
+async function flushGap(token: string, chatId: string): Promise<void> {
+  const pending = gap;
+  if (pending === null) return;
+  gap = null;
+  reportingGap = true;
+  try {
+    await postMessage(
+      token,
+      chatId,
+      deliveryGapMessage(pending.lastError, pending.headlines, pending.from, pending.to),
+    );
+  } catch (err) {
+    console.error('Telegram gap report failed:', err);
+  } finally {
+    reportingGap = false;
+  }
+}
+
 async function postMessage(token: string, chatId: string, html: string): Promise<SendResult> {
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
@@ -50,11 +126,15 @@ async function postMessage(token: string, chatId: string, html: string): Promise
       }),
     });
     if (!res.ok) {
-      return { sent: false, error: `telegram ${res.status}: ${await res.text()}` };
+      const error = `telegram ${res.status}: ${await res.text()}`;
+      recordGap(html, error);
+      return { sent: false, error };
     }
     return { sent: true };
   } catch (err) {
-    return { sent: false, error: err instanceof Error ? err.message : 'send failed' };
+    const error = err instanceof Error ? err.message : 'send failed';
+    recordGap(html, error);
+    return { sent: false, error };
   }
 }
 
@@ -64,8 +144,10 @@ async function postMessage(token: string, chatId: string, html: string): Promise
 export async function sendTelegram(html: string): Promise<SendResult> {
   const { token, chatId } = config();
   if (token === '' || chatId === '') {
+    // Not a delivery gap: nothing is broken, Telegram simply isn't set up.
     return { sent: false, error: 'telegram not configured' };
   }
+  await flushGap(token, chatId);
   return postMessage(token, chatId, html);
 }
 

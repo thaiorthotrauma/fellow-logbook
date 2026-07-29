@@ -320,3 +320,223 @@ $$;
 
 revoke all on function public.staff_can_view_image(text) from public;
 grant execute on function public.staff_can_view_image(text) to authenticated;
+
+-- ── Error notification flood control ────────────────────────────────────────
+-- Backs the Telegram error alerts (see TELEGRAM_ERRORS.md). A Drive rate limit
+-- or an expired token fails on every request; without a ceiling one bad
+-- afternoon buries the chat, including the case notifications the chat exists
+-- for. Counting lives here rather than in the Edge Functions because isolates
+-- are recycled — in-memory counters would reset mid-storm and defeat the mute
+-- exactly when it matters — and because several isolates report concurrently,
+-- which only a single atomic statement can count correctly.
+
+create table if not exists public.error_events (
+  fingerprint text primary key,
+  headline text not null,
+  origin text not null default '',
+  message text not null,
+  first_seen timestamptz not null default now(),
+  last_seen timestamptz not null default now(),
+  window_started_at timestamptz not null default now(),
+  occurrences int not null default 0,
+  sent int not null default 0,
+  muted_until timestamptz,
+  people text[] not null default '{}'
+);
+
+create index if not exists error_events_muted_idx
+  on public.error_events (muted_until)
+  where muted_until is not null;
+
+-- One row, holding the hourly ceiling across every fingerprint.
+create table if not exists public.error_budget (
+  id boolean primary key default true check (id),
+  window_started_at timestamptz not null default now(),
+  sent int not null default 0
+);
+
+insert into public.error_budget (id) values (true) on conflict (id) do nothing;
+
+alter table public.error_events enable row level security;
+alter table public.error_budget enable row level security;
+
+-- No policies at all: both tables are written only by the Edge Functions
+-- through the service role, which bypasses RLS. Nothing client-side may read
+-- or touch them — a caller able to inflate a counter could mute the alerts
+-- about its own behaviour.
+
+-- Decides whether one occurrence of a fingerprint should be sent, and returns
+-- any rollups that fell due, in a single round trip.
+--
+-- Rules (all of them here, so there is one place to read them):
+--   * The first p_full_sends occurrences of a fingerprint send in full
+--     (3 normally) — enough to see whether it is one fellow or everyone.
+--   * The last of those mutes it for an hour and says so, so the silence that
+--     follows is never ambiguous.
+--   * When the mute expires with unreported occurrences, the next report of
+--     ANY error flushes a rollup for it. There is no cron in this schema, so
+--     a rollup rides along with the next thing that happens; if the whole app
+--     goes quiet, nothing is pending to report anyway.
+--   * A window that passes with no occurrences resets, so a bug that returns
+--     tomorrow is announced again rather than staying silently muted.
+--   * 40 alerts an hour across every fingerprint, after which only rollups
+--     get through. Reaching the ceiling is itself announced, once.
+create or replace function public.error_gate(
+  p_fingerprint text,
+  p_headline text,
+  p_origin text,
+  p_message text,
+  p_person text default null,
+  p_full_sends int default 3
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_now timestamptz := now();
+  v_window constant interval := interval '1 hour';
+  -- Reports arriving without a session (an error thrown before login) are
+  -- capped at one full send instead of three: they are the only unauthenticated
+  -- path into the chat, so their ceiling is the tightest one here.
+  v_full_sends constant int := greatest(1, coalesce(p_full_sends, 3));
+  v_budget constant int := 40;
+  v_row public.error_events;
+  v_pending public.error_events;
+  v_rollups jsonb := '[]'::jsonb;
+  v_budget_row public.error_budget;
+  v_budget_reset boolean := false;
+  v_decision text;
+  v_reset boolean;
+begin
+  -- 1. Flush rollups whose mute has expired with occurrences never reported.
+  --    Capped at 3 per call so one report can't turn into a burst of its own.
+  for v_pending in
+    select * from public.error_events
+    where muted_until is not null
+      and muted_until <= v_now
+      and occurrences > sent
+    order by last_seen desc
+    limit 3
+    for update skip locked
+  loop
+    v_rollups := v_rollups || jsonb_build_object(
+      'fingerprint', v_pending.fingerprint,
+      'headline', v_pending.headline,
+      'origin', v_pending.origin,
+      'message', v_pending.message,
+      'suppressed', v_pending.occurrences - v_pending.sent,
+      'since', v_pending.window_started_at,
+      'last_seen', v_pending.last_seen,
+      'people_affected', coalesce(array_length(v_pending.people, 1), 0),
+      -- Still arriving in the last five minutes means the storm is ongoing,
+      -- so the rollup re-mutes instead of reopening the floodgates.
+      'still_muted', v_pending.last_seen > v_now - interval '5 minutes'
+    );
+
+    update public.error_events
+    set window_started_at = v_now,
+        first_seen = v_now,
+        occurrences = 0,
+        sent = 0,
+        people = '{}',
+        muted_until = case
+          when v_pending.last_seen > v_now - interval '5 minutes' then v_now + v_window
+          else null
+        end
+    where fingerprint = v_pending.fingerprint;
+  end loop;
+
+  -- 2. Record this occurrence. A window that elapsed without muting starts
+  --    over, so the same bug next week is announced rather than swallowed.
+  insert into public.error_events as e (
+    fingerprint, headline, origin, message,
+    first_seen, last_seen, window_started_at, occurrences, sent, people
+  )
+  values (
+    p_fingerprint, p_headline, p_origin, p_message,
+    v_now, v_now, v_now, 1, 0,
+    case when p_person is null then '{}'::text[] else array[p_person] end
+  )
+  on conflict (fingerprint) do update
+  set
+    headline = excluded.headline,
+    origin = excluded.origin,
+    message = excluded.message,
+    last_seen = v_now,
+    window_started_at = case
+      when e.muted_until is null and e.window_started_at < v_now - v_window
+      then v_now else e.window_started_at end,
+    occurrences = case
+      when e.muted_until is null and e.window_started_at < v_now - v_window
+      then 1 else e.occurrences + 1 end,
+    sent = case
+      when e.muted_until is null and e.window_started_at < v_now - v_window
+      then 0 else e.sent end,
+    people = case
+      when e.muted_until is null and e.window_started_at < v_now - v_window
+      then (case when p_person is null then '{}'::text[] else array[p_person] end)
+      when p_person is null or p_person = any (e.people) then e.people
+      else e.people || p_person end
+  returning * into v_row;
+
+  -- 3. Decide.
+  if v_row.muted_until is not null and v_row.muted_until > v_now then
+    v_decision := 'muted';
+  elsif v_row.sent >= v_full_sends then
+    v_decision := 'muted';
+  else
+    -- Hourly ceiling, rolled lazily on read for the same reason as above:
+    -- no cron, and a stale window must not permanently silence the chat.
+    select * into v_budget_row from public.error_budget where id limit 1 for update;
+    if v_budget_row is null then
+      insert into public.error_budget (id) values (true)
+      on conflict (id) do nothing;
+      select * into v_budget_row from public.error_budget where id limit 1 for update;
+    end if;
+
+    v_reset := v_budget_row.window_started_at < v_now - v_window;
+    if v_reset then
+      update public.error_budget
+      set window_started_at = v_now, sent = 0
+      where id
+      returning * into v_budget_row;
+    end if;
+
+    if v_budget_row.sent >= v_budget then
+      v_decision := 'budget';
+    else
+      v_decision := 'send';
+      update public.error_budget set sent = sent + 1 where id
+      returning * into v_budget_row;
+      -- Announce the ceiling on the send that reaches it, not after.
+      v_budget_reset := v_budget_row.sent = v_budget;
+
+      update public.error_events
+      set sent = sent + 1,
+          muted_until = case
+            when sent + 1 >= v_full_sends then v_now + v_window
+            else muted_until end
+      where fingerprint = p_fingerprint
+      returning * into v_row;
+    end if;
+  end if;
+
+  return jsonb_build_object(
+    'decision', v_decision,
+    'occurrences', v_row.occurrences,
+    'sent', v_row.sent,
+    'window_started_at', v_row.window_started_at,
+    'muted_until', v_row.muted_until,
+    'budget_reached', v_budget_reset,
+    'budget_resumes_at', coalesce(v_budget_row.window_started_at, v_now) + v_window,
+    'rollups', v_rollups
+  );
+end;
+$$;
+
+-- Only the service role may call this: a caller that could inflate a counter
+-- could mute the alerts about its own behaviour. Every reporter runs inside an
+-- Edge Function, so nothing client-side ever needs it.
+revoke all on function public.error_gate(text, text, text, text, text, int) from public;

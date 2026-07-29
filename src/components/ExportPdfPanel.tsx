@@ -12,6 +12,7 @@ import {
 import { uniqueAiTexts } from '../lib/pdf/regionCategory';
 import { clustersFor } from '../lib/pdf/clusterCache';
 import { describeError } from '../lib/errors';
+import { reportError } from '../lib/errorReport';
 import type { CaseEntry } from '../types';
 
 interface ExportPdfPanelProps {
@@ -100,6 +101,11 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
       setDone(DONE_NOTE[result] ?? '');
     } catch (err) {
       console.error(err);
+      reportError(err, {
+        component: 'Export PDF',
+        where: 'generateLogbookBlob → deliverPdf',
+        context: [`${selected.length} cases · ${rangeLabel(from, to)}`],
+      });
       setError(describeError(err));
     } finally {
       setBusy(false);

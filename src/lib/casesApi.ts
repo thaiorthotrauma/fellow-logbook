@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { entryToRow, fromRow, toRow, type CaseRow } from './caseMapping';
+import { reportDegraded, reportError } from './errorReport';
 import type { CaseEntry, FormState } from '../types';
 
 const DRIVE_FN = 'drive-images';
@@ -158,9 +159,21 @@ export async function notifyCase(
     const body: Record<string, unknown> = { kind, caseId };
     if (previous) body.previous = previous;
     const { error } = await supabase.functions.invoke(NOTIFY_FN, { body });
-    if (error) console.error('Case notification failed:', error);
+    if (error) {
+      console.error('Case notification failed:', error);
+      reportDegraded(error, {
+        component: 'Case notification',
+        where: `notifyCase(${kind}) → notify-case`,
+        context: ['The case itself saved; only its Telegram notification was lost'],
+      });
+    }
   } catch (err) {
     console.error('Case notification failed:', err);
+    reportDegraded(err, {
+      component: 'Case notification',
+      where: `notifyCase(${kind}) → notify-case`,
+      context: ['The case itself saved; only its Telegram notification was lost'],
+    });
   }
 }
 
@@ -201,6 +214,12 @@ export async function getImageUrlsPositional(fileIds: string[]): Promise<(string
         return `data:${contentType};base64,${dataBase64}`;
       } catch (err) {
         console.error('Failed to load case image from Drive:', err);
+        // One image of a set failing is survivable — the rest still render —
+        // but a Drive token that expired fails every one of them.
+        reportDegraded(err, {
+          component: 'Load case image',
+          where: 'getImageUrlsPositional → drive-images (get)',
+        });
         return null;
       }
     }),
@@ -225,6 +244,13 @@ export async function deleteDriveImages(ids: string[]): Promise<void> {
     await invokeDrive({ action: 'delete', ids });
   } catch (err) {
     console.error('Failed to remove orphaned images from Drive:', err);
+    // Orphaned patient images left in Drive: nothing the person sees, and
+    // exactly the sort of thing that is never noticed without an alert.
+    reportError(err, {
+      component: 'Delete orphaned images',
+      where: 'deleteDriveImages → drive-images (delete)',
+      context: [`${ids.length} files left in Drive`],
+    });
   }
 }
 

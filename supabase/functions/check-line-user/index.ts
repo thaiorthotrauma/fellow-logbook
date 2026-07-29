@@ -7,6 +7,7 @@
 //           whitelist + OTP verification. Client shows the email entry screen.
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyLineIdToken } from '../_shared/line.ts';
+import { reportFunctionError } from '../_shared/errorReport.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 // After a project migrates to JWT Signing Keys (ES256), the auto-injected
@@ -70,6 +71,10 @@ Deno.serve(async req => {
     return json({ status: 'verified', email: fellow.email, redeem_token: redeemToken });
   } catch (err) {
     console.error(err);
+    reportFunctionError('check-line-user', err, {
+      where: 'POST check-line-user',
+      context: ['Responded 400 — the fellow could not start a session'],
+    });
     return json({ error: err instanceof Error ? err.message : 'unexpected error' }, 400);
   }
 });

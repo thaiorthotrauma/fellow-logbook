@@ -19,6 +19,7 @@ import { getAppView } from './lib/appView';
 import { DEMO_FULL_ACCESS_LINE_USER_IDS, getLineUserId } from './lib/liff';
 import { parseAoCode } from './lib/aoCode';
 import { describeError } from './lib/errors';
+import { reportError } from './lib/errorReport';
 import { emptyAo, emptyForm, formFromEntry, type AoState, type CaseEntry, type FormState, type StaffCaseEntry } from './types';
 import NewEntryForm from './components/NewEntryForm';
 import CaseLog from './components/CaseLog';
@@ -74,10 +75,12 @@ function App() {
     Promise.all([
       fetchCurrentFellow().catch(err => {
         console.error(err);
+        reportError(err, { component: 'Load profile', where: 'fetchCurrentFellow' });
         return null;
       }),
       fetchStaffProfile().catch(err => {
         console.error(err);
+        reportError(err, { component: 'Load profile', where: 'fetchStaffProfile' });
         return null;
       }),
     ])
@@ -91,6 +94,7 @@ function App() {
             .then(c => !cancelled && setCases(c))
             .catch(err => {
               console.error(err);
+              reportError(err, { component: 'Load cases', where: 'fetchCases' });
               if (!cancelled) {
                 setToast({ message: 'Could not load your cases. Check your connection and reload.', sticky: false });
               }
@@ -101,6 +105,7 @@ function App() {
             .then(c => !cancelled && setStaffCases(c))
             .catch(err => {
               console.error(err);
+              reportError(err, { component: 'Load cases', where: 'fetchStaffCases' });
               if (!cancelled) {
                 setToast({ message: 'Could not load cases. Check your connection and reload.', sticky: false });
               }
@@ -230,6 +235,11 @@ function App() {
       setToast({ message: 'Case updated', sticky: false });
     } catch (err) {
       console.error(err);
+      reportError(err, {
+        component: 'Save case',
+        where: 'updateCase → cases.update',
+        context: [`Editing an existing case · ${images.length} new images`],
+      });
       // The row still references the original images, so this edit's uploads
       // are now orphaned — remove them.
       void deleteDriveImages(addedIds);
@@ -283,6 +293,11 @@ function App() {
       setToast({ message: 'Case saved to logbook', sticky: false });
     } catch (err) {
       console.error(err);
+      reportError(err, {
+        component: 'Save case',
+        where: 'saveCase → cases.insert',
+        context: [`New Entry · ${images.length} images`],
+      });
       // If images uploaded but the row didn't save, remove the now-orphaned
       // Drive files so patient images don't linger unreferenced.
       void deleteDriveImages(imagePaths);
@@ -312,6 +327,10 @@ function App() {
       await deleteCaseById(id, target?.imagePaths ?? []);
     } catch (err) {
       console.error(err);
+      reportError(err, {
+        component: 'Delete case',
+        where: 'notifyCase(deleted) → deleteCaseById',
+      });
       setCases(previous);
       setToast({ message: `Could not delete: ${describeError(err)}`, sticky: true });
     }

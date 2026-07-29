@@ -1,3 +1,4 @@
+import { reportDegraded } from './errorReport';
 /** True for HEIC/HEIF files — checked by MIME when present, else by extension
  *  (HEIC files often arrive with an empty `type`). */
 export function isHeic(file: File): boolean {
@@ -20,6 +21,14 @@ export async function heicToJpeg(file: File): Promise<File> {
     return new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified });
   } catch (err) {
     console.error('HEIC → JPEG conversion failed, keeping original:', err);
+    // Nothing visibly broke — the upload carries on with the HEIC — so nobody
+    // will ever report this. Four in half an hour means a phone model is
+    // failing, and only the amber tier surfaces that.
+    reportDegraded(err, {
+      component: 'HEIC conversion',
+      where: 'convertHeic → kept the original file',
+      context: [`${(file.size / 1048576).toFixed(1)} MB HEIC · upload continued`],
+    });
     return file;
   }
 }
