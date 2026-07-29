@@ -9,7 +9,6 @@ import {
   monthFileSegment,
   rangeLabel,
   sortChronological,
-  uniqueLabels,
 } from '../lib/pdf/stats';
 import { uniqueAiTexts } from '../lib/pdf/regionCategory';
 import { clustersFor } from '../lib/pdf/clusterCache';
@@ -96,33 +95,29 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
     !invalidRange &&
     (grouping === 'single' ? !!selectedFellow && fellowCases.length > 0 : selected.length > 0);
 
-  const procLabels = useMemo(() => uniqueLabels(fellowCases, c => c.procedure), [fellowCases]);
   const aiTexts = useMemo(() => uniqueAiTexts(fellowCases), [fellowCases]);
 
-  // Warm the DeepSeek clustering/classification as soon as the selection is
-  // known, so the export click doesn't have to await it. This is what broke
-  // the staff export specifically: an institution-wide range has far more
-  // distinct labels than one fellow's, so the call was slow enough to burn
-  // the tap's user activation and make iOS refuse the share sheet. See
-  // clusterCache.
+  // Warm the DeepSeek classification as soon as the selection is known, so
+  // the export click doesn't have to await it. This is what broke the staff
+  // export specifically: an institution-wide range has far more distinct
+  // texts than one fellow's, so the call was slow enough to burn the tap's
+  // user activation and make iOS refuse the share sheet. See clusterCache.
   useEffect(() => {
-    if (fellowCases.length > 0) void clustersFor(procLabels, aiTexts);
-  }, [fellowCases, procLabels, aiTexts]);
+    if (fellowCases.length > 0) void clustersFor(aiTexts);
+  }, [fellowCases, aiTexts]);
 
   async function generate() {
     setBusy(true);
     setError('');
     setDone('');
     try {
-      // Best-effort AI: grouping of synonymous procedure wording (e.g.
-      // "ORIF" / "open reduction internal fixation"), plus region and
-      // pediatric judgements for the cases the deterministic passes left
-      // open — one merged set of maps shared across every fellow's summary,
-      // however the export is grouped. Falls back to exact-text ranking and
-      // to those passes' own answers on failure. Scoped to fellowCases so a
+      // Best-effort AI region and pediatric judgements for the cases the
+      // deterministic passes left open — one merged set of maps shared across
+      // every fellow's summary, however the export is grouped. Falls back to
+      // those passes' own answers on failure. Scoped to fellowCases so a
       // single-fellow export only covers that fellow's own wording, not the
       // whole institution's. Normally already resolved by the prefetch above.
-      const { procClusters, regionMap, pediatricMap } = await clustersFor(procLabels, aiTexts);
+      const { regionMap, pediatricMap } = await clustersFor(aiTexts);
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
       const { generateLogbookBlob, generateStaffLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
 
@@ -136,7 +131,6 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
               cases: selected,
               regionMap,
               pediatricMap,
-              procClusters,
             })
           : grouping === 'single'
             ? await generateLogbookBlob({
@@ -147,7 +141,6 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
                 cases: fellowCases,
                 regionMap,
                 pediatricMap,
-                procClusters,
               })
             : await generateStaffLogbookBlob({
                 institution,
@@ -156,7 +149,6 @@ export default function StaffExportPdfPanel({ cases, institution, profileLoading
                 fellows: groupByFellow(selected),
                 regionMap,
                 pediatricMap,
-                procClusters,
               });
 
       const result = await deliverPdf(blob, pdfFileName(institution, grouping, from, to, selectedFellow));

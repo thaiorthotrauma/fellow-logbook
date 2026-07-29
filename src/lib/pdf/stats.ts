@@ -47,60 +47,15 @@ export function sortChronological<T extends CaseEntry>(cases: T[]): T[] {
 }
 
 /** Collapse whitespace/newlines and strip leading bullet markers so free-text
- *  entries that differ only in spacing/bullets rank together. Exported so the
- *  AI clustering step (clusterLabels.ts) can key its groupings on exactly the
- *  same normalized text that topN groups on. */
+ *  entries that differ only in spacing/bullets group together. Exported so
+ *  the AI classification step (classifyRegion.ts) keys its answers on exactly
+ *  the same normalized text the lookups in regionCategory.ts use. */
 export function normalizeLabel(raw: string): { key: string; label: string } {
   const label = raw
     .replace(/^[-\s]+/gm, '')
     .replace(/\s+/g, ' ')
     .trim();
   return { key: label.toLowerCase(), label };
-}
-
-/** The distinct normalized values of a free-text field, one per underlying
- *  wording — the small set actually worth sending to the AI clustering call,
- *  instead of one entry per case. */
-export function uniqueLabels(cases: CaseEntry[], pick: (c: CaseEntry) => string): string[] {
-  const seen = new Map<string, string>();
-  for (const c of cases) {
-    const raw = pick(c);
-    if (!raw || !raw.trim()) continue;
-    const { key, label } = normalizeLabel(raw);
-    if (!seen.has(key)) seen.set(key, label);
-  }
-  return [...seen.values()];
-}
-
-/** Top `n` most frequent values of a free-text field, by normalized text.
- *  Ties break alphabetically for a deterministic order. Empty values ignored.
- *
- *  `clusters`, when given, maps a normalized key (normalizeLabel(x).key) to a
- *  canonical display label — entries whose key resolves to the same
- *  canonical label count together (e.g. "ORIF" and "open reduction internal
- *  fixation" both roll up under whichever canonical label the AI clustering
- *  step chose). Omitted or empty, this behaves exactly as exact-text
- *  ranking did before AI clustering existed. */
-export function topN(
-  cases: CaseEntry[],
-  pick: (c: CaseEntry) => string,
-  n: number,
-  clusters?: ReadonlyMap<string, string>,
-): RankItem[] {
-  const map = new Map<string, RankItem>();
-  for (const c of cases) {
-    const raw = pick(c);
-    if (!raw || !raw.trim()) continue;
-    const { key, label } = normalizeLabel(raw);
-    const display = clusters?.get(key) ?? label;
-    const groupKey = display.toLowerCase();
-    const existing = map.get(groupKey);
-    if (existing) existing.count += 1;
-    else map.set(groupKey, { label: display, count: 1 });
-  }
-  return [...map.values()]
-    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
-    .slice(0, n);
 }
 
 /** Category counts for a pie chart, in the canonical option order, omitting

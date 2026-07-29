@@ -28,6 +28,23 @@ export const s = StyleSheet.create({
   sectionRow: { flexDirection: 'row', gap: 18, marginBottom: 18 },
   col: { flex: 1 },
   sectionTitle: { fontSize: 12.5, fontWeight: 700, color: INK, marginBottom: 7, paddingBottom: 3, borderBottomWidth: 1, borderBottomColor: LINE },
+  // Same rule, but reserving two lines' height. The two side-by-side section
+  // titles differ in length ("Top 5 Operated Regions" fits one line, the
+  // pelvis/acetabulum heading wraps to two), and without a floor the shorter
+  // one would start its rows higher than its neighbour's.
+  sectionTitleTall: {
+    fontSize: 12.5, fontWeight: 700, color: INK, marginBottom: 7, paddingBottom: 3,
+    borderBottomWidth: 1, borderBottomColor: LINE, minHeight: 34,
+  },
+
+  // Role × region counts table (pelvis/acetabulum experience).
+  tableHeadRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 5 },
+  tableRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  tableTotalRow: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: LINE, paddingTop: 5, marginTop: 1 },
+  tableLabel: { flex: 1, fontSize: 11, color: '#24302e', paddingRight: 4 },
+  tableHeadNum: { width: 50, fontSize: 8.5, color: MUTED, textAlign: 'right' },
+  tableNum: { width: 50, fontSize: 11, textAlign: 'right' },
+  tableStrong: { fontWeight: 700 },
 
   rankRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 5 },
   rankNum: { width: 16, fontSize: 11, fontWeight: 700, color: TEAL },

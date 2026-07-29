@@ -15,12 +15,11 @@ export interface StaffLogbookPdfProps {
   rangeLabel: string;
   /** One summary + content page pair per fellow, in this order. */
   fellows: FellowGroup[];
-  /** AI-derived region classification and procedure-synonym groupings,
-   *  computed once over every fellow's cases in range and shared across each
-   *  fellow's summary page — see classifyRegion.ts / clusterLabels.ts. */
+  /** AI-derived region and pediatric classification, computed once over every
+   *  fellow's cases in range and shared across each fellow's summary page —
+   *  see classifyRegion.ts. */
   regionMap?: ReadonlyMap<string, string>;
   pediatricMap?: ReadonlyMap<string, boolean>;
-  procClusters?: ReadonlyMap<string, string>;
 }
 
 /** The "by fellow" export: each fellow gets their own summary page followed
@@ -35,7 +34,6 @@ export default function StaffLogbookPdf({
   fellows,
   regionMap,
   pediatricMap,
-  procClusters,
 }: StaffLogbookPdfProps) {
   return (
     <Document title={`TOTS Logbook — ${institution}`} author={institution}>
@@ -49,7 +47,6 @@ export default function StaffLogbookPdf({
             cases={f.cases}
             regionMap={regionMap}
             pediatricMap={pediatricMap}
-            procClusters={procClusters}
           />
           <ContentPage runHeaderName={`${f.fellowName}, ${institution}`} cases={f.cases} />
         </Fragment>

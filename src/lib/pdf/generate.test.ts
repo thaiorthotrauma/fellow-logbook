@@ -82,7 +82,6 @@ const base = {
   yearLabel: '2026–2027',
   rangeLabel: 'July 2026',
   regionMap: new Map<string, string>(),
-  procClusters: new Map<string, string>(),
 };
 
 function bulkCases(n: number): CaseEntry[] {
@@ -100,7 +99,6 @@ describe('generateLogbookBlob (fellow export)', () => {
       rangeLabel: 'July 2026',
       cases,
       regionMap: new Map(),
-      procClusters: new Map(),
     });
 
     expect(pdf.startsWith('%PDF-')).toBe(true);
@@ -157,7 +155,6 @@ describe('generateLogbookBlob (fellow export)', () => {
       ...base,
       cases: withUnclassified,
       regionMap: new Map([['tibial plateau fracture', 'Tibia / Fibula (Leg) – Tibia – Proximal']]),
-      procClusters: new Map([['orif', 'Open reduction internal fixation']]),
     });
 
     for (const pdf of [withoutClusters, withClusters]) {

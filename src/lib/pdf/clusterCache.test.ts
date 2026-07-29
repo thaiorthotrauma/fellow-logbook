@@ -1,82 +1,69 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-// Mocked so these tests assert how often the (slow, network-bound) clustering
-// / classification calls are actually made — which is the whole point of the
+// Mocked so these tests assert how often the (slow, network-bound)
+// classification call is actually made — which is the whole point of the
 // cache.
-const { clusterLabels, classifyRegions } = vi.hoisted(() => ({
-  clusterLabels: vi.fn(),
-  classifyRegions: vi.fn(),
-}));
-vi.mock('./clusterLabels', () => ({ clusterLabels }));
+const { classifyRegions } = vi.hoisted(() => ({ classifyRegions: vi.fn() }));
 vi.mock('./classifyRegion', () => ({ classifyRegions }));
 
 import { clustersFor } from './clusterCache';
 
+const emptyResult = () => ({ regionMap: new Map(), pediatricMap: new Map() });
+
 describe('clustersFor', () => {
   afterEach(() => {
-    clusterLabels.mockReset();
     classifyRegions.mockReset();
     vi.resetModules();
   });
 
   it('reuses the warm promise, so an export click awaits no new network call', async () => {
-    clusterLabels.mockResolvedValue(new Map());
-    classifyRegions.mockResolvedValue({ regionMap: new Map(), pediatricMap: new Map() });
-    const proc = ['plate', 'plating'];
-    const unclassified = ['ORIF of femur no code'];
+    classifyRegions.mockResolvedValue(emptyResult());
+    const texts = ['ORIF of femur no code', 'acetabular fracture'];
 
     // The panel's useEffect prefetch, as soon as the selection is known.
-    const prefetched = clustersFor(proc, unclassified);
+    const prefetched = clustersFor(texts);
     await prefetched;
-    const callsAfterPrefetch = clusterLabels.mock.calls.length + classifyRegions.mock.calls.length;
+    const callsAfterPrefetch = classifyRegions.mock.calls.length;
 
     // The export click. This is the regression guard: if this awaited a fresh
     // round-trip it would burn the tap's user activation and iOS would refuse
     // navigator.share() — the original bug.
-    const onClick = clustersFor(proc, unclassified);
+    const onClick = clustersFor(texts);
 
     expect(onClick).toBe(prefetched);
-    expect(clusterLabels.mock.calls.length + classifyRegions.mock.calls.length).toBe(callsAfterPrefetch);
+    expect(classifyRegions.mock.calls.length).toBe(callsAfterPrefetch);
   });
 
-  it('keys on label content, not array identity, so re-renders reuse the cache', async () => {
-    clusterLabels.mockResolvedValue(new Map());
-    classifyRegions.mockResolvedValue({ regionMap: new Map(), pediatricMap: new Map() });
-    await clustersFor(['c'], ['a', 'b']);
-    const after = clusterLabels.mock.calls.length;
+  it('keys on text content, not array identity, so re-renders reuse the cache', async () => {
+    classifyRegions.mockResolvedValue(emptyResult());
+    await clustersFor(['a', 'b']);
+    const after = classifyRegions.mock.calls.length;
 
     // Fresh arrays with identical contents — what a React re-render produces.
-    await clustersFor(['c'], ['a', 'b']);
-    expect(clusterLabels.mock.calls.length).toBe(after);
+    await clustersFor(['a', 'b']);
+    expect(classifyRegions.mock.calls.length).toBe(after);
   });
 
   it('re-runs when the selection actually changes', async () => {
-    clusterLabels.mockResolvedValue(new Map());
-    classifyRegions.mockResolvedValue({ regionMap: new Map(), pediatricMap: new Map() });
-    await clustersFor(['c'], ['a', 'b']);
-    const after = clusterLabels.mock.calls.length;
+    classifyRegions.mockResolvedValue(emptyResult());
+    await clustersFor(['a', 'b']);
+    const after = classifyRegions.mock.calls.length;
 
-    await clustersFor(['c'], ['a', 'b', 'd']);
-    expect(classifyRegions.mock.calls.length).toBeGreaterThan(0);
-    expect(clusterLabels.mock.calls.length).toBeGreaterThan(after);
+    await clustersFor(['a', 'b', 'd']);
+    expect(classifyRegions.mock.calls.length).toBeGreaterThan(after);
   });
 
-  it('passes procedure labels and unclassified region texts through to their own calls', async () => {
-    clusterLabels.mockResolvedValue(new Map());
-    classifyRegions.mockResolvedValue({ regionMap: new Map(), pediatricMap: new Map() });
-    await clustersFor(['proc1', 'proc2'], ['text1', 'text2']);
-
-    expect(clusterLabels).toHaveBeenCalledWith(['proc1', 'proc2']);
+  it('passes the texts through unchanged', async () => {
+    classifyRegions.mockResolvedValue(emptyResult());
+    await clustersFor(['text1', 'text2']);
     expect(classifyRegions).toHaveBeenCalledWith(['text1', 'text2']);
   });
 
   it('degrades to empty maps rather than rejecting into the export', async () => {
-    clusterLabels.mockRejectedValue(new Error('deepseek down'));
     classifyRegions.mockRejectedValue(new Error('deepseek down'));
-    // Clustering/classification only refine rankings, so a failure must never
+    // Classification only refines the summary buckets, so a failure must never
     // surface as a "Could not export" error in generate()'s catch.
-    const { procClusters, regionMap, pediatricMap } = await clustersFor(['z'], ['x']);
-    expect(procClusters.size).toBe(0);
+    const { regionMap, pediatricMap } = await clustersFor(['x']);
     expect(regionMap.size).toBe(0);
     expect(pediatricMap.size).toBe(0);
   });
