@@ -10,7 +10,7 @@ import {
   sortChronological,
   uniqueLabels,
 } from '../lib/pdf/stats';
-import { clusterLabels } from '../lib/pdf/clusterLabels';
+import { clustersFor } from '../lib/pdf/clusterCache';
 import { describeError } from '../lib/errors';
 import type { CaseEntry } from '../types';
 
@@ -33,6 +33,7 @@ function pdfFileName(fellowName: string, from: string, to: string): string {
 // 'shared' has no note: the native share sheet is itself the feedback that
 // the PDF is ready, so an extra message here would just be redundant.
 const DONE_NOTE: Record<string, string> = {
+  opened: 'PDF opened in your browser — save it from there.',
   downloaded: 'PDF downloaded.',
 };
 
@@ -63,19 +64,29 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
   const invalidRange = Boolean(from && to && from > to);
   const canGenerate = !busy && !profileLoading && !!from && !!to && !invalidRange && inRange > 0;
 
+  const selected = useMemo(
+    () => (from && to && from <= to ? sortChronological(filterByMonthRange(cases, from, to)) : []),
+    [cases, from, to],
+  );
+  const dxLabels = useMemo(() => uniqueLabels(selected, c => c.diagnosis), [selected]);
+  const procLabels = useMemo(() => uniqueLabels(selected, c => c.procedure), [selected]);
+
+  // Warm the DeepSeek clustering as soon as the range is known, so the export
+  // click doesn't have to await it — see clusterCache for why that matters.
+  useEffect(() => {
+    if (selected.length > 0) void clustersFor(dxLabels, procLabels);
+  }, [selected, dxLabels, procLabels]);
+
   async function generate() {
     setBusy(true);
     setError('');
     setDone('');
     try {
-      const selected = sortChronological(filterByMonthRange(cases, from, to));
       // Best-effort AI grouping of synonymous diagnosis/procedure wording
       // (e.g. "ORIF" / "open reduction internal fixation") for the summary
       // page's top-5 ranking. Falls back to exact-text ranking on failure.
-      const [dxClusters, procClusters] = await Promise.all([
-        clusterLabels(uniqueLabels(selected, c => c.diagnosis)),
-        clusterLabels(uniqueLabels(selected, c => c.procedure)),
-      ]);
+      // Normally already resolved by the prefetch above.
+      const [dxClusters, procClusters] = await clustersFor(dxLabels, procLabels);
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
       const { generateLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
       const blob = await generateLogbookBlob({
