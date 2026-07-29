@@ -26,18 +26,32 @@ describe('matchScore', () => {
     expect(matchScore('humerus', 'distal radius fracture')).toBeNull();
   });
 
+  it('matches the same term with a different ending', () => {
+    expect(matchScore('pelvis', 'Pelvic ring')).not.toBeNull();
+    expect(matchScore('radius', 'Radial head fracture')).not.toBeNull();
+    expect(matchScore('tibia', 'Tibial plateau')).not.toBeNull();
+    expect(matchScore('malleolus', 'Malleolar fracture')).not.toBeNull();
+  });
+
+  it('does not treat a merely similar-looking longer word as the same term', () => {
+    expect(matchScore('radius', 'radiographic union')).toBeNull();
+    expect(matchScore('distal', 'distraction osteogenesis')).toBeNull();
+  });
+
   it('empty query matches everything with score 0', () => {
     expect(matchScore('', 'anything')).toBe(0);
   });
 
-  it('scores a whole word above a word start, and both above an acronym', () => {
+  it('ranks whole word above word start, above mid-word, above stem, above acronym', () => {
     const whole = matchScore('radius', 'distal radius fracture');
     const wordStart = matchScore('radi', 'distal radius fracture');
     const midWord = matchScore('adius', 'distal radius fracture');
+    const stem = matchScore('radial', 'distal radius fracture');
     const acronym = matchScore('drf', 'distal radius fracture');
     expect(whole!).toBeGreaterThan(wordStart!);
     expect(wordStart!).toBeGreaterThan(midWord!);
-    expect(midWord!).toBeGreaterThan(acronym!);
+    expect(midWord!).toBeGreaterThan(stem!);
+    expect(stem!).toBeGreaterThan(acronym!);
   });
 });
 
@@ -59,8 +73,23 @@ describe('matchScoreWordsAcrossFields', () => {
     'Forearm (Radius / Ulna)',
   ];
 
+  const pelvicRing = [
+    'Pelvic ring injury, APC type II',
+    '',
+    'Anterior',
+    'Open reduction internal fixation with symphyseal plate',
+    '61-B1',
+    'Pelvic ring',
+  ];
+
   it('does not match an unrelated region', () => {
     expect(matchScoreWordsAcrossFields('radius', lateralMalleolus)).toBeNull();
+  });
+
+  it('finds a pelvic ring case when searching the noun "pelvis"', () => {
+    expect(matchScoreWordsAcrossFields('pelvis', pelvicRing)).not.toBeNull();
+    expect(matchScoreWordsAcrossFields('pelvis', lateralMalleolus)).toBeNull();
+    expect(matchScoreWordsAcrossFields('pelvis', distalRadius)).toBeNull();
   });
 
   it('matches a distal radius case via its AO region label', () => {
