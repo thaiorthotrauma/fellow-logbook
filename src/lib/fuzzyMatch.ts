@@ -34,19 +34,30 @@ export function fuzzyScore(query: string, target: string): number | null {
   return score;
 }
 
-/** Multi-word fuzzy match: every whitespace-separated word in `query` must
- *  fuzzy-match somewhere in `target` (AND across words, any order) — so
- *  "distal radius" only matches text containing both. Score is the sum of
- *  each word's `fuzzyScore`; returns `null` if any word fails to match. */
-export function fuzzyScoreWords(query: string, target: string): number | null {
+/** Multi-word, multi-field fuzzy match: every whitespace-separated word in
+ *  `query` must fuzzy-match *within a single field* of `fields` (a word can't
+ *  be satisfied by stitching characters across different fields — only
+ *  `fuzzyScore`'s within-field scattering is allowed). Different words may
+ *  still match different fields. This is what keeps a query like "pelvis"
+ *  from matching a distal-radius case just because its diagnosis, approach,
+ *  procedure, AO code, etc. happen to contain p/e/l/v/i/s in order somewhere
+ *  across that combination of unrelated fields. Score is the sum of each
+ *  word's best per-field `fuzzyScore`; returns `null` if any word fails to
+ *  match every field. */
+export function fuzzyScoreWordsAcrossFields(query: string, fields: string[]): number | null {
   const words = query.trim().split(/\s+/).filter(Boolean);
   if (words.length === 0) return 0;
 
   let total = 0;
   for (const word of words) {
-    const s = fuzzyScore(word, target);
-    if (s === null) return null;
-    total += s;
+    let best: number | null = null;
+    for (const field of fields) {
+      if (!field) continue;
+      const s = fuzzyScore(word, field);
+      if (s !== null && (best === null || s > best)) best = s;
+    }
+    if (best === null) return null;
+    total += best;
   }
   return total;
 }
