@@ -1,9 +1,5 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-// Must be imported before anything else so console/error capture is active
-// for the earliest boot logs (auth bootstrap, etc.).
-import './lib/debugLog.ts'
-import DebugConsole from './components/DebugConsole.tsx'
 // Self-hosted fonts (bundled by Vite, no external CDN dependency).
 // IBM Plex Sans covers Latin; IBM Plex Sans Thai supplies matching Thai
 // glyphs (fellow name / institution) — the browser falls through to it
@@ -33,8 +29,5 @@ const root = getAppView() === 'addperson' ? <AddPersonMiniApp /> : (
 )
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    {root}
-    <DebugConsole />
-  </StrictMode>,
+  <StrictMode>{root}</StrictMode>,
 )
