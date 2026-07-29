@@ -57,17 +57,14 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
   }, [bounds]);
 
   const monthOptions = useMemo(() => (bounds ? monthsBetween(bounds.min, bounds.max) : []), [bounds]);
-  const inRange = useMemo(
-    () => (from && to && from <= to ? filterByMonthRange(cases, from, to).length : 0),
-    [cases, from, to],
-  );
-  const invalidRange = Boolean(from && to && from > to);
-  const canGenerate = !busy && !profileLoading && !!from && !!to && !invalidRange && inRange > 0;
-
   const selected = useMemo(
     () => (from && to && from <= to ? sortChronological(filterByMonthRange(cases, from, to)) : []),
     [cases, from, to],
   );
+  const inRange = selected.length;
+  const invalidRange = Boolean(from && to && from > to);
+  const canGenerate = !busy && !profileLoading && !!from && !!to && !invalidRange && inRange > 0;
+
   const dxLabels = useMemo(() => uniqueLabels(selected, c => c.diagnosis), [selected]);
   const procLabels = useMemo(() => uniqueLabels(selected, c => c.procedure), [selected]);
 
