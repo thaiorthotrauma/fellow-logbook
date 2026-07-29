@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getImageUrlsPositional, isAllowedImage, MAX_IMAGES_TOTAL_BYTES } from '../lib/casesApi';
 import { convertHeicFiles } from '../lib/heic';
 import { resizeImages } from '../lib/imageResize';
+import { reportError } from '../lib/errorReport';
 
 interface ImageUploadProps {
   images: File[];
@@ -36,6 +37,11 @@ function SavedImages({ paths, onRemove }: { paths: string[]; onRemove: (index: n
       .then(u => !cancelled && setUrls(u))
       .catch(err => {
         console.error(err);
+        reportError(err, {
+          component: 'Load case images',
+          where: 'getImageUrlsPositional → drive-images (get)',
+          context: [`${paths.length} images · New Entry`],
+        });
         if (!cancelled) setUrls(paths.map(() => null));
       });
     return () => {

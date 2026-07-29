@@ -16,6 +16,12 @@ import App from './App.tsx'
 import AuthGate from './auth/AuthGate.tsx'
 import AddPersonMiniApp from './admin/AddPersonMiniApp.tsx'
 import { getAppView } from './lib/appView.ts'
+import { installGlobalErrorReporting } from './lib/errorReport.ts'
+
+// Catches what no `catch` block did — a render that threw, a promise nobody
+// awaited — and forwards it to the admin Telegram chat. Installed before
+// anything mounts, so an error during the very first render is still reported.
+installGlobalErrorReporting()
 
 // ?view=addperson is the Telegram Mini App admin form — opened from the
 // bot's menu button, never from LINE. It has its own identity model

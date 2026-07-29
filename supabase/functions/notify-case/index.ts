@@ -23,6 +23,7 @@
 // Required secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID (see _shared/telegram.ts)
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { sendTelegram, telegramConfigured } from '../_shared/telegram.ts';
+import { reportFunctionError } from '../_shared/errorReport.ts';
 import {
   deletedCaseMessage,
   editedCaseMessage,
@@ -124,6 +125,12 @@ Deno.serve(async req => {
     return json({ sent: result.sent });
   } catch (err) {
     console.error(err);
+    // The case notification is what failed, so it can't be the thing that
+    // tells you — hence a separate report on the error path.
+    reportFunctionError('notify-case', err, {
+      where: 'POST notify-case',
+      context: ['Responded 200 — the case itself was saved; only its notification was lost'],
+    });
     // Still a 200: the case is already saved, and the app must not report a
     // failure just because the notification didn't go out.
     return json({ sent: false, error: err instanceof Error ? err.message : 'unexpected error' });

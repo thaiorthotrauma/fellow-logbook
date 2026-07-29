@@ -5,6 +5,7 @@ import { loadTelegramWebApp, type TelegramWebApp } from '../lib/telegramWebApp';
 import { extractLineUserId } from '../lib/lineIdExtract';
 import { INSTITUTIONS } from '../data';
 import './addPerson.css';
+import { reportError } from '../lib/errorReport';
 
 type Role = 'fellow' | 'staff';
 
@@ -122,6 +123,13 @@ export default function AddPersonMiniApp() {
         setBanner({ kind: 'error', text: describeAddError(data) });
       }
     } catch (err) {
+      // The Mini App runs inside Telegram with no Supabase session, so this
+      // reports through the unverified path — still worth having, since the
+      // only other trace is a banner the admin has already dismissed.
+      reportError(err, {
+        component: 'Add Person',
+        where: 'AddPersonMiniApp submit → telegram-add-person',
+      });
       setBanner({ kind: 'error', text: err instanceof Error ? err.message : 'Something went wrong.' });
     } finally {
       setSubmitting(false);

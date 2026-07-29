@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getImageUrls } from '../lib/casesApi';
+import { reportError } from '../lib/errorReport';
 
 /** True for a path that's already a usable image URL rather than a Drive file
  *  id — demo mode's cases hold local `blob:` URLs (there's no Drive behind
@@ -28,6 +29,11 @@ export default function CaseImages({ paths }: { paths: string[] }) {
       .then(u => !cancelled && setUrls(u))
       .catch(err => {
         console.error(err);
+        reportError(err, {
+          component: 'Load case images',
+          where: 'getImageUrls → drive-images (get)',
+          context: [`${paths.length} images · Case Log`],
+        });
         if (!cancelled) setFailed(true);
       });
     return () => {

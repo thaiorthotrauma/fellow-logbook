@@ -7,6 +7,7 @@
 //   { id_token: string }   (from liff.getIDToken())
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyLineIdToken } from '../_shared/line.ts';
+import { reportFunctionError } from '../_shared/errorReport.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 // See check-line-user: prefer an explicitly-set SB_SECRET_KEY (a new
@@ -83,6 +84,10 @@ Deno.serve(async req => {
     return json({ status: 'ok' });
   } catch (err) {
     console.error(err);
+    reportFunctionError('link-line-user', err, {
+      where: 'POST link-line-user',
+      context: ['Responded 400 — this device was not linked to the fellow'],
+    });
     return json({ error: err instanceof Error ? err.message : 'unexpected error' }, 400);
   }
 });

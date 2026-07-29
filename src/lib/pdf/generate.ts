@@ -1,6 +1,7 @@
 import { createElement, type ReactElement } from 'react';
 import { pdf, type DocumentProps } from '@react-pdf/renderer';
 import LogbookPdf, { type LogbookPdfProps } from './LogbookPdf';
+import { reportDegraded } from '../errorReport';
 import StaffLogbookPdf, { type StaffLogbookPdfProps } from './StaffLogbookPdf';
 import { registerPdfFonts } from './fonts';
 import { liff } from '../liff';
@@ -49,6 +50,11 @@ export async function deliverPdf(blob: Blob, filename: string): Promise<Delivery
       // Most likely NotAllowedError: the user activation from the tap expired
       // before the share call. Logged because it silently degrades delivery.
       console.error('PDF share failed, falling back:', err);
+      reportDegraded(err, {
+        component: 'PDF delivery',
+        where: 'navigator.share → fell back to opening the file',
+        context: [`${filename} · ${(blob.size / 1048576).toFixed(1)} MB`],
+      });
     }
   }
 
@@ -63,6 +69,11 @@ export async function deliverPdf(blob: Blob, filename: string): Promise<Delivery
     }
   } catch (err) {
     console.error('PDF liff.openWindow failed, falling back:', err);
+    reportDegraded(err, {
+      component: 'PDF delivery',
+      where: 'liff.openWindow → fell back to a download link',
+      context: [`${filename} · ${(blob.size / 1048576).toFixed(1)} MB`],
+    });
   }
 
   const a = document.createElement('a');

@@ -37,6 +37,7 @@ import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { timingSafeEqual } from '../_shared/security.ts';
 import { sendTelegramTo } from '../_shared/telegram.ts';
 import { linkRichMenuToUser } from '../_shared/line.ts';
+import { reportError, reportFunctionError, reportRejected } from '../_shared/errorReport.ts';
 import {
   addUsageMessage,
   addedMessage,
@@ -94,6 +95,14 @@ Deno.serve(async req => {
     const provided = (req.headers.get('x-telegram-bot-api-secret-token') ?? '').trim();
     if (WEBHOOK_SECRET === '' || !timingSafeEqual(provided, WEBHOOK_SECRET)) {
       console.error('Rejected webhook call with an invalid secret token');
+      void reportRejected('Telegram webhook', 'Telegram webhook', 'X-Telegram-Bot-Api-Secret-Token did not match', [
+        WEBHOOK_SECRET === ''
+          ? 'TELEGRAM_WEBHOOK_SECRET is not set on this deployment'
+          : provided === ''
+            ? 'Header absent'
+            : 'Header present but wrong',
+        'Answered 401',
+      ]);
       return new Response('invalid secret token', { status: 401 });
     }
 
@@ -107,6 +116,10 @@ Deno.serve(async req => {
     // Gate 2. Silence, not a rejection message — see the file header.
     if (!ADMIN_IDS.has(String(senderId))) {
       console.error(`Ignored command from non-admin Telegram id ${senderId}`);
+      void reportRejected('Roster command', 'Telegram webhook', 'Command from an id outside TELEGRAM_ADMIN_IDS', [
+        ['Telegram id', String(senderId)],
+        'Ignored in silence — the sender was told nothing',
+      ]);
       return new Response('ok');
     }
 
@@ -231,6 +244,22 @@ Deno.serve(async req => {
           richMenuStatus = 'linked';
         } catch (err) {
           console.error('Automatic staff rich menu assignment failed:', err);
+          // The staff row was still created, so /addstaff succeeded — but the
+          // manual curl in line-oa/README.md is now needed for this person,
+          // and only an alert will tell anyone that.
+          void reportError({
+            kind: 'LINE API error',
+            component: 'Rich menu',
+            origin: 'LINE via telegram-webhook',
+            error: err,
+            where: 'linkRichMenuToUser → POST /v2/bot/user/{id}/richmenu/{menu}',
+            context: [
+              'Staff added by /addstaff — menu not assigned',
+              ['LINE user', parsed.value.lineUserId],
+              ['Rich menu', LINE_STAFF_RICH_MENU_ID],
+              'Failed all 3 attempts',
+            ],
+          });
           richMenuStatus = 'failed';
         }
       }
@@ -244,6 +273,10 @@ Deno.serve(async req => {
     return new Response('ok');
   } catch (err) {
     console.error(err);
+    reportFunctionError('telegram-webhook', err, {
+      where: 'POST telegram-webhook',
+      context: ['Answered 200 so Telegram will not retry this update'],
+    });
     // Still 200: an error here shouldn't make Telegram retry the same update.
     return new Response('ok');
   }

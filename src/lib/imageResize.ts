@@ -3,6 +3,8 @@
 // also strips EXIF metadata (camera GPS/timestamp) and bakes in the correct
 // orientation — a small privacy bonus.
 
+import { reportDegraded } from './errorReport';
+
 const MAX_EDGE = 2048; // longest side, in px; images larger than this are shrunk
 const JPEG_QUALITY = 0.92;
 
@@ -34,6 +36,11 @@ export async function resizeImage(file: File): Promise<File> {
     return new File([blob], name, { type: 'image/jpeg', lastModified: file.lastModified });
   } catch (err) {
     console.error('Image resize failed, keeping original:', err);
+    reportDegraded(err, {
+      component: 'Image resize',
+      where: 'resizeImage → kept the original file',
+      context: [`${(file.size / 1048576).toFixed(1)} MB · upload continued at full size`],
+    });
     return file;
   }
 }

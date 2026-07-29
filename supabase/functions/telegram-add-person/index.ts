@@ -26,6 +26,7 @@
 // SUPABASE_SERVICE_ROLE_KEY)
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { verifyInitData } from '../_shared/telegramInitData.ts';
+import { reportFunctionError, reportRejected } from '../_shared/errorReport.ts';
 import { sendTelegram } from '../_shared/telegram.ts';
 import { esc } from '../_shared/html.ts';
 import { isValidEmail, escapeLikePattern, type ExistingFellow } from '../_shared/fellowCommands.ts';
@@ -75,8 +76,19 @@ Deno.serve(async req => {
     }
 
     const user = await verifyInitData(payload.initData, BOT_TOKEN);
-    if (!user) return json({ ok: false, error: 'invalid-initdata' });
-    if (!ADMIN_IDS.has(String(user.id))) return json({ ok: false, error: 'not-admin' });
+    if (!user) {
+      void reportRejected('Add Person Mini App', 'Telegram Mini App', 'initData signature did not verify', [
+        'Opened outside Telegram, or the signature was tampered with',
+      ]);
+      return json({ ok: false, error: 'invalid-initdata' });
+    }
+    if (!ADMIN_IDS.has(String(user.id))) {
+      void reportRejected('Add Person Mini App', 'Telegram Mini App', 'Telegram id is outside TELEGRAM_ADMIN_IDS', [
+        ['Telegram id', String(user.id)],
+        'The signature was valid — this is a real Telegram user, not an admin',
+      ]);
+      return json({ ok: false, error: 'not-admin' });
+    }
 
     const firstName = (payload.firstName ?? '').trim();
     const lastName = (payload.lastName ?? '').trim();
@@ -144,6 +156,10 @@ Deno.serve(async req => {
     return json({ ok: false, error: 'invalid-role' });
   } catch (err) {
     console.error(err);
+    reportFunctionError('telegram-add-person', err, {
+      where: 'POST telegram-add-person',
+      context: ['The Mini App showed "unexpected" and added nobody'],
+    });
     return json({ ok: false, error: 'unexpected' });
   }
 });
