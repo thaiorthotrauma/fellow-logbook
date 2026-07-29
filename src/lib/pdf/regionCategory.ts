@@ -11,8 +11,8 @@ import type { CaseEntry } from '../../types';
 //  1. Structured Q6 (aoCode) — deterministic, via the same parseAoCode used
 //     to reopen the AO picker for editing. Wins whenever present.
 //  2. AI classification of the leftover free text (diagnosis + Q7 + memo),
-//     for cases with no aoCode — see classifyRegion.ts. Advisory, like the
-//     diagnosis/procedure clustering it sits next to.
+//     for every case step 1 could not resolve — see classifyRegion.ts.
+//     Advisory, like the procedure clustering it sits next to.
 //  3. "Unclassified", when neither resolves.
 //
 // Laterality (left/right/bilateral) carries no region information and is
@@ -31,8 +31,9 @@ export interface RegionLabel {
   label: string;
 }
 
-/** Q6 resolution: a case's aoCode/aoRegionLabel → its region bucket, or null
- *  when the case has no AO/OTA code recorded (Q6 left blank). */
+/** Q6 resolution: a case's aoCode/aoRegionLabel → its region bucket. Null
+ *  when Q6 was left blank, and also when a stored code parses to no region
+ *  this app knows — both are cases the AI step has to fall back on. */
 export function resolveStructuredRegion(c: CaseEntry): RegionLabel | null {
   if (!c.aoCode.trim()) return null;
   const ao = parseAoCode(c.aoCode, c.aoRegionLabel);
@@ -69,20 +70,18 @@ export function resolveStructuredRegion(c: CaseEntry): RegionLabel | null {
 export function allRegionLabelOptions(): string[] {
   const out: string[] = [];
   for (const region of REGIONS) {
-    if (region.bones) {
-      for (const bone of region.bones) {
-        out.push(`${region.name} – ${bone.label}`);
-        for (const seg of bone.segments) out.push(`${region.name} – ${bone.label} – ${segmentDisplayLabel(seg.label)}`);
-      }
-    } else if (region.segments) {
-      out.push(region.name);
-      for (const seg of region.segments) out.push(`${region.name} – ${segmentDisplayLabel(seg.label)}`);
-    } else if (region.subtypes) {
-      out.push(region.name);
-      for (const sub of region.subtypes) out.push(`${region.name} – ${sub.label}`);
-    } else {
-      out.push(region.name);
+    // The bare region name is always an option, including for the two
+    // bone-split regions: a fellow can pick Forearm or Tibia/Fibula without
+    // narrowing to a bone, which resolveStructuredRegion renders as the
+    // region name alone. Leaving it out would make that a bucket the AI
+    // could never assign to but Q6 could still produce.
+    out.push(region.name);
+    for (const bone of region.bones ?? []) {
+      out.push(`${region.name} – ${bone.label}`);
+      for (const seg of bone.segments) out.push(`${region.name} – ${bone.label} – ${segmentDisplayLabel(seg.label)}`);
     }
+    for (const seg of region.segments ?? []) out.push(`${region.name} – ${segmentDisplayLabel(seg.label)}`);
+    for (const sub of region.subtypes ?? []) out.push(`${region.name} – ${sub.label}`);
   }
   return out;
 }
@@ -94,13 +93,20 @@ export function regionSourceText(c: CaseEntry): string {
   return [c.diagnosis, c.otherClassification, c.memo].filter(Boolean).join(' ');
 }
 
-/** The distinct normalized source texts of cases that have no aoCode — the
+/** The distinct normalized source texts of cases Q6 could not resolve — the
  *  small set actually worth sending to the AI classification call, instead
- *  of one entry per case (mirrors uniqueLabels in stats.ts). */
+ *  of one entry per case (mirrors uniqueLabels in stats.ts).
+ *
+ *  The predicate is resolveStructuredRegion, not "aoCode is blank": a case
+ *  can carry an aoCode that parses to no known region (a legacy or
+ *  hand-edited code, or a region whose stored label no longer matches).
+ *  regionBucketLabel falls through to the AI map for exactly those cases, so
+ *  keying off aoCode here would leave their text unsent and strand them in
+ *  "Unclassified" no matter what the model would have said. */
 export function uniqueUnclassifiedTexts(cases: CaseEntry[]): string[] {
   const seen = new Map<string, string>();
   for (const c of cases) {
-    if (c.aoCode.trim()) continue;
+    if (resolveStructuredRegion(c)) continue;
     const raw = regionSourceText(c);
     if (!raw.trim()) continue;
     const { key, label } = normalizeLabel(raw);
@@ -112,8 +118,14 @@ export function uniqueUnclassifiedTexts(cases: CaseEntry[]): string[] {
 const PEDIATRIC_AGE_THRESHOLD = 16;
 
 // Explicit age-in-months markers are always pediatric, no threshold needed:
-// "8 mo", "8 months old", "8 เดือน".
-const AGE_MONTHS_RE = /\b(\d{1,3})\s*(?:mo\.?\b|months?\s*old\b)|(\d{1,3})\s*เดือน/gi;
+// "8 mo", "8 months old".
+//
+// "N months" on its own is deliberately NOT a match: in an operative memo a
+// bare month count is far more often a duration ("ORIF 12 months post-op",
+// "6 เดือน post op") than an age, and mislabelling an adult case pediatric is
+// worse than missing a genuinely pediatric one. Thai ages in months are still
+// caught, via the "อายุ N" particle in AGE_YEARS_RE below.
+const AGE_MONTHS_RE = /\b(\d{1,3})\s*(?:mo\.?\b|months?\s*old\b)/gi;
 // Explicit age-in-years markers, compared against the threshold: "12 yo",
 // "12 y/o", "12 yrs", "12 years old", "aged 12", "อายุ 12", "12 ปี". Deliberately
 // anchored to these age-marker words/particles so a bare number — "3.5 mm
@@ -121,9 +133,9 @@ const AGE_MONTHS_RE = /\b(\d{1,3})\s*(?:mo\.?\b|months?\s*old\b)|(\d{1,3})\s*เ
 const AGE_YEARS_RE =
   /\b(\d{1,3})\s*(?:y\.?\/?o\.?\b|yo\b|yrs?\b|years?\s*old\b)|\baged\s*(\d{1,3})\b|อายุ\s*(\d{1,3})|(\d{1,3})\s*ปี/gi;
 
-/** Whether any explicit age marker in the text names a pediatric patient
- *  (< 16 years, or any age stated in months). Scans diagnosis/Q7/memo text —
- *  pass regionSourceText(c) in. */
+/** Whether an explicit age marker in the text names a pediatric patient:
+ *  under 16 years, or an age stated in months ("8 mo", "18 months old").
+ *  Scans diagnosis/Q7/memo text — pass regionSourceText(c) in. */
 export function isPediatric(text: string): boolean {
   if (!text.trim()) return false;
   for (const _ of text.matchAll(AGE_MONTHS_RE)) return true;

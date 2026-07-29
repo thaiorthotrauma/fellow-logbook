@@ -142,14 +142,21 @@ describe('generateLogbookBlob (fellow export)', () => {
     expect(pageCount(pdf)).toBeGreaterThan(0);
   }, 30_000);
 
-  it('renders on both clustering outcomes — empty (DeepSeek failed) and populated', async () => {
+  it('renders on both AI outcomes — empty (DeepSeek failed) and populated', async () => {
     // clustersFor degrades to empty maps on failure, so the export has to be
-    // fine either way; clustering only refines the summary ranking.
-    const withoutClusters = await render({ ...base, cases });
+    // fine either way; clustering/classification only refine the summary
+    // rankings. The region map is keyed to the one case below with no aoCode,
+    // so the populated path is actually exercised rather than looked up and
+    // missed.
+    const withUnclassified = [
+      ...cases,
+      makeCase({ id: '4', date: '2026-07-25', diagnosis: 'Tibial plateau fracture', aoCode: '', aoRegionLabel: '' }),
+    ];
+    const withoutClusters = await render({ ...base, cases: withUnclassified });
     const withClusters = await render({
       ...base,
-      cases,
-      regionMap: new Map([['distal radius fracture no aocode', 'Femur']]),
+      cases: withUnclassified,
+      regionMap: new Map([['tibial plateau fracture', 'Tibia / Fibula (Leg) – Tibia – Proximal']]),
       procClusters: new Map([['orif', 'Open reduction internal fixation']]),
     });
 

@@ -58,9 +58,22 @@ describe('allRegionLabelOptions', () => {
   it('includes bare regions, bone-level, and segment-level labels', () => {
     const options = allRegionLabelOptions();
     expect(options).toContain('Clavicle');
+    expect(options).toContain('Femur – Diaphyseal');
     expect(options).toContain('Forearm (Radius / Ulna) – Radius');
     expect(options).toContain('Forearm (Radius / Ulna) – Radius – Distal');
     expect(options).toContain('Hand – Scaphoid');
+  });
+
+  it('offers every label resolveStructuredRegion can produce, so no Q6 bucket is unreachable by the AI', () => {
+    // The bone-split regions are the ones this guards: picking Forearm or
+    // Tibia/Fibula without narrowing to a bone resolves to the region name
+    // alone, which must still be an assignable option.
+    const options = new Set(allRegionLabelOptions());
+    for (const aoCode of ['2R/2U', '4/4F']) {
+      const label = resolveStructuredRegion(makeCase({ aoCode }))?.label;
+      expect(label).toBeDefined();
+      expect(options.has(label as string)).toBe(true);
+    }
   });
 });
 
@@ -78,9 +91,16 @@ describe('isPediatric', () => {
     expect(isPediatric('เด็กชายอายุ 5')).toBe(true);
   });
 
-  it('treats any age in months as pediatric regardless of the number', () => {
+  it('treats an explicit age in months as pediatric regardless of the number', () => {
     expect(isPediatric('8 mo infant')).toBe(true);
     expect(isPediatric('18 months old')).toBe(true);
+    expect(isPediatric('อายุ 6 เดือน')).toBe(true);
+  });
+
+  it('does not read a bare month count as an age — in a memo it is usually a duration', () => {
+    expect(isPediatric('ORIF 12 months post-op')).toBe(false);
+    expect(isPediatric('18 months')).toBe(false);
+    expect(isPediatric('6 เดือน post op')).toBe(false);
   });
 
   it('does not flag an age at or above the threshold', () => {
@@ -134,14 +154,24 @@ describe('regionBucketLabel', () => {
 });
 
 describe('uniqueUnclassifiedTexts', () => {
-  it('only includes cases with a blank aoCode, deduplicated by normalized text', () => {
+  it('excludes cases Q6 resolves, deduplicated by normalized text', () => {
     const cases = [
-      makeCase({ aoCode: '32A1', diagnosis: 'Femoral shaft fracture' }),
+      makeCase({ aoCode: '32-A1', aoRegionLabel: 'Femur', diagnosis: 'Femoral shaft fracture' }),
       makeCase({ diagnosis: 'Distal radius fracture' }),
       makeCase({ diagnosis: '  distal   radius fracture  ' }),
       makeCase({ diagnosis: '', otherClassification: '', memo: '' }),
     ];
     expect(uniqueUnclassifiedTexts(cases)).toEqual(['Distal radius fracture']);
+  });
+
+  it('includes a case whose aoCode parses to no known region, since that is what the bucket falls back on', () => {
+    // Keying off "aoCode is blank" instead would leave this text unsent and
+    // strand the case in "Unclassified" however good the model's answer.
+    const c = makeCase({ aoCode: 'XYZ99', aoRegionLabel: 'Tibia', diagnosis: 'Tibial plateau fracture' });
+    expect(uniqueUnclassifiedTexts([c])).toEqual(['Tibial plateau fracture']);
+    expect(regionBucketLabel(c, new Map([['tibial plateau fracture', 'Tibia / Fibula (Leg) – Tibia – Proximal']]))).toBe(
+      'Tibia / Fibula (Leg) – Tibia – Proximal',
+    );
   });
 });
 
