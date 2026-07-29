@@ -1,7 +1,8 @@
 import { Document, Page, Text, View } from '@react-pdf/renderer';
 import PieChart from './PieChart';
-import { distribution, topN, type RankItem } from './stats';
+import { distribution, type RankItem } from './stats';
 import { topRegions } from './regionCategory';
+import { pelvisExperience } from './pelvisTable';
 import { s, formatPdfDate, pdfFooter } from './pdfShared';
 import {
   OPTIME_MAP,
@@ -32,10 +33,6 @@ export interface LogbookPdfProps {
    *  deterministic passes in regionCategory.ts put it. */
   regionMap?: ReadonlyMap<string, string>;
   pediatricMap?: ReadonlyMap<string, boolean>;
-  /** AI-clustered synonym groupings for the summary page's top-5 procedures
-   *  ranking (see clusterLabels.ts). Omitted or empty falls back to
-   *  exact-text ranking. */
-  procClusters?: ReadonlyMap<string, string>;
 }
 
 function RankTable({ title, items }: { title: string; items: RankItem[] }) {
@@ -57,16 +54,52 @@ function RankTable({ title, items }: { title: string; items: RankItem[] }) {
   );
 }
 
+/** Pelvic-ring and acetabular case counts, split by the role the fellow held.
+ *  Every role is listed even at zero — see pelvisExperience for why. */
+function PelvisTable({ cases, regionMap }: { cases: CaseEntry[]; regionMap?: ReadonlyMap<string, string> }) {
+  const { rows, totals } = pelvisExperience(cases, regionMap);
+  return (
+    <View style={s.col}>
+      <Text style={s.sectionTitle}>Experiences on Pelvis &amp; Acetabulum</Text>
+      {totals.total === 0 ? (
+        <Text style={s.emptyNote}>No pelvis or acetabulum cases.</Text>
+      ) : (
+        <>
+          <View style={s.tableHeadRow}>
+            <Text style={s.tableLabel} />
+            <Text style={s.tableHeadNum}>Pelvis</Text>
+            <Text style={s.tableHeadNum}>Acetabulum</Text>
+            <Text style={s.tableHeadNum}>Total</Text>
+          </View>
+          {rows.map(r => (
+            <View key={r.role} style={s.tableRow}>
+              <Text style={s.tableLabel}>{r.label}</Text>
+              <Text style={s.tableNum}>{r.pelvicring}</Text>
+              <Text style={s.tableNum}>{r.acetabulum}</Text>
+              <Text style={[s.tableNum, s.tableStrong]}>{r.total}</Text>
+            </View>
+          ))}
+          <View style={s.tableTotalRow}>
+            <Text style={[s.tableLabel, s.tableStrong]}>Total</Text>
+            <Text style={[s.tableNum, s.tableStrong]}>{totals.pelvicring}</Text>
+            <Text style={[s.tableNum, s.tableStrong]}>{totals.acetabulum}</Text>
+            <Text style={[s.tableNum, s.tableStrong]}>{totals.total}</Text>
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
 export interface SummaryPageProps {
   headingName: string;
   institution: string | null;
   yearLabel: string;
   rangeLabel: string;
   cases: CaseEntry[];
-  /** AI-derived region/age/synonym data — see LogbookPdfProps above. */
+  /** AI-derived region/age data — see LogbookPdfProps above. */
   regionMap?: ReadonlyMap<string, string>;
   pediatricMap?: ReadonlyMap<string, boolean>;
-  procClusters?: ReadonlyMap<string, string>;
 }
 
 /** Page 1 of a logbook: case count, top diagnoses/procedures, distribution
@@ -81,10 +114,8 @@ export function SummaryPage({
   cases,
   regionMap,
   pediatricMap,
-  procClusters,
 }: SummaryPageProps) {
   const topRegionsList = topRegions(cases, 5, regionMap, pediatricMap);
-  const topProc = topN(cases, c => c.procedure, 5, procClusters);
   const typeDist = distribution(cases, c => c.procedureType, PROC_TYPE);
   const roleDist = distribution(cases, c => c.role, ROLES);
   const placeDist = distribution(cases, c => c.place, PLACE);
@@ -113,7 +144,7 @@ export function SummaryPage({
 
       <View style={s.sectionRow}>
         <RankTable title="Top 5 Operated Regions" items={topRegionsList} />
-        <RankTable title="Top 5 Procedures" items={topProc} />
+        <PelvisTable cases={cases} regionMap={regionMap} />
       </View>
 
       <View style={s.chartsWrap}>
@@ -194,7 +225,6 @@ export default function LogbookPdf({
   cases,
   regionMap,
   pediatricMap,
-  procClusters,
 }: LogbookPdfProps) {
   const runHeaderName = institution ? `${fellowName}, ${institution}` : fellowName;
   return (
@@ -207,7 +237,6 @@ export default function LogbookPdf({
         cases={cases}
         regionMap={regionMap}
         pediatricMap={pediatricMap}
-        procClusters={procClusters}
       />
       <ContentPage runHeaderName={runHeaderName} cases={cases} />
     </Document>

@@ -26,7 +26,7 @@ const empty = (): RegionClassification => ({ regionMap: new Map(), pediatricMap:
  *  Only the distinct combined-text entries are sent — no dates, hospital
  *  numbers, or fellow names ever leave the device for this call.
  *
- *  Best-effort like clusterLabels: any failure (offline, quota, malformed
+ *  Best-effort: any failure (offline, quota, malformed
  *  response, or a region outside the allowed set) resolves to empty maps,
  *  which leaves every case exactly where the deterministic passes put it —
  *  a slow or broken AI call must never block a PDF export. */

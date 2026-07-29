@@ -29,6 +29,15 @@ export const s = StyleSheet.create({
   col: { flex: 1 },
   sectionTitle: { fontSize: 12.5, fontWeight: 700, color: INK, marginBottom: 7, paddingBottom: 3, borderBottomWidth: 1, borderBottomColor: LINE },
 
+  // Role × region counts table (pelvis/acetabulum experience).
+  tableHeadRow: { flexDirection: 'row', alignItems: 'flex-end', marginBottom: 5 },
+  tableRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
+  tableTotalRow: { flexDirection: 'row', alignItems: 'center', borderTopWidth: 1, borderTopColor: LINE, paddingTop: 5, marginTop: 1 },
+  tableLabel: { flex: 1, fontSize: 11, color: '#24302e', paddingRight: 4 },
+  tableHeadNum: { width: 50, fontSize: 8.5, color: MUTED, textAlign: 'right' },
+  tableNum: { width: 50, fontSize: 11, textAlign: 'right' },
+  tableStrong: { fontWeight: 700 },
+
   rankRow: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 5 },
   rankNum: { width: 16, fontSize: 11, fontWeight: 700, color: TEAL },
   // Capped to 2 lines so one very long diagnosis/procedure can't push the

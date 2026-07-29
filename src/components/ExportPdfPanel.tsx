@@ -8,7 +8,6 @@ import {
   monthFileSegment,
   rangeLabel,
   sortChronological,
-  uniqueLabels,
 } from '../lib/pdf/stats';
 import { uniqueAiTexts } from '../lib/pdf/regionCategory';
 import { clustersFor } from '../lib/pdf/clusterCache';
@@ -66,27 +65,24 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
   const invalidRange = Boolean(from && to && from > to);
   const canGenerate = !busy && !profileLoading && !!from && !!to && !invalidRange && inRange > 0;
 
-  const procLabels = useMemo(() => uniqueLabels(selected, c => c.procedure), [selected]);
   const aiTexts = useMemo(() => uniqueAiTexts(selected), [selected]);
 
-  // Warm the DeepSeek clustering/classification as soon as the range is
-  // known, so the export click doesn't have to await it — see clusterCache
-  // for why that matters.
+  // Warm the DeepSeek classification as soon as the range is known, so the
+  // export click doesn't have to await it — see clusterCache for why that
+  // matters.
   useEffect(() => {
-    if (selected.length > 0) void clustersFor(procLabels, aiTexts);
-  }, [selected, procLabels, aiTexts]);
+    if (selected.length > 0) void clustersFor(aiTexts);
+  }, [selected, aiTexts]);
 
   async function generate() {
     setBusy(true);
     setError('');
     setDone('');
     try {
-      // Best-effort AI: grouping of synonymous procedure wording (e.g.
-      // "ORIF" / "open reduction internal fixation"), plus region and
-      // pediatric judgements for the cases the deterministic passes left
-      // open. Falls back to exact-text ranking and to those passes' own
+      // Best-effort AI region and pediatric judgements, for the cases the
+      // deterministic passes left open. Falls back to those passes' own
       // answers on failure. Normally already resolved by the prefetch above.
-      const { procClusters, regionMap, pediatricMap } = await clustersFor(procLabels, aiTexts);
+      const { regionMap, pediatricMap } = await clustersFor(aiTexts);
       // Lazy-load the PDF engine (~1 MB) only when actually exporting.
       const { generateLogbookBlob, deliverPdf } = await import('../lib/pdf/generate');
       const blob = await generateLogbookBlob({
@@ -97,7 +93,6 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
         cases: selected,
         regionMap,
         pediatricMap,
-        procClusters,
       });
       const result = await deliverPdf(blob, pdfFileName(fellowName, from, to));
       setDone(DONE_NOTE[result] ?? '');
@@ -120,8 +115,8 @@ export default function ExportPdfPanel({ cases, fellowName, institution, profile
       ) : (
         <>
           <div className="field-label" style={{ marginBottom: 14 }}>
-            Choose the month range to include. The PDF opens with a summary page (case count, top operated regions
-            &amp; procedures, and charts), followed by each case in date order, oldest first.
+            Choose the month range to include. The PDF opens with a summary page (case count, top operated regions,
+            pelvis &amp; acetabulum experience, and charts), followed by each case in date order, oldest first.
           </div>
 
           <div className="export-fields">
