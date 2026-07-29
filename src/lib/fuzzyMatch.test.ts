@@ -1,71 +1,83 @@
 import { describe, expect, it } from 'vitest';
-import { fuzzyScore, fuzzyScoreWordsAcrossFields } from './fuzzyMatch';
+import { matchScore, matchScoreWordsAcrossFields } from './fuzzyMatch';
 
-describe('fuzzyScore', () => {
-  it('matches an exact substring', () => {
-    expect(fuzzyScore('orif', 'Open reduction internal fixation')).not.toBeNull();
-  });
-
-  it('matches scattered characters in order', () => {
-    expect(fuzzyScore('ordis', 'Open reduction, distal radius')).not.toBeNull();
+describe('matchScore', () => {
+  it('matches a substring', () => {
+    expect(matchScore('radius', 'Forearm (Radius / Ulna)')).not.toBeNull();
   });
 
   it('is case-insensitive', () => {
-    expect(fuzzyScore('ORIF', 'open reduction internal fixation')).not.toBeNull();
+    expect(matchScore('ORIF', 'orif with volar plate')).not.toBeNull();
   });
 
-  it('returns null when characters are out of order', () => {
-    expect(fuzzyScore('bca', 'abc')).toBeNull();
+  it('matches an acronym of the field words', () => {
+    expect(matchScore('orif', 'Open reduction internal fixation')).not.toBeNull();
   });
 
-  it('returns null when a character is missing entirely', () => {
-    expect(fuzzyScore('xyz', 'abc')).toBeNull();
+  it('does not match scattered characters', () => {
+    // The bug this replaced: every letter of "radius" appears in order here,
+    // spread across unrelated words, so subsequence matching returned a hit.
+    expect(matchScore('radius', 'Closed fracture lateral malleolus with deltoid ligament injury, right ankle, unstable')).toBeNull();
+    expect(matchScore('radius', 'Closed comminuted intertrochanteric fracture right hip, displaced, unstable')).toBeNull();
+    expect(matchScore('radius', 'Closed fracture right tibial plateau (Schatzker VI), depressed articular surface')).toBeNull();
+  });
+
+  it('returns null when the query is absent', () => {
+    expect(matchScore('humerus', 'distal radius fracture')).toBeNull();
   });
 
   it('empty query matches everything with score 0', () => {
-    expect(fuzzyScore('', 'anything')).toBe(0);
+    expect(matchScore('', 'anything')).toBe(0);
   });
 
-  it('scores a tighter, word-aligned match higher than a scattered one', () => {
-    const tight = fuzzyScore('rad', 'distal radius fracture');
-    const scattered = fuzzyScore('rad', 'right ankle deformity');
-    expect(tight).not.toBeNull();
-    expect(scattered).not.toBeNull();
-    expect(tight!).toBeGreaterThan(scattered!);
+  it('scores a whole word above a word start, and both above an acronym', () => {
+    const whole = matchScore('radius', 'distal radius fracture');
+    const wordStart = matchScore('radi', 'distal radius fracture');
+    const midWord = matchScore('adius', 'distal radius fracture');
+    const acronym = matchScore('drf', 'distal radius fracture');
+    expect(whole!).toBeGreaterThan(wordStart!);
+    expect(wordStart!).toBeGreaterThan(midWord!);
+    expect(midWord!).toBeGreaterThan(acronym!);
   });
 });
 
-describe('fuzzyScoreWordsAcrossFields', () => {
+describe('matchScoreWordsAcrossFields', () => {
+  const lateralMalleolus = [
+    'Closed fracture lateral malleolus with deltoid ligament injury, right ankle, unstable',
+    '',
+    'Lateral',
+    'Open reduction internal fixation with one-third tubular plate and screws',
+    '44-B2',
+    'Malleolus (Ankle)',
+  ];
+  const distalRadius = [
+    'Cfx DER',
+    '',
+    'Volar',
+    'Open reduction internal fixation with volar locking plate',
+    '2R3',
+    'Forearm (Radius / Ulna)',
+  ];
+
+  it('does not match an unrelated region', () => {
+    expect(matchScoreWordsAcrossFields('radius', lateralMalleolus)).toBeNull();
+  });
+
+  it('matches a distal radius case via its AO region label', () => {
+    expect(matchScoreWordsAcrossFields('radius', distalRadius)).not.toBeNull();
+  });
+
   it('requires every word to match some field, in any order', () => {
-    expect(fuzzyScoreWordsAcrossFields('radius distal', ['distal radius fracture'])).not.toBeNull();
-    expect(fuzzyScoreWordsAcrossFields('radius humerus', ['distal radius fracture'])).toBeNull();
+    expect(matchScoreWordsAcrossFields('radius volar', distalRadius)).not.toBeNull();
+    expect(matchScoreWordsAcrossFields('radius humerus', distalRadius)).toBeNull();
+  });
+
+  it('does not stitch one word across multiple fields', () => {
+    // "volar" spans the approach and procedure fields only when joined.
+    expect(matchScoreWordsAcrossFields('volarplate', distalRadius)).toBeNull();
   });
 
   it('empty query matches everything with score 0', () => {
-    expect(fuzzyScoreWordsAcrossFields('   ', ['anything'])).toBe(0);
-  });
-
-  it('lets a word match within one field via scattered characters', () => {
-    expect(fuzzyScoreWordsAcrossFields('ordis', ['Open reduction, distal radius'])).not.toBeNull();
-  });
-
-  it('lets different words be satisfied by different fields', () => {
-    expect(fuzzyScoreWordsAcrossFields('volar radius', ['Distal radius fracture', 'Volar'])).not.toBeNull();
-  });
-
-  it('does not stitch one word across multiple unrelated fields', () => {
-    // "pelvis" letters (p-e-l-v-i-s) happen to appear in order if these
-    // fields are concatenated, but no single field contains them — this is
-    // the exact false-positive a distal-radius case used to produce for a
-    // "pelvis" search when fields were joined into one haystack.
-    const fields = [
-      'Distal radius fracture',
-      '',
-      'Volar',
-      'Open reduction internal fixation with volar locking plate',
-      '2R3B',
-      'Radius/Ulna, distal segment',
-    ];
-    expect(fuzzyScoreWordsAcrossFields('pelvis', fields)).toBeNull();
+    expect(matchScoreWordsAcrossFields('   ', ['anything'])).toBe(0);
   });
 });
