@@ -50,6 +50,21 @@ describe('clusterLabels', () => {
     expect(map.size).toBe(0);
   });
 
+  it('falls back to an empty map when the call hangs, rather than stalling the export', async () => {
+    vi.useFakeTimers();
+    try {
+      // Never settles — a wedged DeepSeek call. Without the timeout this would
+      // hang the export click indefinitely.
+      invoke.mockReturnValueOnce(new Promise(() => {}));
+      const pending = clusterLabels(['a', 'b']);
+      await vi.advanceTimersByTimeAsync(8_000);
+      const map = await pending;
+      expect(map.size).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('maps normalized keys to the canonical label from the response', async () => {
     invoke.mockResolvedValueOnce({
       data: { groups: { ORIF: 'Open reduction internal fixation', 'Open reduction internal fixation': 'Open reduction internal fixation' } },

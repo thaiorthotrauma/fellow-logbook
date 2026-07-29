@@ -17,10 +17,12 @@ export function clustersFor(dxLabels: string[], procLabels: string[]): Promise<C
   const key = JSON.stringify([dxLabels, procLabels]);
   let pending = cache.get(key);
   if (!pending) {
-    pending = Promise.all([clusterLabels(dxLabels), clusterLabels(procLabels)]) as Promise<ClusterPair>;
-    // A rejection here would be unhandled until the export awaits it; the
-    // underlying calls already degrade to empty maps, so this is belt-and-braces.
-    pending.catch(() => {});
+    pending = Promise.all([clusterLabels(dxLabels), clusterLabels(procLabels)]).catch(
+      // Clustering is advisory: it only refines the summary's top-5 ranking.
+      // Never let a failure here reject into the export and surface as a
+      // "Could not export" error — degrade to exact-text ranking instead.
+      () => [new Map<string, string>(), new Map<string, string>()],
+    ) as Promise<ClusterPair>;
     cache.set(key, pending);
   }
   return pending;
