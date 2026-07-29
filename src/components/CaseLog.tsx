@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { OPTIME_MAP, PLACE_MAP, PROC_MAP, ROLE_MAP, TIMING_MAP } from '../data';
-import { fuzzyScoreWords } from '../lib/fuzzyMatch';
+import { fuzzyScoreWordsAcrossFields } from '../lib/fuzzyMatch';
 import { fellowBadgeLabel, formatBulletedField, formatClassification, stripBullets } from '../lib/textFormat';
 import type { CaseEntry, StaffCaseEntry } from '../types';
 import CaseImages from './CaseImages';
@@ -103,18 +103,19 @@ export default function CaseLog({
       .flatMap(row => {
         if (!q) return [row];
         // Name is filtered via the fellow badges, not the search box, so it's
-        // excluded from the fuzzy-matched fields here.
-        const haystack = [
+        // excluded from the fuzzy-matched fields here. Fields are matched
+        // individually (not concatenated) so a query word can't be satisfied
+        // by stitching characters across unrelated fields — see
+        // fuzzyScoreWordsAcrossFields for why that matters.
+        const fields = [
           row.c.diagnosis,
           row.c.otherClassification,
           row.c.approach,
           row.c.procedure,
           row.c.aoCode,
           row.c.aoRegionLabel,
-        ]
-          .filter(Boolean)
-          .join(' ');
-        const score = fuzzyScoreWords(q, haystack);
+        ];
+        const score = fuzzyScoreWordsAcrossFields(q, fields);
         return score === null ? [] : [{ ...row, score }];
       });
     rows.sort((a, b) => {
