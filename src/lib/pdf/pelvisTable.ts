@@ -3,7 +3,7 @@ import { regionSourceText, resolveStructuredRegion } from './regionCategory';
 import { normalizeLabel } from './stats';
 import type { CaseEntry } from '../../types';
 
-// Backs the summary page's "Experiences on Pelvis & Acetabulum Cases" table:
+// Backs the summary page's "Experiences on Pelvis & Acetabulum" table:
 // how many pelvic-ring and acetabular cases the fellow logged, broken down by
 // the role they held in each.
 //
@@ -21,7 +21,11 @@ import type { CaseEntry } from '../../types';
 /** The two AO/OTA regions this table covers, by their REGIONS key, mapped to
  *  the display label resolveStructuredRegion/the AI classifier produce for
  *  them. Both are bare region names with no bone or segment breakdown, so the
- *  label is an exact match either way. */
+ *  label is an exact match either way.
+ *
+ *  These strings are lookup keys, not display text — "Pelvic ring" is the
+ *  AO/OTA region name from data.ts and must match it verbatim. The table's
+ *  own column header shortens it to "Pelvis" independently. */
 export const PELVIS_REGIONS = {
   pelvicring: 'Pelvic ring',
   acetabulum: 'Acetabulum',

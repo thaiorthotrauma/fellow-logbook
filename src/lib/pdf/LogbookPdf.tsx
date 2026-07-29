@@ -38,7 +38,7 @@ export interface LogbookPdfProps {
 function RankTable({ title, items }: { title: string; items: RankItem[] }) {
   return (
     <View style={s.col}>
-      <Text style={s.sectionTitleTall}>{title}</Text>
+      <Text style={s.sectionTitle}>{title}</Text>
       {items.length === 0 ? (
         <Text style={s.emptyNote}>No entries.</Text>
       ) : (
@@ -60,14 +60,14 @@ function PelvisTable({ cases, regionMap }: { cases: CaseEntry[]; regionMap?: Rea
   const { rows, totals } = pelvisExperience(cases, regionMap);
   return (
     <View style={s.col}>
-      <Text style={s.sectionTitleTall}>Experiences on Pelvis &amp; Acetabulum Cases</Text>
+      <Text style={s.sectionTitle}>Experiences on Pelvis &amp; Acetabulum</Text>
       {totals.total === 0 ? (
         <Text style={s.emptyNote}>No pelvis or acetabulum cases.</Text>
       ) : (
         <>
           <View style={s.tableHeadRow}>
             <Text style={s.tableLabel} />
-            <Text style={s.tableHeadNum}>Pelvic ring</Text>
+            <Text style={s.tableHeadNum}>Pelvis</Text>
             <Text style={s.tableHeadNum}>Acetabulum</Text>
             <Text style={s.tableHeadNum}>Total</Text>
           </View>
