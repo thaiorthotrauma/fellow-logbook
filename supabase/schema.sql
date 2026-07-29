@@ -222,6 +222,10 @@ alter table public.staff_devices enable row level security;
 -- Returns the calling staff member's own name/institution, or no rows if the
 -- caller isn't a linked staff device. Lets the client show "who am I" without
 -- ever granting a raw select on the staff tables.
+--
+-- Dropped first — `create or replace` can't change a function's OUT-parameter
+-- row type (added is_admin here), only its body.
+drop function if exists public.my_staff_profile();
 create or replace function public.my_staff_profile()
 returns table (full_name text, institution text, is_admin boolean)
 language sql
