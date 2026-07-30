@@ -1,17 +1,17 @@
 // Captures every app figure the guides use, from the running harness
-// (vite.guide.config.ts), at an iPhone 17 viewport.
+// (vite.guide.config.ts), at a mobile phone viewport.
 //
 // App screens are captured as full viewport frames — what a fellow or staff
 // member actually sees, sticky header included. The auth cards are captured as
 // tight crops instead, since a full frame of one is mostly empty background.
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
-import { CHROMIUM, FIGS, HARNESS, IPHONE_17 } from './paths.mjs';
+import { CHROMIUM, FIGS, HARNESS, PHONE_VIEWPORT } from './paths.mjs';
 
 mkdirSync(FIGS, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: CHROMIUM });
-const ctx = await browser.newContext(IPHONE_17);
+const ctx = await browser.newContext(PHONE_VIEWPORT);
 const page = await ctx.newPage();
 page.on('pageerror', e => console.log('  [pageerror]', String(e).slice(0, 200)));
 
@@ -64,7 +64,7 @@ for (const [screen, name, typing] of [
   const x = Math.max(0, box.x - pad);
   await page.screenshot({
     path: `${FIGS}/${name}.png`,
-    clip: { x, y: Math.max(0, box.y - pad), width: Math.min(IPHONE_17.viewport.width - x, box.width + pad * 2), height: box.height + pad * 2 },
+    clip: { x, y: Math.max(0, box.y - pad), width: Math.min(PHONE_VIEWPORT.viewport.width - x, box.width + pad * 2), height: box.height + pad * 2 },
   });
   console.log('  ✓', name);
 }

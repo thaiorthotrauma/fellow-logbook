@@ -3,13 +3,13 @@
 // wording — no real patient or person is represented. Nothing here ships.
 
 export const SAMPLE_FELLOW = {
-  full_name: 'นายแพทย์ ธนวัฒน์ ศรีวิไล',
-  institution: 'ธรรมศาสตร์',
+  full_name: 'สมชาย ใจดี',
+  institution: 'สถาบันออร์โธทรอม่า',
 };
 
 export const SAMPLE_STAFF = {
   full_name: 'นายแพทย์ ประสิทธิ์ วงศ์อนันต์',
-  institution: 'ธรรมศาสตร์',
+  institution: 'สถาบันออร์โธทรอม่า',
   is_admin: false,
 };
 

@@ -6,12 +6,12 @@
 // its anchor-download branch — which is what Playwright catches here.
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
-import { CHROMIUM, EXPORTS, HARNESS, IPHONE_17 } from './paths.mjs';
+import { CHROMIUM, EXPORTS, HARNESS, PHONE_VIEWPORT } from './paths.mjs';
 
 mkdirSync(EXPORTS, { recursive: true });
 
 const browser = await chromium.launch({ executablePath: CHROMIUM });
-const ctx = await browser.newContext({ ...IPHONE_17, deviceScaleFactor: 2, acceptDownloads: true });
+const ctx = await browser.newContext({ ...PHONE_VIEWPORT, deviceScaleFactor: 2, acceptDownloads: true });
 const page = await ctx.newPage();
 
 async function grab(query, out) {

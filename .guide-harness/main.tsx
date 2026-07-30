@@ -1,6 +1,6 @@
 // Screenshot harness for the tutorial usage guides: renders the real app (and
 // the real auth screens) against stubbed LIFF/Supabase modules, so the guide
-// figures are the actual UI at an iPhone viewport rather than mockups.
+// figures are the actual UI at a mobile phone viewport rather than mockups.
 //
 // Not part of the app bundle — served only by vite.guide.config.ts.
 import { createRoot } from 'react-dom/client';
@@ -34,7 +34,7 @@ function pick() {
     case 'email':
       return <EmailStep onSubmit={never} />;
     case 'otp':
-      return <OtpStep email="thanawat.s@example.ac.th" onSubmit={never} />;
+      return <OtpStep email="somchai.j@example.ac.th" onSubmit={never} />;
     case 'rejected':
       return <RejectedScreen />;
     case 'gate-browser':

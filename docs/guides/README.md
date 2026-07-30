@@ -8,7 +8,7 @@ Two printable A4 guides live in [`docs/`](..):
 | [`TOTS-Fellow-Logbook-Staff-Guide.pdf`](../TOTS-Fellow-Logbook-Staff-Guide.pdf) | Supervising staff | 13 |
 
 Every app screen in them is a **real screenshot of this app**, captured from the
-running UI at an **iPhone 17 viewport (402 × 874 pt at 3×)** — not a mockup. The
+running UI at a **mobile phone viewport (402 × 874 pt at 3×)** — not a mockup. The
 two figures showing the exported logbook are the app's *own* PDF export, driven
 through the real `ExportPdfPanel` and rasterised. So the figures cannot drift
 from the app by being redrawn; they drift only if the UI changes and nobody
@@ -43,8 +43,10 @@ LIFF app, and Google Drive behind it. Rather than mock the UI, the harness
 [`vite.guide.config.ts`](../../vite.guide.config.ts)) swaps two modules for local
 stubs and renders the **real** components:
 
-- `@line/liff` → a stub that reports an iPhone inside the LINE client, so the
-  device gate passes.
+- `@line/liff` → a stub that answers as a logged-in LINE session on a phone.
+  The harness renders `App` directly rather than through `AuthGate` (see
+  `.guide-harness/main.tsx`), so the real device gate never actually runs —
+  the stub just needs to satisfy the app's own calls into `liff`.
 - `@supabase/supabase-js` → an in-memory stand-in holding a fictional roster and
   case list, so the app is fully interactive — log, edit, delete, export — with
   no backend.
