@@ -1,0 +1,905 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TOTS Fellow Logbook — Fellow User Guide</title>
+<link rel="stylesheet" href="guide.css">
+<style>
+  :root { --accent: #0d6e64; --cover-band: linear-gradient(135deg, #12a091 0%, #0d6e64 48%, #083d38 100%); }
+</style>
+</head>
+<body>
+
+<!-- ================================================================ P1 COVER -->
+<section class="page">
+  <div class="cover">
+    <div class="cover-band">
+      <div class="cover-eyebrow">Thai Orthopaedic Trauma Society · Fellowship</div>
+      <h1 class="cover-title">Fellow Logbook<br>User Guide</h1>
+      <div class="cover-sub">How to log, review, and export your operative cases from your phone — for
+      fellows.</div>
+      <div class="cover-meta">
+        <div><span>Audience</span>Fellows on the roster</div>
+        <div><span>Where it runs</span>LINE app, phone or tablet</div>
+        <div><span>Screens shown on</span>iPhone 17 · 402 × 874 pt</div>
+      </div>
+    </div>
+
+    <div class="cover-body">
+      <h3>What this app is</h3>
+      <p>An operative case logbook for your fellowship year, built for the ward and the OR rather than a
+      desk. You open it from the Fellow Logbook LINE Official Account, log a case in a single scrolling
+      form, and export the whole record as a PDF whenever you need it — for your programme, your
+      portfolio, or a board submission.</p>
+
+      <p>Your cases are yours. The database restricts every row to the fellow who created it, so no other
+      fellow can read your logbook, and you cannot read theirs. Staff at your institution see a read-only,
+      HN-masked view of the cases logged there — described in the staff guide, not this one.</p>
+
+      <h3>Three tabs, one screen</h3>
+      <table class="narrow-first">
+        <tr>
+          <td>New Entry</td>
+          <td>The 14-question form for one operative case. Fourteen cards, top to bottom, most of them a
+          single tap.</td>
+        </tr>
+        <tr>
+          <td>Case Log</td>
+          <td>Everything you have logged, newest first, with search, filters, and a count. Tap a case to
+          open it, edit it, or delete it.</td>
+        </tr>
+        <tr>
+          <td>PDF</td>
+          <td>Export a month range as a formatted PDF — a summary page plus one block per case — built on
+          your phone and handed to the iOS share sheet.</td>
+        </tr>
+      </table>
+
+      <div class="toc">
+        <div class="toc-row"><div class="toc-num">1</div><div class="toc-title">Getting in</div><div class="toc-desc">Opening the app, and verifying your email the first time</div></div>
+        <div class="toc-row"><div class="toc-num">2</div><div class="toc-title">When a screen stops you</div><div class="toc-desc">The three refusals, and what each one is telling you</div></div>
+        <div class="toc-row"><div class="toc-num">3</div><div class="toc-title">Logging a case</div><div class="toc-desc">Questions 1–5: date, place, staff, HN, diagnosis</div></div>
+        <div class="toc-row"><div class="toc-num">4</div><div class="toc-title">Classifying the fracture</div><div class="toc-desc">Question 6 on the body map, question 7 for everything else</div></div>
+        <div class="toc-row"><div class="toc-num">5</div><div class="toc-title">Finishing the entry</div><div class="toc-desc">Questions 8–12, then images and your memo</div></div>
+        <div class="toc-row"><div class="toc-num">6</div><div class="toc-title">Saving</div><div class="toc-desc">What Save checks, what it does, and what Reset clears</div></div>
+        <div class="toc-row"><div class="toc-num">7</div><div class="toc-title">Your Case Log</div><div class="toc-desc">Searching, filtering, opening, editing, deleting</div></div>
+        <div class="toc-row"><div class="toc-num">8</div><div class="toc-title">Exporting a PDF</div><div class="toc-desc">Choosing a range, and what the document contains</div></div>
+        <div class="toc-row"><div class="toc-num">9</div><div class="toc-title">Privacy, and quick answers</div><div class="toc-desc">What leaves your phone, and a troubleshooting table</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================== P2 GETTING IN -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 1</div>
+  <h2 class="chapter">Getting in</h2>
+  <div class="chapter-lede">The logbook lives inside LINE. There is no separate app to install, no
+  username, and no password — your LINE identity plus a one-time email code is the whole of it.</div>
+
+  <figure class="fig" style="max-width: 128mm;">
+    <img src="figs/richmenu-logbook.jpg" alt="Fellow Logbook rich menu">
+    <figcaption><b>Figure 1.1</b> The rich menu at the bottom of the Official Account chat. It shows
+    already expanded, and tapping anywhere on it opens the logbook.</figcaption>
+  </figure>
+
+  <div style="display:flex; gap:20px; margin-top:16px;">
+    <div style="flex:1;">
+      <h3>Opening the app</h3>
+      <ol class="walk">
+        <li>Add the <strong>Fellow Logbook</strong> LINE Official Account, if you have not already. Your
+        programme administrator will send you the link.</li>
+        <li>Open the chat. The rich menu sits at the bottom.</li>
+        <li>Tap <strong>Open Logbook</strong>. The app loads inside LINE's own browser.</li>
+      </ol>
+    </div>
+    <div style="flex:1;">
+      <div class="tip" style="margin-top:0;">
+        <span class="lbl">Worth doing once</span>
+        Pin the Official Account to the top of your LINE chat list. The rich menu is the only entry point
+        you need, and pinning it makes the logbook roughly as reachable as a home-screen icon.
+      </div>
+      <div class="note">
+        <span class="lbl">Phone or tablet, either way</span>
+        The same login works on your iPhone and your iPad, at the same time. Only the desktop LINE client
+        is refused.
+      </div>
+    </div>
+  </div>
+
+  <h3>First time: verify your email</h3>
+  <p>Only fellows on the programme roster can use the logbook, and the roster is keyed by email address.
+  The first time you open the app, you prove you hold that address. This happens <strong>once</strong> —
+  after it, your LINE identity is linked to your fellow record and you go straight into the app on every
+  later open.</p>
+
+  <div class="shots">
+    <figure class="fig crop">
+      <img src="figs/a-email.jpg" alt="Verify Your Email screen">
+      <figcaption><b>Figure 1.2</b> Enter the email registered with your programme — not necessarily your
+      hospital address. Tap <b>Send Code</b>.</figcaption>
+    </figure>
+    <figure class="fig crop">
+      <img src="figs/a-otp.jpg" alt="Enter Verification Code screen">
+      <figcaption><b>Figure 1.3</b> Type the six digits from the email. The boxes advance on their own, you
+      can paste the whole code, and it submits itself on the sixth digit.</figcaption>
+    </figure>
+  </div>
+
+</section>
+
+<!-- ======================================================= P3 BLOCKING SCREENS -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 2</div>
+  <h2 class="chapter">When a screen stops you</h2>
+  <div class="chapter-lede">Three screens refuse to load the logbook. None of them is a fault in the app;
+  each is telling you something specific, and each has a different fix.</div>
+
+  <div class="note" style="margin-top:0;">
+    <span class="lbl">First, the one that is not a refusal</span>
+    If the verification code simply never arrives, check the junk folder. If it is genuinely missing, close
+    and reopen the app to request a fresh one — codes expire, and an expired code reports itself as
+    incorrect rather than as expired.
+  </div>
+
+  <div class="shots">
+    <figure class="fig crop">
+      <img src="figs/a-rejected.jpg" alt="Email Not Found screen">
+      <figcaption><b>Figure 2.1</b> <b>Email Not Found</b> — the address is not on the roster.</figcaption>
+    </figure>
+    <figure class="fig crop">
+      <img src="figs/a-gate-browser.jpg" alt="Open This in the LINE App screen">
+      <figcaption><b>Figure 2.2</b> <b>Open This in the LINE App</b> — you are in Safari or
+      Chrome.</figcaption>
+    </figure>
+  </div>
+
+  <div class="split wide" style="margin-top: 2px;">
+    <div class="shot-col">
+      <figure class="fig crop">
+        <img src="figs/a-gate-desktop.jpg" alt="Mobile and Tablet Only screen">
+        <figcaption><b>Figure 2.3</b> <b>Mobile &amp; Tablet Only</b> — you are on the desktop LINE
+        client.</figcaption>
+      </figure>
+    </div>
+    <div class="text-col">
+      <table class="narrow-first">
+        <tr>
+          <td>Email Not Found</td>
+          <td>The address you typed is not on the approved fellow list, and no code was sent. Either it was
+          a typo — reopen the app and retype it — or you are not on the roster yet, which only your
+          programme administrator can fix.</td>
+        </tr>
+        <tr>
+          <td>Open This in the LINE App</td>
+          <td>You reached the URL from an external browser or a saved bookmark. The logbook runs only
+          inside LINE's in-app browser. Go back to the Official Account chat and use the rich menu.</td>
+        </tr>
+        <tr>
+          <td>Mobile &amp; Tablet Only</td>
+          <td>You are using the desktop LINE client on Windows or a Mac. The logbook is deliberately phone-
+          and tablet-only, because that is where it gets used. Open it on your phone.</td>
+        </tr>
+        <tr>
+          <td>Something went wrong</td>
+          <td>A network or server problem rather than a rule. Tap <strong>Try again</strong>, which restarts
+          the whole sign-in. If it keeps happening, tell your administrator — the failure is reported to
+          them automatically, so they may already know.</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="lbl">You verify once, not once per device</span>
+    After your first successful sign-in you will not be asked for your email again — not on a new phone,
+    and not if LINE clears its cache. The app re-establishes your session from your LINE identity on its
+    own. If you <em>are</em> asked a second time, you are almost certainly signed into a different LINE
+    account than the one you verified with.
+  </div>
+</section>
+
+<!-- ======================================================== P4 LOGGING Q1–Q5 -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 3</div>
+  <h2 class="chapter">Logging a case · questions 1–5</h2>
+  <div class="chapter-lede">New Entry is one scrolling form of fourteen numbered cards. A red asterisk marks
+  a required field, and nothing saves until every one is answered — so work top to bottom and let Save tell
+  you what you missed.</div>
+
+  <div class="split tight">
+    <div class="shot-col">
+      <figure class="fig">
+        <img src="figs/f-form-top.jpg" alt="Header and questions 1 to 5">
+        <figcaption><b>Figure 3.1</b> The header carries your name, your institution, and the three tabs.
+        It stays pinned as you scroll.</figcaption>
+      </figure>
+    </div>
+    <div class="text-col">
+      <h3>The header</h3>
+      <p>Your name and <strong>Institution</strong> are read from the roster, not typed by you — if either
+      is wrong, tell your administrator. <strong>Case Log (5)</strong> counts what you have logged and ticks
+      up the moment a case saves, which is the quickest confirmation that a save landed.</p>
+
+      <h3><span class="q">1</span> Date of Operation</h3>
+      <p>Tap the date field and pick the operative date from the iOS wheel. Then choose the timing:
+      <span class="pillbox">Official hours</span> <span class="pillbox">After hours</span></p>
+      <p>Both parts are required. "After hours" is what makes an emergency workload visible in your exported
+      summary, so it is worth getting right.</p>
+
+      <h3><span class="q">2</span> Place</h3>
+      <p><span class="pillbox">Home institution</span> <span class="pillbox">Outside institution</span></p>
+      <p>Choose <strong>Outside institution</strong> for a case done anywhere other than your own hospital.
+      Those cases still belong in your logbook and still appear in your export — the tag is only what lets
+      them be counted separately.</p>
+    </div>
+  </div>
+
+  <div class="split tight">
+    <div class="text-col">
+      <h3><span class="q">3</span> Staff</h3>
+      <p>The staff surgeon you operated with, as free text. Type it the same way each time — counts group
+      on exact wording, so <span class="thai">อ. สมชาย</span> and <span class="thai">อาจารย์ สมชาย</span>
+      are two different people as far as the summary is concerned.</p>
+
+      <h3><span class="q">4</span> HN</h3>
+      <p>The hospital number, <strong>digits only</strong>. The field strips anything else as you type and
+      brings up the numeric keypad, so you cannot accidentally save an HN with a dash or a space in it.</p>
+
+      <div class="note">
+        <span class="lbl">Why HN is asked for at all</span>
+        It is how you find the case again months later when you need the films. It stays in your own rows:
+        <strong>never</strong> in the exported PDF, only its last four digits to staff, and stripped
+        entirely from any error report.
+      </div>
+
+      <h3><span class="q">5</span> Diagnosis</h3>
+      <p>Free text, and <strong>multi-line on purpose</strong>: press return and the next line starts as a
+      new bullet, so a diagnosis written across several lines shows as a bulleted list wherever it appears
+      later, the PDF included.</p>
+      <p>Write it as you would in an operative note — side, open or closed, and the bone or segment. Both
+      the Case Log search and the export's region counts read this field, so specific wording pays off
+      twice.</p>
+    </div>
+    <div class="shot-col">
+      <figure class="fig">
+        <img src="figs/f-form-staff-hn.jpg" alt="Questions 3, 4, and 5">
+        <figcaption><b>Figure 3.2</b> Staff, HN, and Diagnosis. The keypad for HN is numeric because the
+        field accepts nothing else.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================== P5 AO PART 1 -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 4</div>
+  <h2 class="chapter">Classifying the fracture · questions 6 and 7</h2>
+  <div class="chapter-lede">Questions 6 and 7 are a pair. Both cards are tagged <b>Answer #6 or #7</b>: the
+  case saves as long as one of them has something in it. Answer both when both apply — that is the common
+  case, not the exception.</div>
+
+  <div class="split">
+    <div class="shot-col">
+      <figure class="fig">
+        <img src="figs/f-ao-empty.jpg" alt="AO classification body map">
+        <figcaption><b>Figure 4.1</b> Sixteen anatomic regions, each marker labelled with its AO
+        number.</figcaption>
+      </figure>
+    </div>
+    <div class="text-col">
+      <h3><span class="q">6</span> AO/OTA classification</h3>
+      <p>Rather than typing a code from memory, you narrow it down by tapping.</p>
+      <ol class="walk">
+        <li>Tap the region on the body diagram — or use the <strong>Select region…</strong> dropdown
+        underneath, which lists all sixteen by name. The two do the same thing; the dropdown is easier when
+        markers sit close together, as they do around the pelvis and the ankle.</li>
+        <li>Answer whichever narrowing questions that region has. They differ by region: the femur asks
+        only for a <strong>Segment</strong>; the forearm and the leg ask for a <strong>Bone</strong> first,
+        then its segment; the hand and the foot ask for a <strong>Specific bone</strong> instead.</li>
+        <li>Pick the <strong>Fracture type</strong> — A, B, or C. Press and hold a type to see its
+        description: simple / extra-articular, wedge / partial articular, complex / complete
+        articular.</li>
+        <li>Add a <strong>Group</strong> (1, 2, or 3) if you know it. This one is optional — the code is
+        valid without it.</li>
+      </ol>
+      <p>The code assembles itself as you go and appears as a badge next to the question title, so you can
+      see at a glance whether you built the code you meant to.</p>
+
+      <div class="note">
+        <span class="lbl">Two escape hatches</span>
+        The code box at the foot of the panel is <strong>editable</strong> — if the picker cannot express
+        the code you want, type over it. And <strong>Clear</strong> resets the whole question, which is what
+        you want after tapping the wrong region rather than undoing each pill in turn.
+      </div>
+    </div>
+  </div>
+
+  <h3>The sixteen regions, and what each one asks next</h3>
+  <table style="font-size: 8.6pt;">
+    <tr>
+      <th style="width:22%">Region</th><th style="width:10%">Code</th><th>Then asks for</th>
+      <th style="width:22%">Region</th><th style="width:10%">Code</th><th>Then asks for</th>
+    </tr>
+    <tr>
+      <td>Craniomaxillofacial</td><td>9</td><td>type only</td>
+      <td>Pelvic ring</td><td>61</td><td>type only</td>
+    </tr>
+    <tr>
+      <td>Clavicle</td><td>15</td><td>type only</td>
+      <td>Acetabulum</td><td>62</td><td>type only</td>
+    </tr>
+    <tr>
+      <td>Scapula</td><td>14</td><td>type only</td>
+      <td>Femur</td><td>3</td><td>segment</td>
+    </tr>
+    <tr>
+      <td>Thorax</td><td>16</td><td>type only</td>
+      <td>Patella</td><td>34</td><td>type only</td>
+    </tr>
+    <tr>
+      <td>Spine</td><td>5</td><td>type only</td>
+      <td>Tibia / Fibula</td><td>4 / 4F</td><td>bone, then segment</td>
+    </tr>
+    <tr>
+      <td>Humerus</td><td>1</td><td>segment</td>
+      <td>Malleolus (ankle)</td><td>44</td><td>type only</td>
+    </tr>
+    <tr>
+      <td>Forearm (radius / ulna)</td><td>2R / 2U</td><td>bone, then segment</td>
+      <td>Foot</td><td>8</td><td>specific bone</td>
+    </tr>
+    <tr>
+      <td>Hand</td><td>7</td><td>specific bone</td>
+      <td colspan="3" style="color: var(--muted); font-weight: 400;">Fracture type A / B / C is asked for
+      every region; group is always optional.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ============================================================== P6 AO PART 2 -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 4 · continued</div>
+  <h2 class="chapter">Building the code, and question 7</h2>
+  <div class="chapter-lede">A worked example: a diaphyseal femoral fracture, simple, group 2 — tapped out
+  in four gestures.</div>
+
+  <div class="shots phones">
+    <figure class="fig">
+      <img src="figs/f-ao-picked.jpg" alt="Femur selected on the diagram with code badge">
+      <figcaption><b>Figure 4.2</b> Femur tapped. The marker fills in, the dropdown follows the diagram,
+      and the badge beside the question title already reads <b>32-A2</b>.</figcaption>
+    </figure>
+    <figure class="fig">
+      <img src="figs/f-ao-detail.jpg" alt="Segment, fracture type, and group pills">
+      <figcaption><b>Figure 4.3</b> The narrowing panel: segment, then fracture type, then the optional
+      group. The computed code sits in an editable box at the foot, with <b>Clear</b> beside it.</figcaption>
+    </figure>
+  </div>
+
+  <h3><span class="q">7</span> Other Classification</h3>
+  <p>Every classification that is not AO/OTA: Schatzker, Weber, Gustilo–Anderson, Judet–Letournel,
+  Young–Burgess, Garden, Neer. Free text, and multi-line the same way Diagnosis is — one classification per
+  line, and each becomes its own bullet.</p>
+  <p>In the Case Log and in the PDF, questions 6 and 7 are shown together under a single
+  <strong>Classification</strong> heading: the AO/OTA code first, then each of your other classifications
+  beneath it.</p>
+
+  <div class="warn">
+    <span class="lbl">The one validation you can trip here</span>
+    If both 6 and 7 are empty, Save is blocked and the banner lists <em>"AO classification or Other
+    classification"</em>. Answering either one clears it. This is the only place in the form where two
+    questions are satisfied by one answer.
+  </div>
+</section>
+
+<!-- ========================================================== P7 FINISHING 8–12 -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 5</div>
+  <h2 class="chapter">Finishing the entry · questions 8–12</h2>
+  <div class="chapter-lede">Two free-text fields and three sets of options. This is the fastest part of the
+  form, and it is where the numbers on your summary page come from.</div>
+
+  <div class="split">
+    <div class="shot-col">
+      <figure class="fig">
+        <img src="figs/f-form-q7-q10.jpg" alt="Questions 7 through 10">
+        <figcaption><b>Figure 5.1</b> Approach and Procedure(s) are the same multi-line, auto-bulleting
+        fields as Diagnosis.</figcaption>
+      </figure>
+    </div>
+    <div class="text-col">
+      <h3><span class="q">8</span> Approach &nbsp;·&nbsp; <span class="q">9</span> Procedure(s)</h3>
+      <p>Both free text, both multi-line. Use a line per approach and a line per procedure when a case had
+      more than one — a staged fixation with an external fixator and later plating reads far better as two
+      lines than as one long sentence, both in your log and in the export.</p>
+
+      <h3><span class="q">10</span> Type of Procedure</h3>
+      <p><span class="pillbox">Primary surgery</span> <span class="pillbox">Revision surgery</span>
+      <span class="pillbox">Staged surgery</span></p>
+      <p>One choice. This drives a pie chart on the export's summary page.</p>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="text-col">
+      <h3><span class="q">11</span> Your Role</h3>
+      <p><span class="pillbox">Primary surgeon</span> <span class="pillbox">Primary assist</span>
+      <span class="pillbox">Secondary assist</span> <span class="pillbox">Observer (not scrub in)</span>
+      <span class="pillbox">Uncertain</span></p>
+      <p>The single most consequential field in the form. It is charted on the summary page, and it is the
+      axis of the <strong>Experiences on Pelvis &amp; Acetabulum</strong> table, which counts your pelvic
+      and acetabular cases by the role you held in each.</p>
+      <p>Record the role you actually had. <strong>Uncertain</strong> exists for the genuinely ambiguous
+      case — use it rather than rounding up.</p>
+
+      <h3><span class="q">12</span> Operative Time</h3>
+      <p>Skin to skin, as a range: <span class="pillbox">&lt; 1 hr</span>
+      <span class="pillbox">1–2 hr</span> <span class="pillbox">2–3 hr</span>
+      <span class="pillbox">3–4 hr</span> <span class="pillbox">&gt; 4 hr</span></p>
+      <p>An estimate is expected. The ranges are wide precisely so you do not need the anaesthetic record
+      in front of you.</p>
+    </div>
+    <div class="shot-col">
+      <figure class="fig">
+        <img src="figs/f-form-role-time.jpg" alt="Role and operative time options">
+        <figcaption><b>Figure 5.2</b> Role, in a two-column grid, and operative time.</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================= P8 IMAGES AND MEMO -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 5 · continued</div>
+  <h2 class="chapter">Images and your memo · questions 13 and 14</h2>
+  <div class="chapter-lede">The last two cards are optional, and both are tagged as such. A case saves
+  perfectly well with neither.</div>
+
+  <div class="split">
+    <div class="text-col">
+      <h3><span class="q">13</span> Image(s)</h3>
+      <p>Pre- and post-op films, intra-op findings. Tap <strong>+ Add images</strong> and pick from your
+      camera roll or take a photo. JPG, PNG, and HEIC are accepted — iPhone HEIC files are converted for
+      you — up to <strong>10 MB in total</strong> across all images on the case. The running total under the
+      button turns red if you go over, and Save is blocked until you remove something.</p>
+      <p>Everything happens on your phone before anything is sent: each image is converted if needed,
+      downscaled to a 2048-pixel long edge, and re-encoded. That keeps the upload small and, as a side
+      effect, strips the photo's embedded metadata — camera GPS and timestamp.</p>
+      <p>Saved images go to the programme's own private Google Drive, never a public link, and are fetched
+      back through the app when you open the case.</p>
+
+      <h3><span class="q">14</span> Memo</h3>
+      <p>Notes for yourself: what went well, what you would do differently, an implant size worth
+      remembering. Multi-line, same as the other text fields.</p>
+      <p>It is shown in your Case Log but is <strong>not</strong> included in the PDF export — so it is a
+      genuinely private field, and a good place for the reflection you would not put in a submission.</p>
+    </div>
+    <div class="shot-col">
+      <figure class="fig">
+        <img src="figs/f-form-images-memo.jpg" alt="Images, memo, and the save buttons">
+        <figcaption><b>Figure 5.3</b> The two optional cards, and the actions at the foot of the
+        form.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <div class="warn">
+    <span class="lbl">Check the frame before you add it</span>
+    Nothing crops, blurs, or redacts an image for you. A patient name or a ward sticker visible in the
+    corner of a photographed film will be stored exactly as captured, and staff at your institution can
+    open that image. Frame it out, or photograph the film rather than the screen surrounding it.
+  </div>
+
+  <div class="tip">
+    <span class="lbl">Images can wait</span>
+    You do not have to attach films at the time. Save the case now, and add the images later from
+    <strong>Edit case</strong> — the 10 MB ceiling then applies only to what you are adding, not to what is
+    already there.
+  </div>
+</section>
+
+<!-- =============================================================== P9 SAVING -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 6</div>
+  <h2 class="chapter">Saving</h2>
+  <div class="chapter-lede">Two buttons at the foot of the form, and neither asks for confirmation.</div>
+
+  <div class="shots phones">
+    <figure class="fig">
+      <img src="figs/f-validation.jpg" alt="Validation banner listing missing fields">
+      <figcaption><b>Figure 6.1</b> Tapping <b>Save Case</b> with fields outstanding lists every one of
+      them in a banner at the top of the form. Nothing is saved, and nothing you typed is lost.</figcaption>
+    </figure>
+    <figure class="fig">
+      <img src="figs/f-saved-toast.jpg" alt="Case saved to logbook toast">
+      <figcaption><b>Figure 6.2</b> A complete save: the toast confirms it, the form clears itself for the
+      next case, and the tab count goes from 5 to 6.</figcaption>
+    </figure>
+  </div>
+
+  <h3>What Save does</h3>
+  <ol class="walk">
+    <li>Checks every required field. Anything missing is listed in a banner at the top of the form, and
+    nothing is written.</li>
+    <li>Uploads your images first, and only then writes the case — so a case is never stored without the
+    films you attached to it. If an upload fails, nothing is saved and the message says why.</li>
+    <li>Confirms with <strong>Case saved to logbook</strong>, clears the form for the next case, and
+    increments the count on the <strong>Case Log</strong> tab.</li>
+  </ol>
+
+  <div class="note">
+    <span class="lbl">The count is your receipt</span>
+    If the tab count went up, the case is stored. A failed save gives you a message you have to dismiss
+    yourself, rather than a toast that disappears while you are looking away.
+  </div>
+
+  <div class="warn">
+    <span class="lbl">Reset clears everything, immediately</span>
+    <strong>Reset</strong> empties the whole form — every field, the AO selection, and any images you
+    picked. There is no confirmation step and no undo. It is there for starting over, not for clearing one
+    field.
+  </div>
+</section>
+
+<!-- ============================================================= P10 CASE LOG -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 7</div>
+  <h2 class="chapter">Your Case Log</h2>
+  <div class="chapter-lede">Every case you have logged, newest first. The tab title carries the count, so
+  the log doubles as your running total for the year.</div>
+
+  <div class="split">
+    <div class="shot-col">
+      <figure class="fig">
+        <img src="figs/f-log-list.jpg" alt="Case Log list">
+        <figcaption><b>Figure 7.1</b> Search, two filter rows, the count, then the cards.</figcaption>
+      </figure>
+    </div>
+    <div class="text-col">
+      <h3>Reading a card</h3>
+      <p>Each collapsed card shows the operative date, a <strong>Home institution</strong> or
+      <strong>Outside institution</strong> tag, the timing, the diagnosis truncated to one line, and your
+      role with the operative time. Enough to find a case without opening it.</p>
+
+      <h3>Finding a case</h3>
+      <ul>
+        <li><strong>Search</strong> matches diagnosis, other classification, approach, procedure, AO code,
+        and region name. Whole words in any order, and an AO code such as <code>43-B1</code> works as a
+        search term. It does not search Staff, HN, or Memo.</li>
+        <li><strong>All / Home / Outside</strong> filters by where the case was done.</li>
+        <li><strong>Newest / Oldest</strong> flips the order. While a search is running, best matches lead
+        instead, and this toggle takes over again once you clear the box.</li>
+      </ul>
+      <p>The count line above the cards changes to <em>"3 of 5 cases"</em> whenever a search or filter is
+      narrowing the list — which is how you tell a filtered list from a short one.</p>
+
+      <div class="note">
+        <span class="lbl">Loaded once per open</span>
+        Cases are fetched when the app starts, not continuously. If you logged a case on your iPad and want
+        to see it on your phone, reopen the app on the phone.
+      </div>
+    </div>
+  </div>
+
+  <h3>Which control to reach for</h3>
+  <table class="narrow-first">
+    <tr>
+      <td>"The distal tibia case from June"</td>
+      <td>Search <code>tibia</code>, then read the dates. Faster than scrolling, and the search box is the
+      only control that looks inside the case text.</td>
+    </tr>
+    <tr>
+      <td>"How many of my cases were 43-B1?"</td>
+      <td>Search the AO code itself. The count line above the cards gives you the answer without opening
+      anything.</td>
+    </tr>
+    <tr>
+      <td>"Everything I did away from my own hospital"</td>
+      <td>Clear the search and tap <strong>Outside</strong>. The count line reports the total against your
+      whole logbook — <em>2 of 5 cases</em>.</td>
+    </tr>
+    <tr>
+      <td>"My year, in order, from the start"</td>
+      <td>Clear the search and tap <strong>Oldest</strong>. For anything longer than a quick look, export
+      the PDF instead — it is the same record, laid out to read.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ========================================================== P11 OPENING CASE -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 7 · continued</div>
+  <h2 class="chapter">Opening a case</h2>
+  <div class="chapter-lede">Tap anywhere on a card to expand it. The card scrolls itself to just under the
+  header, so what you opened is what you are looking at. Tap it again to collapse.</div>
+
+  <div class="shots phones">
+    <figure class="fig">
+      <img src="figs/f-log-expanded.jpg" alt="Expanded case detail">
+      <figcaption><b>Figure 7.2</b> The expanded view adds everything the card leaves out. Note the
+      <b>Classification</b> block: the AO/OTA code from question 6 and the Gustilo–Anderson grade from
+      question 7, as one bulleted list.</figcaption>
+    </figure>
+    <figure class="fig">
+      <img src="figs/f-log-expanded-actions.jpg" alt="Case images and edit and delete buttons">
+      <figcaption><b>Figure 7.3</b> Images load from the programme Drive when you expand the case — tap a
+      thumbnail for full size. <b>Edit case</b> and <b>Delete case</b> sit at the foot.</figcaption>
+    </figure>
+  </div>
+
+  <p>Expanded, a case shows staff, HN, place, hours, the full diagnosis, the combined
+  <strong>Classification</strong> block, approach, position, type of procedure, the procedures performed,
+  and your memo. Fields you left empty are simply absent rather than shown as blanks, so a short detail
+  panel means a sparse case, not a display problem.</p>
+
+  <div class="note">
+    <span class="lbl">Only one case at a time</span>
+    Opening a second case closes the first. This is deliberate on a phone — it keeps the list scrollable
+    instead of turning it into a wall of detail.
+  </div>
+</section>
+
+<!-- ====================================================== P12 EDIT AND DELETE -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 7 · continued</div>
+  <h2 class="chapter">Editing and deleting</h2>
+  <div class="chapter-lede">Both actions sit at the foot of an expanded case. One is entirely safe; the
+  other cannot be undone.</div>
+
+  <div class="split">
+    <div class="text-col">
+      <h3>Editing a case</h3>
+      <p><strong>Edit case</strong> reopens the case in the entry form, fully prefilled. The AO diagram and
+      pills come back preselected from the stored code, so re-saving a case you did not otherwise touch
+      cannot change its classification.</p>
+      <p>You can tell you are editing rather than logging: the first tab is relabelled
+      <strong>Edit Case</strong>, a banner sits above the form, and the buttons become
+      <strong>Cancel</strong> and <strong>Save Changes</strong>.</p>
+      <ul>
+        <li>Already-saved images can be removed, and new ones added, in the same edit.</li>
+        <li>The 10 MB ceiling applies only to what you are adding. Images already on the case do not count
+        against it.</li>
+        <li>Saving returns you to the log with that case open, so you can check the change landed.</li>
+        <li><strong>Cancel</strong> abandons the edit and leaves the stored case exactly as it was.</li>
+      </ul>
+      <p>There is no limit on how often you edit a case, and no record of the edit in your own view — so
+      correcting a role or fixing a typo months later is entirely routine.</p>
+    </div>
+    <div class="shot-col">
+      <figure class="fig">
+        <img src="figs/f-edit-banner.jpg" alt="Edit Case tab and banner">
+        <figcaption><b>Figure 7.4</b> Edit mode: the relabelled tab and the banner above the
+        form.</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <h3>Deleting a case</h3>
+  <div class="warn">
+    <span class="lbl">There is no undo</span>
+    <strong>Delete case</strong> removes the case immediately, along with its images. Nothing asks you to
+    confirm, and the case cannot be recovered — if you delete one by mistake, you log it again.
+  </div>
+  <p>The card disappears the moment you tap. If the server refuses the delete, the case
+  <strong>reappears</strong> in the list and a message tells you it failed — so a card that comes back is a
+  failed delete, not a glitch, and the case is still there.</p>
+</section>
+
+<!-- ================================================================ P13 PDF -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 8</div>
+  <h2 class="chapter">Exporting a PDF</h2>
+  <div class="chapter-lede">The PDF tab turns a month range of your logbook into a formatted document,
+  built entirely on your phone.</div>
+
+  <div class="split">
+    <div class="shot-col">
+      <figure class="fig">
+        <img src="figs/f-pdf-panel.jpg" alt="Export logbook PDF panel">
+        <figcaption><b>Figure 8.1</b> Two month pickers, a live case count, and one button.</figcaption>
+      </figure>
+    </div>
+    <div class="text-col">
+      <h3>Exporting</h3>
+      <ol class="walk">
+        <li>Open the <strong>PDF</strong> tab. <strong>From</strong> and <strong>To</strong> arrive already
+        set to the full span of your logbook — for a whole-year export, change nothing.</li>
+        <li>Narrow the range if you want a quarter or a single month. Both pickers list only months you
+        actually have cases in.</li>
+        <li>Check the line underneath: <em>"5 cases in range"</em>. If it reads 0, or if
+        <strong>From</strong> is later than <strong>To</strong>, the button stays disabled and says
+        so.</li>
+        <li>Tap <strong>Generate PDF</strong>. It reads <em>Building PDF…</em> for a few seconds — longer
+        the first time, since the layout engine loads on demand.</li>
+        <li>The iOS share sheet opens with the finished file. <strong>Save to Files</strong>, mail it, or
+        send it into a LINE chat yourself.</li>
+      </ol>
+
+      <div class="note">
+        <span class="lbl">Why the share sheet</span>
+        The file is generated on your phone and handed straight to iOS — it is never uploaded anywhere to
+        be turned into a PDF. A LINE bot cannot attach a file to a chat, which is why nothing arrives in
+        the chatbox on its own. If the share sheet does not appear, the app falls back to opening the PDF
+        in your browser, and then to a plain download.
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <span class="lbl">The export ignores your filters</span>
+    Whatever search or Home / Outside filter you left running in the Case Log has no effect here. The
+    export is always the complete record for the months you chose.
+  </div>
+
+  <h3>If the export will not run</h3>
+  <table class="narrow-first">
+    <tr>
+      <td>"No cases to export yet"</td>
+      <td>Your logbook is empty. Log a case first — there is nothing to summarise.</td>
+    </tr>
+    <tr>
+      <td>The button is greyed out</td>
+      <td>Either the range holds no cases, or <strong>From</strong> is later than <strong>To</strong>. The
+      line above the button says which.</td>
+    </tr>
+    <tr>
+      <td>It says "Loading profile…"</td>
+      <td>Your name and institution have not arrived yet. It clears itself in a moment — the wait exists so
+      a PDF cannot be built with a blank name on it.</td>
+    </tr>
+    <tr>
+      <td>"Could not export"</td>
+      <td>Try again. If it persists, tell your administrator; the failure is reported to them
+      automatically.</td>
+    </tr>
+  </table>
+</section>
+
+<!-- ========================================================= P14 PDF CONTENTS -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 8 · continued</div>
+  <h2 class="chapter">What the document contains</h2>
+  <div class="chapter-lede">A summary page, then your cases in order. Three things are deliberately left
+  out.</div>
+
+  <div class="shots phones" style="align-items: flex-start;">
+    <figure class="fig" style="flex: 0 1 76mm; max-width: 76mm;">
+      <img src="figs/export-fellow-p1.jpg" alt="Exported PDF summary page">
+      <figcaption><b>Figure 8.2</b> Page 1 of a real export: the case count, top operated regions, the
+      pelvis and acetabulum table broken down by role, and the three distribution charts.</figcaption>
+    </figure>
+    <figure class="fig" style="flex: 0 1 76mm; max-width: 76mm;">
+      <img src="figs/export-fellow-p2.jpg" alt="Exported PDF case page">
+      <figcaption><b>Figure 8.3</b> The pages that follow: one block per case, oldest first, with the date
+      and the timing / place / AO-code chips.</figcaption>
+    </figure>
+  </div>
+
+  <table class="narrow-first">
+    <tr>
+      <td>Page 1 — summary</td>
+      <td>Your name, institution, and fellowship year; the range and the case count; your <strong>top
+      operated regions</strong>; the <strong>Experiences on Pelvis &amp; Acetabulum</strong> table, broken
+      down by the role you held in each case; and pie charts of <strong>type of procedure</strong>,
+      <strong>role</strong>, and <strong>place</strong>.</td>
+    </tr>
+    <tr>
+      <td>Then, one block per case</td>
+      <td><strong>Oldest first</strong> — the reverse of the Case Log's default, because a logbook reads
+      chronologically. Each block carries the date, the timing / place / AO-code chips, and questions 2
+      through 9.</td>
+    </tr>
+    <tr>
+      <td>Deliberately not included</td>
+      <td><strong>HN</strong>, your <strong>memos</strong>, and the <strong>images</strong>. The export is a
+      record of your operative experience, not a patient record — which is what makes it shareable as it
+      stands, without you having to check it first.</td>
+    </tr>
+  </table>
+
+  <p>The file is named for you and the range, e.g.
+  <code>TOTS-fellow-logbook_&lt;your-name&gt;_2026-06_to_2027-05.pdf</code>, so a folder of monthly exports
+  sorts itself.</p>
+
+  <div class="tip">
+    <span class="lbl">Habit worth forming</span>
+    Export at the end of each month and keep the file. It takes under a minute, it gives you a dated
+    snapshot you can hand over without notice, and it means a portfolio deadline never depends on your
+    logbook being complete that particular week.
+  </div>
+
+  
+</section>
+
+<!-- =========================================================== P15 PRIVACY -->
+<section class="page">
+  <div class="chapter-kicker">Chapter 9</div>
+  <h2 class="chapter">Privacy, and quick answers</h2>
+  <div class="chapter-lede">What the logbook holds, who can see it, and the questions worth answering
+  before they come up.</div>
+
+  <h3>Where your data lives</h3>
+  <table class="narrow-first">
+    <tr>
+      <td>Your cases</td>
+      <td>In the programme's database, restricted at the database level to the fellow who created each row.
+      Another fellow cannot read your cases even in principle.</td>
+    </tr>
+    <tr>
+      <td>Your images</td>
+      <td>In the programme's own private Google Drive, reached only through the app. They are never given a
+      public link, and your phone never talks to Google directly.</td>
+    </tr>
+    <tr>
+      <td>HN</td>
+      <td>Stored on your own rows so you can find the case again. Masked to its last four digits anywhere it
+      leaves them — the staff view, and your administrator's notifications. Never in the PDF, and never in
+      an error report.</td>
+    </tr>
+    <tr>
+      <td>Staff at your institution</td>
+      <td>See a read-only list of cases logged by fellows at your institution, including yours, with HN
+      masked and your name shown on each. They cannot edit or delete anything.</td>
+    </tr>
+    <tr>
+      <td>Your administrator</td>
+      <td>Receives a notification when a case is logged, edited, or deleted — with HN masked. Clinical text
+      is included in full. This is programme oversight, not an audit trail.</td>
+    </tr>
+  </table>
+
+  <div class="warn">
+    <span class="lbl">Your part of it</span>
+    Two things are yours to get right, because nothing downstream can correct them: what you type into the
+    free-text fields, and what is visible in the images you attach. Keep patient names and identifiers out
+    of both — HN is the only identifier the logbook asks for.
+  </div>
+
+  <h3>Quick answers</h3>
+  <table class="narrow-first">
+    <tr>
+      <td>Can I use it on my iPad?</td>
+      <td>Yes — open it from LINE on the iPad. Phones and tablets both work; only desktop is refused. You
+      will not be asked to verify your email again on a second device.</td>
+    </tr>
+    <tr>
+      <td>I logged a case on my iPad and my phone does not show it.</td>
+      <td>Cases load when the app opens. Reopen it on the phone.</td>
+    </tr>
+    <tr>
+      <td>My name or institution in the header is wrong.</td>
+      <td>Both come from the programme roster and cannot be edited in the app. Ask your administrator to
+      correct the roster.</td>
+    </tr>
+    <tr>
+      <td>Save says the images are too large.</td>
+      <td>10 MB is the ceiling across all images on one case. Remove one and save, then add the rest through
+      <strong>Edit case</strong> — that allowance is separate.</td>
+    </tr>
+    <tr>
+      <td>I deleted a case by mistake.</td>
+      <td>There is no undo; the row and its images are gone. Log it again.</td>
+    </tr>
+    <tr>
+      <td>Nothing arrived in the LINE chat after I exported.</td>
+      <td>Expected. The PDF goes to the iOS share sheet, not into the chat. Use <strong>Save to
+      Files</strong>, or pick a LINE chat from the share sheet yourself.</td>
+    </tr>
+    <tr>
+      <td>The app will not load at all.</td>
+      <td>Check you opened it from the rich menu inside LINE rather than a browser. If a "Something went
+      wrong" screen appears, tap <strong>Try again</strong>; if it persists, tell your administrator.</td>
+    </tr>
+  </table>
+
+  <div class="footnote">
+    Screens in this guide were captured from the running app at iPhone 17 dimensions (402 × 874 pt). The
+    fellow name, institution, staff names, HNs, and case details shown are fictional sample data. On a
+    device with a different screen size, spacing and line wrapping will differ; the cards, their order, and
+    their numbering will not.
+  </div>
+</section>
+
+</body>
+</html>

@@ -24,3 +24,8 @@ supabase/.temp
 *.njsproj
 *.sln
 *.sw?
+
+# Generated assets for the usage guides (see docs/guides/README.md)
+docs/guides/figs
+docs/guides/fonts
+docs/guides/exports
