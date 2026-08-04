@@ -44,9 +44,22 @@ since they're inside the LINE in-app browser.
 A branded template matching the app's look is at
 [`supabase/email-templates/otp-email.html`](./supabase/email-templates/otp-email.html)
 — paste its contents into the **Confirm signup** template's HTML source (it
-already contains `{{ .Token }}` where the code should render). The Magic
-Link template is not used anywhere in this app's flow and doesn't need
-editing.
+already contains `{{ .Token }}` where the code should render). Paste the same
+contents into **Magic Link** as well: `signInWithOtp` falls through to that
+template for anyone whose Auth account already exists and is confirmed, so
+leaving it at the stock link-only default means some sign-ins get a link
+instead of a code.
+
+> **Symptom: a not-yet-verified fellow receives two emails.** One is
+> "Confirm your email address" with a link and no code; the other carries the
+> 6-digit code. That means the branded template only ever reached one of the
+> two slots above, and **Confirm signup** is still Supabase's default. The
+> account-creating first request emails the link, which is useless here — it
+> has no `{{ .Token }}`, and tapping it opens the app outside LINE, where
+> `AuthGate` blocks it ("not-liff"). It does confirm the account server-side,
+> so when the fellow gives up and re-enters their email, that second attempt
+> now takes the Magic Link path and finally delivers a code. Fix it by putting
+> the token template in **both** slots — no code change is involved.
 
 Also check **Authentication → Rate Limits**: Supabase's default built-in
 email sender allows only a handful of emails/hour. Fine for a small fellow
